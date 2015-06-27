@@ -1,0 +1,7 @@
+# File format reference:
+# https://pip.pypa.io/en/latest/reference/pip_install.html#requirements-file-format
+
+--index-url https://pypi.python.org/simple/
+
+.
+tinydb
