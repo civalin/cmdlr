@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import urllib.request as UR
+import urllib.error as UE
 import re
 import os
 import concurrent.futures as CF
@@ -173,23 +174,31 @@ def get_comic_download_list(comic_metadata, output_dir):
 
 
 def download_image(url, save_path):
-    if not os.path.exists(save_path):
+    if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
+        # print('Already Exist: {}'.format(save_path))
+        pass
+    else:
         dirname = os.path.dirname(save_path)
         os.makedirs(dirname, exist_ok=True)
-        response = UR.urlopen(url)
+        while True:
+            try:
+                response = UR.urlopen(url, timeout=60)
+                break
+            except UE.HTTPError as err:
+                print('Skip {url} ->\n  {save_path}\n  {err}'.format(
+                    url=url,
+                    save_path=save_path,
+                    err=err))
+                break
+            except UE.URLError as err:
+                print('Retry {url} ->\n  {save_path}\n  {err}'.format(
+                    url=url,
+                    save_path=save_path,
+                    err=err))
+                continue
         with open(save_path, 'wb') as f:
             f.write(response.read())
         print('OK: {}'.format(save_path))
-    else:
-        print('Already Exist: {}'.format(save_path))
-
-
-# def download_comic(comic_id, output_dir=os.getcwd()):
-#     comic_metadata = get_comic_metadata(5847)
-#     comic_download_list = get_comic_download_list(comic_metadata, output_dir)
-#     with CF.ThreadPoolExecutor(max_workers=4) as e:
-#         for download_info in comic_download_list:
-#             e.submit(download_image, **download_info)
 
 
 def get_comic_index_table(db):
@@ -274,9 +283,13 @@ def main():
                     )
         print(info)
 
-    def list_subscribed_comics(db):
+    def get_all_subscribed_rows(db):
         s_table = get_subscribed_table(db)
-        for row in s_table.all():
+        return sorted(s_table.all(),
+                      key=lambda row: (row['status'], row['title']))
+
+    def list_subscribed_comics(db):
+        for row in get_all_subscribed_rows(db):
             print_subscribed_comic_info(row)
 
     def refresh(db):
@@ -317,7 +330,9 @@ def main():
             tinydb.where('comic_id') == comic_id)
         if old_meta:
             s_table.update(new_comic_metadata, eids=[old_meta.eid])
-            if old_meta['volume_codes'] != new_comic_metadata['volume_codes']:
+            old_len = len(old_meta['volume_codes'])
+            new_len = len(new_comic_metadata['volume_codes'])
+            if old_len < new_len:
                 s_table.update({'status': "update"}, eids=[old_meta.eid])
         else:
             s_table.insert(dict(status="new", **new_comic_metadata))
@@ -330,13 +345,17 @@ def main():
 
     def unsubscribe(db, comic_id):
         s_table = get_subscribed_table(db)
+        row = s_table.get(tinydb.where('comic_id') == comic_id)
+        print_subscribed_comic_info(row)
         s_table.remove(tinydb.where('comic_id') == comic_id)
 
     def download_subscribed(db, output_dir):
         s_table = get_subscribed_table(db)
-        for row in s_table.all():
+        for row in [r for r in get_all_subscribed_rows(db)
+                    # if r.get('status')
+                    ]:
             comic_download_list = get_comic_download_list(row, output_dir)
-            with CF.ThreadPoolExecutor(max_workers=6) as e:
+            with CF.ThreadPoolExecutor(max_workers=10) as e:
                 for download_info in comic_download_list:
                     e.submit(download_image, **download_info)
             s_table.update(
@@ -350,7 +369,14 @@ def main():
     else:
         if args.refresh:
             refresh(db)
+        # if args.output_dir:
+        #     if db.table('settings').contain(
+        #             tinydb.where('name') == 'output_dir'):
+        #         elem = db.table('settings').get(
+        #                 tinydb.where('name') == 'output_dir')
+        #         elem['value']
         if args.unsubscribe_comic_ids:
+            print('Unsubscribe:')
             for comic_id in args.unsubscribe_comic_ids:
                 unsubscribe(db, comic_id)
         if args.subscribe_comic_ids:

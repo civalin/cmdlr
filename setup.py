@@ -22,7 +22,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Topic :: System :: Archiving"],
-    install_requires=[],
+    install_requires=['tinydb'],
     setup_requires=[],
     package_dir={'': 'src'},
     packages=['cmdlr'],
