@@ -21,8 +21,9 @@ class ComicDB:
         self.__db = tinydb.TinyDB(dbpath)
         self.__s_table = self.__db.table('subscribed')
         self.__c_table = self.__db.table('comic_index')
+        self.__settings_table = self.__db.table('settings')
 
-    def print_subscribed_comic_info(self, row):
+    def __print_subscribed_comic_info(self, row):
         if row.get('status') == 'update':
             sign = '!'
         elif row.get('status') == 'new':
@@ -38,13 +39,28 @@ class ComicDB:
                     )
         print(info)
 
-    def get_all_subscribed_rows(self):
+    def __get_all_subscribed_rows(self):
         return sorted(self.__s_table.all(),
                       key=lambda row: (row['status'], row['title']))
 
+    def __upsert_subscribed(self, new_comic_metadata):
+        comic_id = new_comic_metadata['comic_id']
+        old_meta = self.__s_table.get(
+            where('comic_id') == comic_id)
+        if old_meta:
+            self.__s_table.update(new_comic_metadata, eids=[old_meta.eid])
+            old_len = len(old_meta['volume_codes'])
+            new_len = len(new_comic_metadata['volume_codes'])
+            if old_len < new_len:
+                self.__s_table.update({'status': "update"},
+                                      eids=[old_meta.eid])
+        else:
+            self.__s_table.insert(dict(status="new", **new_comic_metadata))
+        return self.__s_table.get(where('comic_id') == comic_id)
+
     def list_subscribed_comics(self):
-        for row in self.get_all_subscribed_rows():
-            self.print_subscribed_comic_info(row)
+        for row in self.__get_all_subscribed_rows():
+            self.__print_subscribed_comic_info(row)
 
     def refresh(self):
         def refresh_index():
@@ -65,8 +81,8 @@ class ComicDB:
             def from_queue():
                 for i in range(length):
                     comic_metadata = que.get()
-                    row = self.upsert_subscribed(comic_metadata)
-                    self.print_subscribed_comic_info(row)
+                    row = self.__upsert_subscribed(comic_metadata)
+                    self.__print_subscribed_comic_info(row)
 
             print("Update subscribed comics metadata ...\n")
             with CF.ThreadPoolExecutor(max_workers=10) as e:
@@ -89,33 +105,18 @@ class ComicDB:
             for match in matches:
                 print('{comic_id:<10}{title}'.format(**match))
 
-    def upsert_subscribed(self, new_comic_metadata):
-        comic_id = new_comic_metadata['comic_id']
-        old_meta = self.__s_table.get(
-            where('comic_id') == comic_id)
-        if old_meta:
-            self.__s_table.update(new_comic_metadata, eids=[old_meta.eid])
-            old_len = len(old_meta['volume_codes'])
-            new_len = len(new_comic_metadata['volume_codes'])
-            if old_len < new_len:
-                self.__s_table.update({'status': "update"},
-                                      eids=[old_meta.eid])
-        else:
-            self.__s_table.insert(dict(status="new", **new_comic_metadata))
-        return self.__s_table.get(where('comic_id') == comic_id)
-
     def subscribe(self, comic_id):
         comic_metadata = eight_comic.get_comic_metadata(comic_id)
-        row = self.upsert_subscribed(comic_metadata)
-        self.print_subscribed_comic_info(row)
+        row = self.__upsert_subscribed(comic_metadata)
+        self.__print_subscribed_comic_info(row)
 
     def unsubscribe(self, comic_id):
         row = self.__s_table.get(where('comic_id') == comic_id)
-        self.print_subscribed_comic_info(row)
+        self.__print_subscribed_comic_info(row)
         self.__s_table.remove(where('comic_id') == comic_id)
 
     def download_subscribed(self, output_dir):
-        for row in [r for r in self.get_all_subscribed_rows()
+        for row in [r for r in self.__get_all_subscribed_rows()
                     # if r.get('status')
                     ]:
             comic_download_list = eight_comic.get_comic_download_list(
@@ -125,6 +126,24 @@ class ComicDB:
                     e.submit(download_image, **download_info)
             self.__s_table.update(
                 {"status": ""}, where('comic_id') == row['comic_id'])
+
+    def set_output_dir(self, output_dir):
+        query = where('option') == 'output_dir'
+        row = self.__settings_table.get(query)
+        if row:
+            self.__settings_table.update({'value': output_dir}, query)
+        else:
+            self.__settings_table.insert(
+                {'option': 'output_dir', 'value': output_dir})
+
+    def get_output_dir(self):
+        query = where('option') == 'output_dir'
+        row = self.__settings_table.get(query)
+        if row:
+            return row.get('value')
+        else:
+            self.set_output_dir(os.path.expanduser('~/comics'))
+            return self.get_output_dir()
 
 
 def download_image(url, save_path):
@@ -155,7 +174,7 @@ def download_image(url, save_path):
         print('OK: {}'.format(save_path))
 
 
-def get_args():
+def get_args(cdb):
     def parse_args():
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter,
@@ -193,14 +212,14 @@ def get_args():
 
         parser.add_argument(
             '-o', '--output-dir', metavar='DIR', dest='output_dir', type=str,
-            default=os.getcwd(),
-            help='Change download folder. default is cwd.'
-                 '\n(default: %(default)s)')
+            default=cdb.get_output_dir(),
+            help='Change download folder.'
+                 '\n(Current value: %(default)s)')
 
         # parser.add_argument(
         #     '--init', dest='init',
         #     action='store_const', const=True, default=False,
-        #     help='Clear whole comic book database!')
+        #     help='Clear your whole comic book database!')
 
         parser.add_argument(
             '-v', '--version', action='version', version=VERSION)
@@ -214,20 +233,16 @@ def get_args():
 
 def main():
 
-    args = get_args()
     cdb = ComicDB()
+    args = get_args(cdb)
 
     if args.query:
         cdb.search(args.query)
     else:
         if args.refresh:
             cdb.refresh()
-        # if args.output_dir:
-        #     if db.table('settings').contain(
-        #             tinydb.where('name') == 'output_dir'):
-        #         elem = db.table('settings').get(
-        #                 tinydb.where('name') == 'output_dir')
-        #         elem['value']
+        if args.output_dir:
+            cdb.set_output_dir(args.output_dir)
         if args.unsubscribe_comic_ids:
             print('Unsubscribe:')
             for comic_id in args.unsubscribe_comic_ids:
@@ -238,7 +253,7 @@ def main():
         if args.list_subscribed:
             cdb.list_subscribed_comics()
         if args.download:
-            cdb.download_subscribed(args.output_dir)
+            cdb.download_subscribed(cdb.get_output_dir())
         # if args.init:
         #     cdb.purge_tables()
 

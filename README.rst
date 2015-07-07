@@ -56,7 +56,7 @@ Make sure your python >= 3.3, then...
 Changelog
 =========
 
-1.0.0
+1.1.0
 ---------
 
 - Init release.
