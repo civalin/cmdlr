@@ -53,6 +53,15 @@ Make sure your python >= 3.3, then...
 
     pip3 install cmdlr
 
+Subscription Database
+==========================
+
+User can backup the database manually if (s)he want.
+
+.. code:: bash
+
+    ~/.cmdlrdb
+
 Changelog
 =========
 

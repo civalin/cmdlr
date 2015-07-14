@@ -58,9 +58,16 @@ class ComicDB:
             self.__s_table.insert(dict(status="new", **new_comic_metadata))
         return self.__s_table.get(where('comic_id') == comic_id)
 
-    def list_subscribed_comics(self):
+    def __list_subscribed_comics(self):
         for row in self.__get_all_subscribed_rows():
             self.__print_subscribed_comic_info(row)
+
+    def list_info(self):
+        self.__list_subscribed_comics()
+        print('-------------------------------------------')
+        # print('  Index Size: {}'.format(len(self.__c_table)))
+        print('  Output Dir: {}'.format(self.get_output_dir()))
+        print('  Subscribed: {}'.format(len(self.__s_table)))
 
     def refresh(self):
         def refresh_index():
@@ -117,7 +124,7 @@ class ComicDB:
 
     def download_subscribed(self, output_dir):
         for row in [r for r in self.__get_all_subscribed_rows()
-                    # if r.get('status')
+                    if r.get('status')
                     ]:
             comic_download_list = eight_comic.get_comic_download_list(
                 row, output_dir)
@@ -195,9 +202,9 @@ def get_args(cdb):
             help='Unsubscribe some comic book.')
 
         parser.add_argument(
-            '-l', '--list-subscribed', dest='list_subscribed',
+            '-l', '--list-info', dest='list_info',
             action='store_const', const=True, default=False,
-            help='List all subscribed books.')
+            help='List all subscribed books and other info.')
 
         parser.add_argument(
             '-r', '--refresh', dest='refresh',
@@ -250,8 +257,8 @@ def main():
         if args.subscribe_comic_ids:
             for comic_id in args.subscribe_comic_ids:
                 cdb.subscribe(comic_id)
-        if args.list_subscribed:
-            cdb.list_subscribed_comics()
+        if args.list_info:
+            cdb.list_info()
         if args.download:
             cdb.download_subscribed(cdb.get_output_dir())
         # if args.init:
