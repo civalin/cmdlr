@@ -1,10 +1,26 @@
 import urllib.request as UR
+import urllib.error as UE
 import re
 import os
 
+class EightComicException(Exception):
+    pass
 
 def get_html(url):
-    response = UR.urlopen(url)
+    while True:
+        try:
+            response = UR.urlopen(url, timeout=30)
+            break
+        except UE.URLError as err:
+            print('Retry {url} ->\n  {err}'.format(
+                url=url,
+                err=err))
+            continue
+        except UE.HTTPError as err:
+            print('Fatal Error {url} ->\n  {err}'.format(
+                url=url,
+                err=err))
+            continue
     html = response.read().decode('big5', errors='ignore')
     return html
 
@@ -26,20 +42,26 @@ def get_comic_metadata(comic_id):
     def get_one_page_url(comic_index_url):
         def get_random_cview_params(html):
             match = re.search(r"cview\('(.+?)',(\d+?)\)", html)
-            return match.groups(1)
+            if match is None:
+                raise EightComicException(
+                    "CView decode Error: {}".format(comic_index_url))
+            else:
+                answer = match.groups(1)
+                return answer
+
 
         def generate_one_page_url(one_page_url_fragment, catid):
             catid = int(catid)
             if catid in (4, 6, 12, 22):
-                baseurl = "http://new.comicvip.com/show/cool-"
+                baseurl = "http://www.comicvip.com/show/cool-"
             elif catid in (1, 17, 19, 21):
-                baseurl = "http://new.comicvip.com/show/cool-"
+                baseurl = "http://www.comicvip.com/show/cool-"
             elif catid in (2, 5, 7, 9):
-                baseurl = "http://new.comicvip.com/show/cool-"
+                baseurl = "http://www.comicvip.com/show/cool-"
             elif catid in (10, 11, 13, 14):
-                baseurl = "http://new.comicvip.com/show/best-manga-"
+                baseurl = "http://www.comicvip.com/show/best-manga-"
             elif catid in (3, 8, 15, 16, 18, 20):
-                baseurl = "http://new.comicvip.com/show/best-manga-"
+                baseurl = "http://www.comicvip.com/show/best-manga-"
 
             fragment = one_page_url_fragment.replace(
                 ".html", "").replace("-", ".html?ch=")

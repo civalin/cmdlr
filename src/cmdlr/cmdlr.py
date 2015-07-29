@@ -82,13 +82,22 @@ class ComicDB:
             length = len(self.__s_table)
 
             def to_queue(comic_id):
-                comic_metadata = eight_comic.get_comic_metadata(comic_id)
-                que.put(comic_metadata)
+                try:
+                    comic_metadata = eight_comic.get_comic_metadata(comic_id)
+                    que.put(comic_metadata)
+                except eight_comic.EightComicException as e:
+                    que.put(e)
 
             def from_queue():
                 for i in range(length):
-                    comic_metadata = que.get()
+                    obj = que.get()
+                    if isinstance(obj, Exception):
+                        print(obj)
+                    else:
+                        comic_metadata = obj
                     row = self.__upsert_subscribed(comic_metadata)
+                    print('{i:>4}/{length} '.format(i=i+1, length=length),
+                          end='')
                     self.__print_subscribed_comic_info(row)
 
             print("Update subscribed comics metadata ...\n")
@@ -113,9 +122,12 @@ class ComicDB:
                 print('{comic_id:<10}{title}'.format(**match))
 
     def subscribe(self, comic_id):
-        comic_metadata = eight_comic.get_comic_metadata(comic_id)
-        row = self.__upsert_subscribed(comic_metadata)
-        self.__print_subscribed_comic_info(row)
+        try:
+            comic_metadata = eight_comic.get_comic_metadata(comic_id)
+            row = self.__upsert_subscribed(comic_metadata)
+            self.__print_subscribed_comic_info(row)
+        except eight_comic.EightComicException as e:
+            print(e)
 
     def unsubscribe(self, comic_id):
         row = self.__s_table.get(where('comic_id') == comic_id)
