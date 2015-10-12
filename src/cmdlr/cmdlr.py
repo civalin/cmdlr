@@ -1,239 +1,84 @@
 #!/usr/bin/env python3
 
-import urllib.request as UR
-import urllib.error as UE
+# import concurrent.futures as CF
+import sys
 import os
-import concurrent.futures as CF
 import argparse
-import queue
+import pathlib
+# import importlib
 
-import tinydb
-from tinydb import where
-
-from . import eight_comic
-
-
-VERSION = '1.1.0'
+from . import comicdb
+from . import comicanalyzer
+from .analyzers import eightcomic
 
 
-class ComicDB:
-    def __init__(self, dbpath=os.path.expanduser('~/.cmdlrdb')):
-        self.__db = tinydb.TinyDB(dbpath)
-        self.__s_table = self.__db.table('subscribed')
-        self.__c_table = self.__db.table('comic_index')
-        self.__settings_table = self.__db.table('settings')
-
-    def __print_subscribed_comic_info(self, row):
-        if row.get('status') == 'update':
-            sign = '!'
-        elif row.get('status') == 'new':
-            sign = '+'
-        else:
-            sign = ' '
-        info = ('{sign} {comic_id:<10}{title}'
-                '  (Volumes: {volume_count})').format(
-                    comic_id=row['comic_id'],
-                    title=row['title'],
-                    volume_count=len(row['volume_codes']),
-                    sign=sign,
-                    )
-        print(info)
-
-    def __get_all_subscribed_rows(self):
-        return sorted(self.__s_table.all(),
-                      key=lambda row: (row['status'], row['title']))
-
-    def __upsert_subscribed(self, new_comic_metadata):
-        comic_id = new_comic_metadata['comic_id']
-        old_meta = self.__s_table.get(
-            where('comic_id') == comic_id)
-        if old_meta:
-            self.__s_table.update(new_comic_metadata, eids=[old_meta.eid])
-            old_len = len(old_meta['volume_codes'])
-            new_len = len(new_comic_metadata['volume_codes'])
-            if old_len < new_len:
-                self.__s_table.update({'status': "update"},
-                                      eids=[old_meta.eid])
-        else:
-            self.__s_table.insert(dict(status="new", **new_comic_metadata))
-        return self.__s_table.get(where('comic_id') == comic_id)
-
-    def __list_subscribed_comics(self):
-        for row in self.__get_all_subscribed_rows():
-            self.__print_subscribed_comic_info(row)
-
-    def list_info(self):
-        self.__list_subscribed_comics()
-        print('-------------------------------------------')
-        # print('  Index Size: {}'.format(len(self.__c_table)))
-        print('  Output Dir: {}'.format(self.get_output_dir()))
-        print('  Subscribed: {}'.format(len(self.__s_table)))
-
-    def refresh(self):
-        def refresh_index():
-            self.__c_table.purge()
-            comic_index = eight_comic.get_comic_index()
-            self.__c_table.insert_multiple(comic_index)
-            print("Index rebuild complete. Comics count: {}\n".format(
-                len(comic_index)))
-
-        def refresh_subscribed():
-            que = queue.Queue()
-            length = len(self.__s_table)
-
-            def to_queue(comic_id):
-                try:
-                    comic_metadata = eight_comic.get_comic_metadata(comic_id)
-                    que.put(comic_metadata)
-                except eight_comic.EightComicException as e:
-                    que.put(e)
-
-            def from_queue():
-                for i in range(length):
-                    obj = que.get()
-                    if isinstance(obj, Exception):
-                        print(obj)
-                    else:
-                        comic_metadata = obj
-                    row = self.__upsert_subscribed(comic_metadata)
-                    print('{i:>4}/{length} '.format(i=i+1, length=length),
-                          end='')
-                    self.__print_subscribed_comic_info(row)
-
-            print("Update subscribed comics metadata ...\n")
-            with CF.ThreadPoolExecutor(max_workers=10) as e:
-                for row in self.__s_table.all():
-                    e.submit(to_queue, row['comic_id'])
-                from_queue()
-            print("\nMetadata update complete.")
-
-        refresh_index()
-        refresh_subscribed()
-
-    def search(self, query):
-        if not len(self.__c_table):
-            self.refresh()
-        matches = self.__c_table.search(
-            where('title').matches(r'.*?{}.*'.format(query)))
-        if len(matches):
-            # print('Comic ID  Title')
-            # print('========= =====================')
-            for match in matches:
-                print('{comic_id:<10}{title}'.format(**match))
-
-    def subscribe(self, comic_id):
-        try:
-            comic_metadata = eight_comic.get_comic_metadata(comic_id)
-            row = self.__upsert_subscribed(comic_metadata)
-            self.__print_subscribed_comic_info(row)
-        except eight_comic.EightComicException as e:
-            print(e)
-
-    def unsubscribe(self, comic_id):
-        row = self.__s_table.get(where('comic_id') == comic_id)
-        self.__print_subscribed_comic_info(row)
-        self.__s_table.remove(where('comic_id') == comic_id)
-
-    def download_subscribed(self, output_dir):
-        for row in [r for r in self.__get_all_subscribed_rows()
-                    if r.get('status')
-                    ]:
-            comic_download_list = eight_comic.get_comic_download_list(
-                row, output_dir)
-            with CF.ThreadPoolExecutor(max_workers=10) as e:
-                for download_info in comic_download_list:
-                    e.submit(download_image, **download_info)
-            self.__s_table.update(
-                {"status": ""}, where('comic_id') == row['comic_id'])
-
-    def set_output_dir(self, output_dir):
-        query = where('option') == 'output_dir'
-        row = self.__settings_table.get(query)
-        if row:
-            self.__settings_table.update({'value': output_dir}, query)
-        else:
-            self.__settings_table.insert(
-                {'option': 'output_dir', 'value': output_dir})
-
-    def get_output_dir(self):
-        query = where('option') == 'output_dir'
-        row = self.__settings_table.get(query)
-        if row:
-            return row.get('value')
-        else:
-            self.set_output_dir(os.path.expanduser('~/comics'))
-            return self.get_output_dir()
+VERSION = '2.0.0'
+_ANALYZERS = []
 
 
-def download_image(url, save_path):
-    if os.path.exists(save_path) and os.path.getsize(save_path) > 0:
-        # print('Already Exist: {}'.format(save_path))
-        pass
-    else:
-        dirname = os.path.dirname(save_path)
-        os.makedirs(dirname, exist_ok=True)
-        while True:
-            try:
-                response = UR.urlopen(url, timeout=60)
-                break
-            except UE.HTTPError as err:
-                print('Skip {url} ->\n  {save_path}\n  {err}'.format(
-                    url=url,
-                    save_path=save_path,
-                    err=err))
-                break
-            except UE.URLError as err:
-                print('Retry {url} ->\n  {save_path}\n  {err}'.format(
-                    url=url,
-                    save_path=save_path,
-                    err=err))
-                continue
-        with open(save_path, 'wb') as f:
-            f.write(response.read())
-        print('OK: {}'.format(save_path))
+def import_analyzers_modules():
+    analyzers_dir = pathlib.Path(__file__).parent / 'analyzers'
+    sys.path.append(str(analyzers_dir))
+    # for path in analyzers_dir.glob('*.py'):
+    #     if path.stem == '__init__':
+    #         continue
+    #     ANALYZER_MODULES.append(importlib.import_module(path.stem))
+    # remove python editor unuse alert.
+    (eightcomic, )
+    _ANALYZERS.extend([
+        cls() for cls in comicanalyzer.ComicAnalyzer.__subclasses__()])
+
+
+def get_analyzer_by_url(url):
+    for analyzer in _ANALYZERS:
+        comic_id = analyzer.url_to_comic_id(url)
+        if comic_id:
+            return analyzer
+    return None
 
 
 def get_args(cdb):
     def parse_args():
+        analyzers_desc_text = '\n'.join([
+            '    ' + azr.codename + ' - ' + azr.desc
+            for azr in _ANALYZERS])
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter,
-            description='Download comic books from 8comic!')
+            description='Subscribe and download your comic books!\n'
+                        '\n'
+                        '  Enabled analyzers:\n' + analyzers_desc_text
+            )
 
         parser.add_argument(
-            'query', metavar='QUERY', type=str, nargs='?',
-            help='Search index to find the comic_id')
-
-        parser.add_argument(
-            '-s', '--subscribe', metavar='Comic_ID',
-            dest='subscribe_comic_ids', type=int, nargs='+',
+            '-s', '--subscribe', metavar='comic_entry_url',
+            dest='subscribe_comic_entry_urls', type=str, nargs='+',
             help='Subscribe some comic book.')
 
-        parser.add_argument(
-            '-u', '--unsubscribe', metavar='Comic_ID',
-            dest='unsubscribe_comic_ids', type=int, nargs='+',
-            help='Unsubscribe some comic book.')
+        # parser.add_argument(
+        #     '-u', '--unsubscribe', metavar='comic_id',
+        #     dest='unsubscribe_comic_ids', type=str, nargs='+',
+        #     help='Unsubscribe some comic book.')
 
-        parser.add_argument(
-            '-l', '--list-info', dest='list_info',
-            action='store_const', const=True, default=False,
-            help='List all subscribed books and other info.')
+        # parser.add_argument(
+        #     '-l', '--list-info', dest='list_info',
+        #     action='store_const', const=True, default=False,
+        #     help='List all subscribed books and other info.')
 
-        parser.add_argument(
-            '-r', '--refresh', dest='refresh',
-            action='store_const', const=True, default=False,
-            help='Refresh index of content and subscribed comic\'s'
-                 '\nmetadata.')
+        # parser.add_argument(
+        #     '-r', '--refresh', dest='refresh',
+        #     action='store_const', const=True, default=False,
+        #     help='Update all subscribed comic info.')
 
-        parser.add_argument(
-            '-d', '--download', dest='download',
-            action='store_const', const=True, default=False,
-            help='Download subscribed comic books.')
+        # parser.add_argument(
+        #     '-d', '--download', dest='download',
+        #     action='store_const', const=True, default=False,
+        #     help='Download subscribed comic books.')
 
-        parser.add_argument(
-            '-o', '--output-dir', metavar='DIR', dest='output_dir', type=str,
-            default=cdb.get_output_dir(),
-            help='Change download folder.'
-                 '\n(Current value: %(default)s)')
+        # parser.add_argument(
+        #     '-o', '--output-dir', metavar='DIR', dest='output_dir', type=str,
+        #     default=cdb.output_dir,
+        #     help='Change download folder.'
+        #          '\n(Current value: %(default)s)')
 
         # parser.add_argument(
         #     '--init', dest='init',
@@ -251,30 +96,36 @@ def get_args(cdb):
 
 
 def main():
-
-    cdb = ComicDB()
+    import_analyzers_modules()
+    cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/comicdb_test.db'))
     args = get_args(cdb)
 
-    if args.query:
-        cdb.search(args.query)
-    else:
-        if args.refresh:
-            cdb.refresh()
-        if args.output_dir:
-            cdb.set_output_dir(args.output_dir)
-        if args.unsubscribe_comic_ids:
-            print('Unsubscribe:')
-            for comic_id in args.unsubscribe_comic_ids:
-                cdb.unsubscribe(comic_id)
-        if args.subscribe_comic_ids:
-            for comic_id in args.subscribe_comic_ids:
-                cdb.subscribe(comic_id)
-        if args.list_info:
-            cdb.list_info()
-        if args.download:
-            cdb.download_subscribed(cdb.get_output_dir())
-        # if args.init:
-        #     cdb.purge_tables()
+    if args.subscribe_comic_entry_urls:
+        for url in args.subscribe_comic_entry_urls:
+            print(url)
+            azr = get_analyzer_by_url(url)
+            comic_id = azr.url_to_comic_id(url)
+            data = azr.get_comic_info(comic_id)
+            for volume in data['volumes']:
+                print(azr.get_volume_pages(
+                    comic_id, volume['volume_id'], data['extra_data']))
+    # if args.refresh:
+    #     cdb.refresh()
+    # if args.output_dir:
+    #     cdb.set_output_dir(args.output_dir)
+    # if args.unsubscribe_comic_ids:
+    #     print('Unsubscribe:')
+    #     for comic_id in args.unsubscribe_comic_ids:
+    #         cdb.unsubscribe(comic_id)
+    # if args.subscribe_comic_ids:
+    #     for comic_id in args.subscribe_comic_ids:
+    #         cdb.subscribe(comic_id)
+    # if args.list_info:
+    #     cdb.list_info()
+    # if args.download:
+    #     cdb.download_subscribed(cdb.get_output_dir())
+    # if args.init:
+    #     cdb.purge_tables()
 
 
 if __name__ == "__main__":

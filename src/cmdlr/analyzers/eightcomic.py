@@ -1,29 +1,37 @@
 import re
 
-from . import comic_analyzer
-from . import downloader
+from .. import comicanalyzer
+from .. import downloader
 
 
-class EightComicException(comic_analyzer.ComicAnalyzerException):
+class EightComicException(comicanalyzer.ComicAnalyzerException):
     pass
 
 
-class EightAnalyzer(comic_analyzer.ComicAnalyzer):
+class EightAnalyzer(comicanalyzer.ComicAnalyzer):
+
+    @property
+    def codename(self):
+        return '8c'
+
+    @property
+    def desc(self):
+        return '8comic: comicvip.com'
 
     def url_to_comic_id(self, comic_entry_url):
-        match = re.match('www.comicvip.com/html/(\d+).html',
-                         comic_entry_url)
+        match = re.search('comicvip.com/html/(\d+).html',
+                          comic_entry_url)
         if match is None:
             return None
         else:
-            id_in_site = match.groups()[0]
-            return '8c/' + id_in_site
+            local_comic_id = match.groups()[0]
+            return self.convert_to_comic_id(local_comic_id)
 
     def comic_id_to_url(self, comic_id):
-        if comic_id.startswith('8c/'):
-            id_in_site = comic_id[3:]
+        local_comic_id = self.convert_to_local_comic_id(comic_id)
+        if local_comic_id:
             return 'http://www.comicvip.com/html/{}.html'.format(
-                id_in_site)
+                local_comic_id)
         else:
             return None
 
@@ -54,7 +62,7 @@ class EightAnalyzer(comic_analyzer.ComicAnalyzer):
                 ".html", "").replace("-", ".html?ch=")
             return baseurl + fragment
 
-        comic_html = downloader.get(
+        comic_html = downloader.Downloader.get(
             comic_url).decode('big5', errors='ignore')
         page_url_fragment, catid = __get_page_url_fragment_and_catid(
             comic_html)
@@ -73,7 +81,7 @@ class EightAnalyzer(comic_analyzer.ComicAnalyzer):
         return [comic_code[i:i+chunk_size]
                 for i in range(0, len(comic_code), chunk_size)]
 
-    def __decode_volume_code(volume_code):
+    def __decode_volume_code(self, volume_code):
         def get_only_digit(string):
             return re.sub("\D", "", string)
 
@@ -95,7 +103,7 @@ class EightAnalyzer(comic_analyzer.ComicAnalyzer):
 
         comic_url = self.comic_id_to_url(comic_id)
         one_page_url = self.__get_one_page_url(comic_url)
-        one_page_html = downloader.get(
+        one_page_html = downloader.Downloader.get(
             one_page_url).decode('big5', errors='ignore')
         comic_code = self.__get_comic_code(one_page_html)
 
@@ -118,7 +126,7 @@ class EightAnalyzer(comic_analyzer.ComicAnalyzer):
         return answer
 
     def get_volume_pages(self, comic_id, volume_id, extra_data):
-        def get_image_url(page_number, comic_id,
+        def get_image_url(page_number, local_comic_id,
                           did, sid, volume_number, volume_code, **kwargs):
             def get_hash(page_number):
                 magic_number = (((page_number - 1) / 10) % 10) +\
@@ -128,10 +136,10 @@ class EightAnalyzer(comic_analyzer.ComicAnalyzer):
                 return volume_code[magic_number:magic_number+3]
 
             hash = get_hash(page_number)
-            image_url = "http://img{sid}.8comic.com/{did}/{comic_id}/"\
+            image_url = "http://img{sid}.8comic.com/{did}/{local_comic_id}/"\
                         "{volume_number}/{page_number:03}_{hash}.jpg".format(
                             page_number=page_number,
-                            comic_id=comic_id,
+                            local_comic_id=local_comic_id,
                             did=did,
                             sid=sid,
                             volume_number=volume_number,
@@ -145,11 +153,12 @@ class EightAnalyzer(comic_analyzer.ComicAnalyzer):
                             for vol_code in vol_code_list]
         volume_info_dict = {v['volume_id']: v for v in volume_info_list}
         volume_info = volume_info_dict[volume_id]
+        local_comic_id = self.convert_to_local_comic_id(comic_id)
 
         pages = []
         for page_number in range(volume_info['page_count']):
             url = get_image_url(page_number=page_number,
-                                comic_id=comic_id,
+                                local_comic_id=local_comic_id,
                                 did=volume_info['did'],
                                 sid=volume_info['did'],
                                 volume_number=volume_id,

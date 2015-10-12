@@ -8,6 +8,36 @@ class ComicAnalyzerException(Exception):
 class ComicAnalyzer(metaclass=abc.ABCMeta):
     '''Base class of all comic analyzer'''
 
+    @property
+    @abc.abstractmethod
+    def codename(self):
+        '''
+        Return analyzer code name.
+        Keep it SHORT and CLEAR. and not conflict with other analyzer.
+        Recommend use 2 chars.
+
+        e.g., co, sm, rd
+        '''
+
+    @property
+    @abc.abstractmethod
+    def desc(self):
+        '''
+        Return analyzer short description.
+        Recommend include sitename or siteurl for user friendly.
+
+        e.g., "8comic: vipcomic.com"
+        '''
+
+    def convert_to_local_comic_id(self, comic_id):
+        if comic_id.startswith(self.codename + '/'):
+            return comic_id[len(self.codename) + 1:]
+        else:
+            return None
+
+    def convert_to_comic_id(self, local_comic_id):
+        return self.codename + '/' + local_comic_id
+
     @abc.abstractmethod
     def url_to_comic_id(self, comic_entry_url):
         '''

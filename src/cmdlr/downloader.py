@@ -7,7 +7,8 @@ class Downloader():
     """
         General Download Toolkit
     """
-    def get(self, url, **kwargs):
+    @classmethod
+    def get(cls, url, **kwargs):
         '''
             urllib.request.urlopen wrapper
             return:
@@ -30,7 +31,8 @@ class Downloader():
         binary_data = response.read()
         return binary_data
 
-    def save(self, url, filepath, **kwargs):
+    @classmethod
+    def save(cls, url, filepath, **kwargs):
         '''
             args:
                 url:
@@ -38,7 +40,7 @@ class Downloader():
                 filepath:
                     the file location want to save
         '''
-        binary_data = self.get(url, **kwargs)
+        binary_data = cls.get(url, **kwargs)
         dirname = os.path.dirname(filepath)
         os.makedirs(dirname, exists_ok=True)
         with open(filepath, 'wb') as f:

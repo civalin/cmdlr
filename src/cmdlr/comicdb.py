@@ -55,13 +55,13 @@ class ComicDB():
                     '  ON DELETE CASCADE,'
                     'volume_id INTEGER NOT NULL,'      # vol NO. e.g., 15
                     'name TEXT NOT NULL,'              # vol name. e.g., 第15回
-                    'is_downloaded BOOLEAN NOT NULL DEFAULT 0,'
+                    'is_downloaded BOOLEAN NOT NULL DEFAULT 0'
                     ');'
                 )
                 self.conn.execute(
                     'CREATE TABLE options ('
                     'option TEXT PRIMARY KEY NOT NULL,'
-                    'value TEXT,'
+                    'value TEXT'
                     ');'
                 )
                 insert_option('output_dir', os.path.expanduser('~/comics'))
@@ -79,8 +79,7 @@ class ComicDB():
                                     detect_types=sqlite3.PARSE_DECLTYPES)
         self.conn.row_factory = sqlite3.Row
         self.conn.execute('PRAGMA foreign_keys = ON;')
-        self.migrate()
-        self.__metadata_init()
+        migrate()
 
     def __get_option(self, option):
         '''
