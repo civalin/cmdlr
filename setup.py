@@ -52,7 +52,7 @@ setup(
     install_requires=[],
     setup_requires=[],
     package_dir={'': 'src'},
-    packages=['cmdlr'],
+    packages=['cmdlr', 'cmdlr.analyzers'],
     entry_points={
         'console_scripts': ['cmdlr = cmdlr.cmdlr:main'],
         'setuptools.installation': ['eggsecutable = cmdlr.cmdlr:main']
