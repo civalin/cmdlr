@@ -156,7 +156,7 @@ def list_info(cdb, verbose):
         print(text)
     print('  ------------------------------------------')
     print('    Total:              {:>4} comics / {:>6} volumes'.format(
-        len(cdb.get_all_comics()),
+        len(all_comics),
         cdb.get_volumes_count(),
         ))
     no_downloaded_volumes = cdb.get_not_downloaded_volumes()
@@ -166,11 +166,12 @@ def list_info(cdb, verbose):
         ))
     print('    Last refresh:       {}'.format(cdb.last_refresh_time))
     print('    Download Directory: "{}"'.format(cdb.output_dir))
-    counter = collections.Counter(
-        [comic_info['comic_id'].split('/')[0] for comic_info in all_comics])
+    counter = collections.Counter([
+        get_analyzer_by_comic_id(comic_info['comic_id'])
+        for comic_info in all_comics])
     print('    Used Analyzers:     {}'.format(
-        ', '.join(['{}({})'.format(codename, count)
-                   for codename, count in counter.items()])))
+        ', '.join(['{}({}):{}'.format(azr.name, azr.codename, count)
+                   for azr, count in counter.items()])))
 
 
 def refresh_all(cdb, verbose):
@@ -234,7 +235,7 @@ def download_subscribed(cdb, verbose):
 def get_args(cdb):
     def parse_args():
         analyzers_desc_text = '\n'.join([
-            '    ' + azr.codename + ' - ' + azr.desc
+            '    ' + azr.name + '(' + azr.codename + ') - ' + azr.desc
             for azr in _ANALYZERS])
 
         parser = argparse.ArgumentParser(
@@ -258,7 +259,7 @@ def get_args(cdb):
         parser.add_argument(
             '-l', '--list-info', dest='list_info',
             action='store_const', const=True, default=False,
-            help='List all subscribed books and other info.')
+            help='List all subscribed books info.')
 
         parser.add_argument(
             '-r', '--refresh', dest='refresh',
@@ -276,15 +277,15 @@ def get_args(cdb):
 
         parser.add_argument(
             '--output-dir', metavar='DIR', dest='output_dir',
-            type=str, default=cdb.output_dir,
+            type=str, default=None,
             help='Change download folder.'
-                 '\n(Current value: %(default)s)')
+                 '\n(Current value: {})'.format(cdb.output_dir))
 
         parser.add_argument(
             '--threads', metavar='NUM', dest='threads',
-            type=int, default=cdb.threads,
+            type=int, default=None,
             help='Change downloading threads count.'
-                 '\n(Current value: %(default)s)')
+                 '\n(Current value: {})'.format(cdb.threads))
 
         parser.add_argument(
             '--version', action='version', version=VERSION)
@@ -301,13 +302,15 @@ def main():
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/.cmdlr.db'))
     args = get_args(cdb)
 
+    if args.output_dir:
+        cdb.output_dir = args.output_dir
+    if args.threads:
+        cdb.threads = args.threads
     if args.subscribe_comic_entrys:
         for entry in args.subscribe_comic_entrys:
             subscribe(cdb, entry, args.verbose)
     if args.refresh:
         refresh_all(cdb, args.verbose + 1)
-    if args.output_dir:
-        cdb.output_dir = args.output_dir
     if args.unsubscribe_comic_entrys:
         for comic_entry in args.unsubscribe_comic_entrys:
             unsubscribe(cdb, comic_entry, args.verbose)

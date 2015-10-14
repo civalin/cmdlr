@@ -110,6 +110,7 @@ class ComicDB():
             set the option value, the value must be str or None.
         '''
         data = {'value': value, 'option': option}
+        print(option, value)
         cursor = self.conn.execute(
             'UPDATE "options" SET "value" = :value'
             ' WHERE "option" = :option',
@@ -165,7 +166,7 @@ class ComicDB():
 
     @threads.setter
     def threads(self, threads):
-        self.__set_option(str(threads))
+        self.__set_option('threads', str(threads))
 
     def upsert_comic(self, comic_info):
         '''
@@ -278,8 +279,12 @@ class ComicDB():
             ' ORDER BY comic_id').fetchall()
 
     def get_all_comics(self):
+        return [self.get_comic(row['comic_id'])
+                for row in self.get_all_comic_ids()]
+
+    def get_all_comic_ids(self):
         return self.conn.execute(
-            'SELECT comics.* FROM comics JOIN volumes'
+            'SELECT comics.comic_id FROM comics JOIN volumes'
             ' ON comics.comic_id = volumes.comic_id'
             ' GROUP BY comics.comic_id'
             ' ORDER BY volumes.is_downloaded DESC,'
@@ -299,7 +304,7 @@ class ComicDB():
 
     def get_comic_volumes_status(self, comic_id):
         '''
-            Use for UI display.
+            For UI display.
         '''
         volumes = self.conn.execute(
             'SELECT * FROM volumes'

@@ -40,8 +40,12 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
         return '8c'
 
     @property
+    def name(self):
+        return '8comic'
+
+    @property
     def desc(self):
-        return '8comic: comicvip.com'
+        return 'comicvip.com'
 
     def url_to_comic_id(self, comic_entry_url):
         match = re.search('comicvip.com/html/(\d+).html',
@@ -59,63 +63,6 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
                 local_comic_id)
         else:
             return None
-
-    def __get_one_page_url(self, comic_html, comic_url):
-        def __get_page_url_fragment_and_catid(html):
-            match = re.search(r"cview\('(.+?)',(\d+?)\)", html)
-            if match is None:
-                raise EightComicException(
-                    "CView decode Error: {}".format(comic_url))
-            else:
-                answer = match.groups(1)
-                return answer
-
-        def __get_page_url(page_url_fragment, catid):
-            catid = int(catid)
-            if catid in (4, 6, 12, 22):
-                baseurl = "http://www.comicvip.com/show/cool-"
-            elif catid in (1, 17, 19, 21):
-                baseurl = "http://www.comicvip.com/show/cool-"
-            elif catid in (2, 5, 7, 9):
-                baseurl = "http://www.comicvip.com/show/cool-"
-            elif catid in (10, 11, 13, 14):
-                baseurl = "http://www.comicvip.com/show/best-manga-"
-            elif catid in (3, 8, 15, 16, 18, 20):
-                baseurl = "http://www.comicvip.com/show/best-manga-"
-
-            fragment = page_url_fragment.replace(
-                ".html", "").replace("-", ".html?ch=")
-            return baseurl + fragment
-
-        page_url_fragment, catid = __get_page_url_fragment_and_catid(
-            comic_html)
-        page_url = __get_page_url(page_url_fragment, catid)
-        return page_url
-
-    def __get_comic_code(self, one_page_html):
-        match_comic_code = re.search(r"var cs='(\w*)'",
-                                     one_page_html)
-        comic_code = match_comic_code.group(1)
-        return comic_code
-
-    def __split_vol_code_list(self, comic_code):
-        '''split code for each volume'''
-        chunk_size = 50
-        return [comic_code[i:i+chunk_size]
-                for i in range(0, len(comic_code), chunk_size)]
-
-    def __decode_volume_code(self, volume_code):
-        def get_only_digit(string):
-            return re.sub("\D", "", string)
-
-        volume_info = {
-            "volume_id": str(int(get_only_digit(volume_code[0:4]))),
-            "sid": get_only_digit(volume_code[4:6]),
-            "did": get_only_digit(volume_code[6:7]),
-            "page_count": int(get_only_digit(volume_code[7:10])),
-            "volume_code": volume_code,
-            }
-        return volume_info
 
     def get_comic_info(self, comic_id):
         def get_title(one_page_html):
@@ -198,3 +145,60 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
             pages.append({'url': url, 'local_filename': local_filename})
 
         return pages
+
+    def __get_one_page_url(self, comic_html, comic_url):
+        def __get_page_url_fragment_and_catid(html):
+            match = re.search(r"cview\('(.+?)',(\d+?)\)", html)
+            if match is None:
+                raise EightComicException(
+                    "CView decode Error: {}".format(comic_url))
+            else:
+                answer = match.groups(1)
+                return answer
+
+        def __get_page_url(page_url_fragment, catid):
+            catid = int(catid)
+            if catid in (4, 6, 12, 22):
+                baseurl = "http://www.comicvip.com/show/cool-"
+            elif catid in (1, 17, 19, 21):
+                baseurl = "http://www.comicvip.com/show/cool-"
+            elif catid in (2, 5, 7, 9):
+                baseurl = "http://www.comicvip.com/show/cool-"
+            elif catid in (10, 11, 13, 14):
+                baseurl = "http://www.comicvip.com/show/best-manga-"
+            elif catid in (3, 8, 15, 16, 18, 20):
+                baseurl = "http://www.comicvip.com/show/best-manga-"
+
+            fragment = page_url_fragment.replace(
+                ".html", "").replace("-", ".html?ch=")
+            return baseurl + fragment
+
+        page_url_fragment, catid = __get_page_url_fragment_and_catid(
+            comic_html)
+        page_url = __get_page_url(page_url_fragment, catid)
+        return page_url
+
+    def __get_comic_code(self, one_page_html):
+        match_comic_code = re.search(r"var cs='(\w*)'",
+                                     one_page_html)
+        comic_code = match_comic_code.group(1)
+        return comic_code
+
+    def __split_vol_code_list(self, comic_code):
+        '''split code for each volume'''
+        chunk_size = 50
+        return [comic_code[i:i+chunk_size]
+                for i in range(0, len(comic_code), chunk_size)]
+
+    def __decode_volume_code(self, volume_code):
+        def get_only_digit(string):
+            return re.sub("\D", "", string)
+
+        volume_info = {
+            "volume_id": str(int(get_only_digit(volume_code[0:4]))),
+            "sid": get_only_digit(volume_code[4:6]),
+            "did": get_only_digit(volume_code[6:7]),
+            "page_count": int(get_only_digit(volume_code[7:10])),
+            "volume_code": volume_code,
+            }
+        return volume_info

@@ -87,12 +87,22 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
+    def name(self):
+        '''
+        Return analyzer name.
+        Recommand include the target site name.
+
+        E.g., 8comic
+        '''
+
+    @property
+    @abc.abstractmethod
     def desc(self):
         '''
         Return analyzer short description.
-        Recommend include sitename or siteurl for user friendly.
+        Recommend include siteurl for user friendly.
 
-        e.g., "8comic: vipcomic.com"
+        e.g., "vipcomic.com"
         '''
 
     def convert_to_local_comic_id(self, comic_id):
