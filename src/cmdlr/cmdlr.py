@@ -198,7 +198,7 @@ def refresh_all(cdb, verbose):
             print(text)
             cdb.last_refresh_time = DT.datetime.now()
 
-    with CF.ThreadPoolExecutor(max_workers=10) as executor:
+    with CF.ThreadPoolExecutor(max_workers=cdb.threads) as executor:
         all_comics = cdb.get_all_comics()
         for comic_info in all_comics:
             executor.submit(get_data_one, comic_info)
@@ -214,12 +214,13 @@ def download_subscribed(cdb, verbose):
             pass
 
     output_dir = cdb.output_dir
+    threads = cdb.threads
     for volume in cdb.get_not_downloaded_volumes():
         volume_dir = pathlib.Path(
             output_dir) / volume['title'] / volume['name']
         os.makedirs(str(volume_dir), exist_ok=True)
         azr = get_analyzer_by_comic_id(volume['comic_id'])
-        with CF.ThreadPoolExecutor(max_workers=10) as executor:
+        with CF.ThreadPoolExecutor(max_workers=threads) as executor:
             for data in azr.get_volume_pages(volume['comic_id'],
                                              volume['volume_id'],
                                              volume['extra_data']):
@@ -270,14 +271,20 @@ def get_args(cdb):
             help='Download subscribed comic books.')
 
         parser.add_argument(
-            '-o', '--output-dir', metavar='DIR', dest='output_dir',
+            "-v", "--verbose", action="count", dest='verbose',
+            default=0, help="Increase output verbosity. E.g., -v, -vvv")
+
+        parser.add_argument(
+            '--output-dir', metavar='DIR', dest='output_dir',
             type=str, default=cdb.output_dir,
             help='Change download folder.'
                  '\n(Current value: %(default)s)')
 
         parser.add_argument(
-            "-v", "--verbose", action="count", dest='verbose',
-            default=0, help="Increase output verbosity. E.g., -v, -vvv")
+            '--threads', metavar='NUM', dest='threads',
+            type=int, default=cdb.threads,
+            help='Change downloading threads count.'
+                 '\n(Current value: %(default)s)')
 
         parser.add_argument(
             '--version', action='version', version=VERSION)

@@ -53,17 +53,6 @@ class ComicDB():
                 self.conn.execute('PRAGMA user_version = {};'.format(
                     int(version)))
 
-            def insert_option(option, value):
-                '''
-                    insert a option and its value.
-                    Both 2 args must be str type or None.
-                '''
-                self.conn.execute(
-                    'INSERT INTO "options" (option, value)'
-                    'VALUES (:option, :value)',
-                    {'option': option, 'value': value}
-                )
-
             def from0to1():
                 self.conn.execute(
                     'CREATE TABLE comics ('           # 已訂閱的漫畫
@@ -89,8 +78,10 @@ class ComicDB():
                     'value TEXT'
                     ');'
                 )
-                insert_option('output_dir', os.path.expanduser('~/comics'))
-                insert_option('last_refresh_time', None)
+                self.__set_option(
+                    'output_dir', os.path.expanduser('~/comics'))
+                self.__set_option('last_refresh_time', None)
+                self.__set_option('threads', str(2))
                 set_db_version(1)
 
             db_version = get_db_version()
@@ -127,7 +118,7 @@ class ComicDB():
             self.conn.execute(
                 'INSERT INTO "options"'
                 ' (option, value)'
-                ' VALUE (:option, :value)',
+                ' VALUES (:option, :value)',
                 data)
         self.conn.commit()
 
@@ -142,7 +133,9 @@ class ComicDB():
     @property
     def last_refresh_time(self):
         '''
-            return None or datetime format
+            Record last refresh time.
+            return:
+                None or datetime format
         '''
         lrt_strformat = self.__get_option('last_refresh_time')
         if lrt_strformat is None:
@@ -165,6 +158,14 @@ class ComicDB():
             lrt_strformat = DT.datetime.strftime(
                 last_refresh_time, '%Y-%m-%dT%H:%M:%S')
             self.__set_option('last_refresh_time', lrt_strformat)
+
+    @property
+    def threads(self):
+        return int(self.__get_option('threads'))
+
+    @threads.setter
+    def threads(self, threads):
+        self.__set_option(str(threads))
 
     def upsert_comic(self, comic_info):
         '''

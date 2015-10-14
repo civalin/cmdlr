@@ -21,7 +21,7 @@ Set Your Local Comics Directory
 
 .. code:: bash
 
-    cmdlr -o <DIR>
+    cmdlr --output-dir <DIR>
 
 
 Default comics directory is ``~/comics``.
