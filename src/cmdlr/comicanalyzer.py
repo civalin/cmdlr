@@ -1,3 +1,69 @@
+#########################################################################
+#  The MIT License (MIT)
+#
+#  Copyright (c) 2014~2015 CIVA LIN (林雪凡)
+#
+#  Permission is hereby granted, free of charge, to any person obtaining a
+#  copy of this software and associated documentation files
+#  (the "Software"), to deal in the Software without restriction, including
+#  without limitation the rights to use, copy, modify, merge, publish,
+#  distribute, sublicense, and/or sell copies of the Software, and to
+#  permit persons to whom the Software is furnished to do so,
+#  subject to the following conditions:
+#
+#  The above copyright notice and this permission notice shall be included
+#  in all copies or substantial portions of the Software.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+#  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+##########################################################################
+
+
+######################################################################
+#
+# Term description:
+#
+#   codename:
+#     A analyzer short name.
+#     e.g., 8c
+#
+#   comic_id: (str)
+#     A comic identifier scope in the whole program.
+#     Most internal interface using the comic_id to identify one comic.
+#     e.g., 8c/123a97
+#
+#   local_comic_id: (str)
+#     A comic identifier scope in the analyzer (comic site)
+#     It is a string and a part of comic's url.
+#     e.g., 123a97
+#
+#   (you should convert local_comic_id <-> comic_id by
+#    `analyzer.convert_*` function)
+#
+#   volume_id: (str)
+#     A volume identifier scope in a comic.
+#     e.g., "13"
+#
+#   volume_name: (str)
+#     A short volume description.
+#     e.g., "vol1"
+#
+#   comic_entry_url: (str)
+#     A url which reference a comic (in this site)
+#     This url must contain the local_comic_id.
+#
+#   extra_data: (dict)
+#     A comic level cache data.
+#     Analyzer designer can define it structure by her(his) self.
+#     e.g., {}
+#
+######################################################################
+
 import abc
 
 

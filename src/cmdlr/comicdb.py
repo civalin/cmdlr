@@ -1,3 +1,28 @@
+#########################################################################
+#  The MIT License (MIT)
+#
+#  Copyright (c) 2014~2015 CIVA LIN (林雪凡)
+#
+#  Permission is hereby granted, free of charge, to any person obtaining a
+#  copy of this software and associated documentation files
+#  (the "Software"), to deal in the Software without restriction, including
+#  without limitation the rights to use, copy, modify, merge, publish,
+#  distribute, sublicense, and/or sell copies of the Software, and to
+#  permit persons to whom the Software is furnished to do so,
+#  subject to the following conditions:
+#
+#  The above copyright notice and this permission notice shall be included
+#  in all copies or substantial portions of the Software.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+#  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+##########################################################################
+
 import sqlite3
 import os
 import datetime as DT
@@ -53,8 +78,8 @@ class ComicDB():
                     'CREATE TABLE volumes ('
                     'comic_id TEXT REFERENCES comics(comic_id)'
                     '  ON DELETE CASCADE,'
-                    'volume_id INTEGER NOT NULL,'      # vol NO. e.g., 15
-                    'name TEXT NOT NULL,'              # vol name. e.g., 第15回
+                    'volume_id TEXT NOT NULL,'      # vol NO. e.g., 15
+                    'name TEXT NOT NULL,'           # vol name. e.g., 第15回
                     'is_downloaded BOOLEAN NOT NULL DEFAULT 0'
                     ');'
                 )
@@ -93,10 +118,18 @@ class ComicDB():
         '''
             set the option value, the value must be str or None.
         '''
-        self.conn.execute(
+        data = {'value': value, 'option': option}
+        cursor = self.conn.execute(
             'UPDATE "options" SET "value" = :value'
-            ' WHERE option = :option',
-            {'value': value, 'option': option})
+            ' WHERE "option" = :option',
+            data)
+        if cursor.rowcount == 0:
+            self.conn.execute(
+                'INSERT INTO "options"'
+                ' (option, value)'
+                ' VALUE (:option, :value)',
+                data)
+        self.conn.commit()
 
     @property
     def output_dir(self):
@@ -141,40 +174,66 @@ class ComicDB():
             This function will also maintain the volumes table.
         '''
         def upsert_volume(volume):
-            self.conn.execute(
-                'INSERT OR REPLACE INTO volumes'
-                ' (comic_id, number, name)'
-                ' VOLUES ('
-                ' :comic_id,'
-                ' :volume_id,'
-                ' :name,'
-                ' )',
+            cursor = self.conn.execute(
+                'UPDATE volumes SET'
+                ' name = name'
+                ' WHERE comic_id = :comic_id AND'
+                '       volume_id = :volume_id',
                 {
                     'comic_id': comic_info['comic_id'],
                     'volume_id': volume['volume_id'],
                     'name': volume['name'],
                 }
             )
+            if cursor.rowcount == 0:
+                self.conn.execute(
+                    'INSERT INTO volumes'
+                    ' (comic_id, volume_id, name)'
+                    ' VALUES ('
+                    ' :comic_id,'
+                    ' :volume_id,'
+                    ' :name'
+                    ' )',
+                    {
+                        'comic_id': comic_info['comic_id'],
+                        'volume_id': volume['volume_id'],
+                        'name': volume['name'],
+                    }
+                )
 
         now = DT.datetime.now()
-        self.conn.execute(
-            'INSERT OR REPLACE INTO comics'
-            ' (comic_id, title, desc, created_time)'
-            ' VALUES ('
-            ' :comic_id,'
-            ' :title,'
-            ' :desc,'
-            ' COALESCE('
-            '  (SELECT created_time FROM comics WHERE comic_id = :comic_id),'
-            '  :created_time'
-            ' ),'
-            ' )',
+        cursor = self.conn.execute(
+            'UPDATE comics SET'
+            ' desc = :desc,'
+            ' title = :title,'
+            ' created_time = :created_time,'
+            ' extra_data = :extra_data'
+            ' WHERE comic_id = :comic_id',
             {
                 'comic_id': comic_info['comic_id'],
                 'title': comic_info['title'],
                 'desc': comic_info['desc'],
                 'created_time': now,
+                'extra_data': comic_info['extra_data'],
             })
+        if cursor.rowcount == 0:
+            self.conn.execute(
+                'INSERT INTO comics'
+                ' (comic_id, title, desc, created_time, extra_data)'
+                ' VALUES ('
+                ' :comic_id,'
+                ' :title,'
+                ' :desc,'
+                ' :created_time,'
+                ' :extra_data'
+                ' )',
+                {
+                    'comic_id': comic_info['comic_id'],
+                    'title': comic_info['title'],
+                    'desc': comic_info['desc'],
+                    'created_time': now,
+                    'extra_data': comic_info['extra_data'],
+                })
 
         for volume in comic_info['volumes']:
             upsert_volume(volume)
@@ -188,17 +247,17 @@ class ComicDB():
         self.conn.commit()
 
     def set_volume_is_downloaded(
-            self, comic_id, volume_number, is_downloaded=True):
+            self, comic_id, volume_id, is_downloaded=True):
         '''
             change volume downloaded status
         '''
         self.conn.execute(
             'UPDATE volumes'
             ' SET is_downloaded = :is_downloaded'
-            ' WHERE comic_id = :comic_id AND number = :number',
+            ' WHERE comic_id = :comic_id AND volume_id = :volume_id',
             {
                 'comic_id': comic_id,
-                'number': volume_number,
+                'volume_id': volume_id,
                 'is_downloaded': is_downloaded,
             })
         self.conn.commit()
@@ -219,8 +278,23 @@ class ComicDB():
 
     def get_all_comics(self):
         return self.conn.execute(
+            'SELECT comics.* FROM comics JOIN volumes'
+            ' ON comics.comic_id = volumes.comic_id'
+            ' GROUP BY comics.comic_id'
+            ' ORDER BY volumes.is_downloaded DESC,'
+            '          comics.title ASC,'
+            '          comics.comic_id ASC').fetchall()
+
+    def get_volumes_count(self):
+        return self.conn.execute(
+            'SELECT COUNT(*) FROM volumes'
+                ).fetchone()[0]
+
+    def get_comic(self, comic_id):
+        return self.conn.execute(
             'SELECT * FROM comics'
-            ' ORDER BY created_time').fetchall()
+            ' WHERE comic_id = :comic_id',
+            {'comic_id': comic_id}).fetchone()
 
     def get_comic_volumes_status(self, comic_id):
         '''

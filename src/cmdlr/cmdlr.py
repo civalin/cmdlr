@@ -1,14 +1,45 @@
 #!/usr/bin/env python3
 
-# import concurrent.futures as CF
+#########################################################################
+#  The MIT License (MIT)
+#
+#  Copyright (c) 2014~2015 CIVA LIN (林雪凡)
+#
+#  Permission is hereby granted, free of charge, to any person obtaining a
+#  copy of this software and associated documentation files
+#  (the "Software"), to deal in the Software without restriction, including
+#  without limitation the rights to use, copy, modify, merge, publish,
+#  distribute, sublicense, and/or sell copies of the Software, and to
+#  permit persons to whom the Software is furnished to do so,
+#  subject to the following conditions:
+#
+#  The above copyright notice and this permission notice shall be included
+#  in all copies or substantial portions of the Software.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+#  OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+#  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+#  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+#  CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+#  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+#  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+##########################################################################
+
+import concurrent.futures as CF
+import datetime as DT
 import sys
 import os
 import argparse
 import pathlib
+import textwrap
+import shutil
+import queue
+import collections
 # import importlib
 
 from . import comicdb
 from . import comicanalyzer
+from . import downloader
 from .analyzers import eightcomic
 
 
@@ -29,12 +60,174 @@ def import_analyzers_modules():
         cls() for cls in comicanalyzer.ComicAnalyzer.__subclasses__()])
 
 
-def get_analyzer_by_url(url):
+def get_analyzer_by_comic_id(comic_id):
     for analyzer in _ANALYZERS:
-        comic_id = analyzer.url_to_comic_id(url)
-        if comic_id:
+        if comic_id.split('/')[0] == analyzer.codename:
             return analyzer
     return None
+
+
+def get_analyzer_and_comic_id(comic_entry):
+    def get_analyzer_by_url(url):
+        for analyzer in _ANALYZERS:
+            comic_id = analyzer.url_to_comic_id(url)
+            if comic_id:
+                return analyzer
+        return None
+
+    azr = get_analyzer_by_url(comic_entry)
+    if azr is None:
+        azr = get_analyzer_by_comic_id(comic_entry)
+        if azr is None:
+            print('"{}" not fits any analyzers.'.format(comic_entry))
+            return (None, None)
+        else:
+            comic_id = comic_entry
+    else:
+        comic_id = azr.url_to_comic_id(comic_entry)
+    return (azr, comic_id)
+
+
+def get_comic_info_text(cdb, comic_info, verbose=0):
+    volumes_status = cdb.get_comic_volumes_status(
+        comic_info['comic_id'])
+    data = {'comic_id': comic_info['comic_id'],
+            'title': comic_info['title'],
+            'desc': comic_info['desc'],
+            'no_downloaded_count': volumes_status['no_downloaded_count'],
+            'no_downloaded_names': ','.join(
+                [name.lstrip('w') for name in
+                 volumes_status['no_downloaded_names'][:2]]),
+            'downloaded_count': volumes_status['downloaded_count'],
+            'total': volumes_status['total'],
+            }
+    texts = []
+    texts.append('{comic_id:<15} {title}')
+    if verbose >= 1:
+        texts.append(' ({downloaded_count}/{total})')
+        if data['no_downloaded_count'] != 0:
+            texts.insert(0, '{no_downloaded_count:<+4} ')
+        else:
+            texts.insert(0, '     ')
+    if verbose >= 2:
+        if data['no_downloaded_count'] > 0:
+            texts.append(' + {no_downloaded_names}')
+        if data['no_downloaded_count'] > 2:
+            texts.append(',...')
+    text = ''.join(texts).format(**data)
+    if verbose >= 3:
+        text = '\n'.join([text,
+                          textwrap.indent(
+                              textwrap.fill('{desc}'.format(**data), 35),
+                              '    '),
+                          ''])
+    return text
+
+
+def subscribe(cdb, comic_entry, verbose):
+    azr, comic_id = get_analyzer_and_comic_id(comic_entry)
+    if azr is None:
+        return None
+    comic_info = azr.get_comic_info(comic_id)
+    cdb.upsert_comic(comic_info)
+    text = get_comic_info_text(cdb, comic_info, verbose)
+    print('[subscribed]  ' + text)
+
+
+def unsubscribe(cdb, comic_entry, verbose):
+    azr, comic_id = get_analyzer_and_comic_id(comic_entry)
+    if azr is None:
+        return None
+    comic_info = cdb.get_comic(comic_id)
+    if comic_info is None:
+        print('"{}" are not exists.'.format(comic_entry))
+        return None
+    text = get_comic_info_text(cdb, comic_info, verbose)
+    cdb.delete_comic(comic_id)
+    comic_dir = pathlib.Path(cdb.output_dir) / comic_info['title']
+    shutil.rmtree(str(comic_dir), ignore_errors=True)
+    print('[removed]     ' + text)
+
+
+def list_info(cdb, verbose):
+    all_comics = cdb.get_all_comics()
+    for comic_info in all_comics:
+        text = get_comic_info_text(cdb, comic_info, verbose)
+        print(text)
+    print('  ------------------------------------------')
+    print('    Total:              {:>4} comics / {:>6} volumes'.format(
+        len(cdb.get_all_comics()),
+        cdb.get_volumes_count(),
+        ))
+    no_downloaded_volumes = cdb.get_not_downloaded_volumes()
+    print('    No Downloaded:      {:>4} comics / {:>6} volumes'.format(
+        len(set(v['comic_id'] for v in no_downloaded_volumes)),
+        len(no_downloaded_volumes),
+        ))
+    print('    Last refresh:       {}'.format(cdb.last_refresh_time))
+    print('    Download Directory: "{}"'.format(cdb.output_dir))
+    counter = collections.Counter(
+        [comic_info['comic_id'].split('/')[0] for comic_info in all_comics])
+    print('    Used Analyzers:     {}'.format(
+        ', '.join(['{}({})'.format(codename, count)
+                   for codename, count in counter.items()])))
+
+
+def refresh_all(cdb, verbose):
+    que = queue.Queue()
+
+    def get_data_one(comic_info):
+        azr = get_analyzer_by_comic_id(comic_info['comic_id'])
+        try:
+            comic_info = azr.get_comic_info(comic_info['comic_id'])
+            que.put(comic_info)
+        except:
+            print(
+                'Error: refresh failed\n  {title} ({url})'.format(
+                    url=azr.comic_id_to_url(comic_info['comic_id']),
+                    title=comic_info['title']))
+            que.put(None)
+
+    def post_process(cdb, length, verbose):
+        for index in range(length):
+            comic_info = que.get()
+            cdb.upsert_comic(comic_info)
+            text = ''.join([
+                ' {:>5} '.format('{}/{}'.format(index + 1, length)),
+                get_comic_info_text(cdb, comic_info, verbose)])
+            print(text)
+            cdb.last_refresh_time = DT.datetime.now()
+
+    with CF.ThreadPoolExecutor(max_workers=10) as executor:
+        all_comics = cdb.get_all_comics()
+        for comic_info in all_comics:
+            executor.submit(get_data_one, comic_info)
+        post_process(cdb, len(all_comics), verbose)
+
+
+def download_subscribed(cdb, verbose):
+    def download(url, path):
+        try:
+            downloader.save(url, str(path))
+            print('OK: "{}"'.format(str(path)))
+        except downloader.DownloadError:
+            pass
+
+    output_dir = cdb.output_dir
+    for volume in cdb.get_not_downloaded_volumes():
+        volume_dir = pathlib.Path(
+            output_dir) / volume['title'] / volume['name']
+        os.makedirs(str(volume_dir), exist_ok=True)
+        azr = get_analyzer_by_comic_id(volume['comic_id'])
+        with CF.ThreadPoolExecutor(max_workers=10) as executor:
+            for data in azr.get_volume_pages(volume['comic_id'],
+                                             volume['volume_id'],
+                                             volume['extra_data']):
+                path = volume_dir / data['local_filename']
+                if not (path.exists() and path.stat().st_size):
+                    executor.submit(download, data['url'], path)
+        cdb.set_volume_is_downloaded(
+            volume['comic_id'], volume['volume_id'], True)
 
 
 def get_args(cdb):
@@ -42,6 +235,7 @@ def get_args(cdb):
         analyzers_desc_text = '\n'.join([
             '    ' + azr.codename + ' - ' + azr.desc
             for azr in _ANALYZERS])
+
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter,
             description='Subscribe and download your comic books!\n'
@@ -50,43 +244,43 @@ def get_args(cdb):
             )
 
         parser.add_argument(
-            '-s', '--subscribe', metavar='comic_entry_url',
-            dest='subscribe_comic_entry_urls', type=str, nargs='+',
-            help='Subscribe some comic book.')
-
-        # parser.add_argument(
-        #     '-u', '--unsubscribe', metavar='comic_id',
-        #     dest='unsubscribe_comic_ids', type=str, nargs='+',
-        #     help='Unsubscribe some comic book.')
-
-        # parser.add_argument(
-        #     '-l', '--list-info', dest='list_info',
-        #     action='store_const', const=True, default=False,
-        #     help='List all subscribed books and other info.')
-
-        # parser.add_argument(
-        #     '-r', '--refresh', dest='refresh',
-        #     action='store_const', const=True, default=False,
-        #     help='Update all subscribed comic info.')
-
-        # parser.add_argument(
-        #     '-d', '--download', dest='download',
-        #     action='store_const', const=True, default=False,
-        #     help='Download subscribed comic books.')
-
-        # parser.add_argument(
-        #     '-o', '--output-dir', metavar='DIR', dest='output_dir', type=str,
-        #     default=cdb.output_dir,
-        #     help='Change download folder.'
-        #          '\n(Current value: %(default)s)')
-
-        # parser.add_argument(
-        #     '--init', dest='init',
-        #     action='store_const', const=True, default=False,
-        #     help='Clear your whole comic book database!')
+            '-s', '--subscribe', metavar='COMIC',
+            dest='subscribe_comic_entrys', type=str, nargs='+',
+            help='Subscribe some comic books.\n'
+                 'COMIC can be a url or comic_id.')
 
         parser.add_argument(
-            '-v', '--version', action='version', version=VERSION)
+            '-u', '--unsubscribe', metavar='COMIC',
+            dest='unsubscribe_comic_entrys', type=str, nargs='+',
+            help='Unsubscribe some comic books.')
+
+        parser.add_argument(
+            '-l', '--list-info', dest='list_info',
+            action='store_const', const=True, default=False,
+            help='List all subscribed books and other info.')
+
+        parser.add_argument(
+            '-r', '--refresh', dest='refresh',
+            action='store_const', const=True, default=False,
+            help='Update all subscribed comic info.')
+
+        parser.add_argument(
+            '-d', '--download', dest='download',
+            action='store_const', const=True, default=False,
+            help='Download subscribed comic books.')
+
+        parser.add_argument(
+            '-o', '--output-dir', metavar='DIR', dest='output_dir',
+            type=str, default=cdb.output_dir,
+            help='Change download folder.'
+                 '\n(Current value: %(default)s)')
+
+        parser.add_argument(
+            "-v", "--verbose", action="count", dest='verbose',
+            default=0, help="Increase output verbosity. E.g., -v, -vvv")
+
+        parser.add_argument(
+            '--version', action='version', version=VERSION)
 
         args = parser.parse_args()
         return args
@@ -97,35 +291,23 @@ def get_args(cdb):
 
 def main():
     import_analyzers_modules()
-    cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/comicdb_test.db'))
+    cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/.cmdlr.db'))
     args = get_args(cdb)
 
-    if args.subscribe_comic_entry_urls:
-        for url in args.subscribe_comic_entry_urls:
-            print(url)
-            azr = get_analyzer_by_url(url)
-            comic_id = azr.url_to_comic_id(url)
-            data = azr.get_comic_info(comic_id)
-            for volume in data['volumes']:
-                print(azr.get_volume_pages(
-                    comic_id, volume['volume_id'], data['extra_data']))
-    # if args.refresh:
-    #     cdb.refresh()
-    # if args.output_dir:
-    #     cdb.set_output_dir(args.output_dir)
-    # if args.unsubscribe_comic_ids:
-    #     print('Unsubscribe:')
-    #     for comic_id in args.unsubscribe_comic_ids:
-    #         cdb.unsubscribe(comic_id)
-    # if args.subscribe_comic_ids:
-    #     for comic_id in args.subscribe_comic_ids:
-    #         cdb.subscribe(comic_id)
-    # if args.list_info:
-    #     cdb.list_info()
-    # if args.download:
-    #     cdb.download_subscribed(cdb.get_output_dir())
-    # if args.init:
-    #     cdb.purge_tables()
+    if args.subscribe_comic_entrys:
+        for entry in args.subscribe_comic_entrys:
+            subscribe(cdb, entry, args.verbose)
+    if args.refresh:
+        refresh_all(cdb, args.verbose + 1)
+    if args.output_dir:
+        cdb.output_dir = args.output_dir
+    if args.unsubscribe_comic_entrys:
+        for comic_entry in args.unsubscribe_comic_entrys:
+            unsubscribe(cdb, comic_entry, args.verbose)
+    if args.list_info:
+        list_info(cdb, args.verbose + 1)
+    if args.download:
+        download_subscribed(cdb, args.verbose)
 
 
 if __name__ == "__main__":
