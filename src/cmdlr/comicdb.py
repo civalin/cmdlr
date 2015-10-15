@@ -110,7 +110,6 @@ class ComicDB():
             set the option value, the value must be str or None.
         '''
         data = {'value': value, 'option': option}
-        print(option, value)
         cursor = self.conn.execute(
             'UPDATE "options" SET "value" = :value'
             ' WHERE "option" = :option',
@@ -271,7 +270,7 @@ class ComicDB():
         self.conn.execute('UPDATE volumes SET is_downloaded = 0')
         self.conn.commit()
 
-    def get_not_downloaded_volumes(self):
+    def get_no_downloaded_volumes(self):
         return self.conn.execute(
             'SELECT * FROM comics INNER JOIN volumes'
             ' ON comics.comic_id = volumes.comic_id'

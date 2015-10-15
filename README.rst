@@ -93,9 +93,16 @@ Very easy!
 4. Run ``./cmdlr.py`` to testing the plugin.
 5. When you done, don't forget make a pull request to me. Thanks!
 
-I recommend plugin use the ``cmdlr.Downloader.save()`` & ``cmdlr.downloader.get()`` function to download data, but it is not necessary. you can choice any tools freely.
+I recommend use the ``cmdlr.Downloader.save()`` & ``cmdlr.downloader.get()`` function to download data, but it is not necessary. you can choice any tools freely. Also, using any prefer tools to parsing data. like ``lxml``.
 
-Also, you can using you prefer tools to parsing data. like ``lxml``.
+Happy hacking! :D
+
+LICENSE
+=========
+
+MIT License
+
+Copyright (c) 2014~2015 CIVA LIN
 
 Changelog
 =========

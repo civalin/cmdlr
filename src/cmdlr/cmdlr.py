@@ -150,7 +150,7 @@ def list_info(cdb, verbose):
         len(all_comics),
         cdb.get_volumes_count(),
         ))
-    no_downloaded_volumes = cdb.get_not_downloaded_volumes()
+    no_downloaded_volumes = cdb.get_no_downloaded_volumes()
     print('    No Downloaded:      {:>4} comics / {:>6} volumes'.format(
         len(set(v['comic_id'] for v in no_downloaded_volumes)),
         len(no_downloaded_volumes),
@@ -207,7 +207,7 @@ def download_subscribed(cdb, verbose):
 
     output_dir = cdb.output_dir
     threads = cdb.threads
-    for volume in cdb.get_not_downloaded_volumes():
+    for volume in cdb.get_no_downloaded_volumes():
         volume_dir = pathlib.Path(
             output_dir) / volume['title'] / volume['name']
         os.makedirs(str(volume_dir), exist_ok=True)
@@ -217,8 +217,8 @@ def download_subscribed(cdb, verbose):
                                              volume['volume_id'],
                                              volume['extra_data']):
                 path = volume_dir / data['local_filename']
-                if not (path.exists() and path.stat().st_size):
-                    executor.submit(download, data['url'], path)
+                # if not (path.exists() and path.stat().st_size):
+                executor.submit(download, data['url'], path)
         cdb.set_volume_is_downloaded(
             volume['comic_id'], volume['volume_id'], True)
 
