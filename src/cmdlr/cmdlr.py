@@ -37,87 +37,10 @@ import queue
 import collections
 
 from . import comicdb
-from . import comicanalyzer
 from . import downloader
-
-from . analyzers import *
-
+from . import azrmanager as azrm
 
 VERSION = '2.0.0'
-_ANALYZERS = []
-
-
-def get_custom_data_key(azr):
-    return 'analyzer_custom_data_' + azr.codename()
-
-
-def set_custom_data(cdb, custom_data):
-    try:
-        (codename, data) = custom_data.split('/', 1)
-        if data == '':
-            data = {}
-        else:
-            pairs = [pair.split('=', 1) for pair in data.split(',')]
-            data = {key: value for key, value in pairs}
-    except ValueError:
-        print('"{}" cannot be parsed. Cancel.'.format(
-            custom_data))
-        return
-    for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
-        if cls.codename() == codename:
-            try:
-                cls(data)
-                key = get_custom_data_key(cls)
-                print('{} <= {}'.format(cls.name(), data))
-                cdb.set_option(key, data)
-                print('Updated done!')
-            except:
-                print('Custom data test failed. Cancel.')
-            return
-    print('Analyzer codename: "{}" not found. Cancel.'.format(codename))
-
-
-def get_custom_data_in_cdb(cdb, cls):
-    key = get_custom_data_key(cls)
-    data = cdb.get_option(key)
-    if not (data and type(data) == dict):
-        data = {}
-    return data
-
-
-def initial_analyzers(cdb):
-    for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
-        data = get_custom_data_in_cdb(cdb, cls)
-        azr = cls(data)
-        _ANALYZERS.append(azr)
-
-
-def get_analyzer_by_comic_id(comic_id):
-    for azr in _ANALYZERS:
-        if comic_id.split('/')[0] == azr.codename():
-            return azr
-    return None
-
-
-def get_analyzer_and_comic_id(comic_entry):
-    def get_analyzer_by_url(url):
-        for analyzer in _ANALYZERS:
-            comic_id = analyzer.url_to_comic_id(url)
-            if comic_id:
-                return analyzer
-        return None
-
-    azr = get_analyzer_by_url(comic_entry)
-    if azr is None:
-        azr = get_analyzer_by_comic_id(comic_entry)
-        if azr is None:
-            print('"{}" not fits any analyzers.'.format(comic_entry))
-            return (None, None)
-        else:
-            comic_id = comic_entry
-    else:
-        comic_id = azr.url_to_comic_id(comic_entry)
-    return (azr, comic_id)
 
 
 def get_comic_info_text(cdb, comic_info, verbose=0):
@@ -157,7 +80,7 @@ def get_comic_info_text(cdb, comic_info, verbose=0):
 
 
 def subscribe(cdb, comic_entry, verbose):
-    azr, comic_id = get_analyzer_and_comic_id(comic_entry)
+    azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
         return None
     comic_info = azr.get_comic_info(comic_id)
@@ -167,7 +90,7 @@ def subscribe(cdb, comic_entry, verbose):
 
 
 def unsubscribe(cdb, comic_entry, verbose):
-    azr, comic_id = get_analyzer_and_comic_id(comic_entry)
+    azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
         return None
     comic_info = cdb.get_comic(comic_id)
@@ -203,37 +126,48 @@ def list_info(cdb, verbose):
     print('    Download Directory: "{}"'.format(
         cdb.get_option('output_dir')))
     counter = collections.Counter([
-        get_analyzer_by_comic_id(comic_info['comic_id'])
+        azrm.get_analyzer_by_comic_id(comic_info['comic_id'])
         for comic_info in all_comics])
     print('    Used Analyzers:     {}'.format(
         ', '.join(['{}({}):{}'.format(azr.name(), azr.codename(), count)
-                   for azr, count in counter.items()])))
+                   for azr, count in counter.items()
+                   if azr is not None])))
 
 
 def refresh_all(cdb, verbose):
     que = queue.Queue()
 
     def get_data_one(comic_info):
-        azr = get_analyzer_by_comic_id(comic_info['comic_id'])
+        azr = azrm.get_analyzer_by_comic_id(comic_info['comic_id'])
+        if azr is None:
+            print(('Skip: Analyzer not exists -> {title} ({comic_id})'
+                   ).format(**comic_info))
+            que.put(None)
+            return
         try:
             comic_info = azr.get_comic_info(comic_info['comic_id'])
             que.put(comic_info)
+            return
         except:
             print(
-                'Error: refresh failed\n  {title} ({url})'.format(
+                'Skip: refresh failed -> {title} ({url})'.format(
                     url=azr.comic_id_to_url(comic_info['comic_id']),
                     title=comic_info['title']))
             que.put(None)
+            return
 
     def post_process(cdb, length, verbose):
         for index in range(length):
             comic_info = que.get()
-            cdb.upsert_comic(comic_info)
-            text = ''.join([
-                ' {:>5} '.format('{}/{}'.format(index + 1, length)),
-                get_comic_info_text(cdb, comic_info, verbose)])
-            print(text)
-            cdb.set_option('last_refresh_time', DT.datetime.now())
+            if comic_info is None:
+                return
+            else:
+                cdb.upsert_comic(comic_info)
+                text = ''.join([
+                    ' {:>5} '.format('{}/{}'.format(index + 1, length)),
+                    get_comic_info_text(cdb, comic_info, verbose)])
+                print(text)
+                cdb.set_option('last_refresh_time', DT.datetime.now())
 
     with CF.ThreadPoolExecutor(
             max_workers=cdb.get_option('threads')) as executor:
@@ -257,7 +191,7 @@ def download_subscribed(cdb, verbose):
         volume_dir = pathlib.Path(
             output_dir) / volume['title'] / volume['name']
         os.makedirs(str(volume_dir), exist_ok=True)
-        azr = get_analyzer_by_comic_id(volume['comic_id'])
+        azr = azrm.get_analyzer_by_comic_id(volume['comic_id'])
         with CF.ThreadPoolExecutor(max_workers=threads) as executor:
             for data in azr.get_volume_pages(volume['comic_id'],
                                              volume['volume_id'],
@@ -275,7 +209,7 @@ def get_args(cdb):
         analyzers_desc_text = '\n'.join([
             '    {}({}) - {}'.format(
                 azr.name(), azr.codename(), azr.site())
-            for azr in _ANALYZERS])
+            for azr in azrm.get_all_analyzers()])
 
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter,
@@ -337,7 +271,7 @@ def get_args(cdb):
         parser.add_argument(
             '--azr', metavar='CODENAME', dest='analyzer_info',
             type=str, default=None,
-            choices=[azr.codename() for azr in _ANALYZERS],
+            choices=[azr.codename() for azr in azrm.get_all_analyzers()],
             help='Show the analyzer\'s info message.')
 
         parser.add_argument(
@@ -359,18 +293,18 @@ def get_args(cdb):
 
 def main():
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/.cmdlr.db'))
-    initial_analyzers(cdb)
+    azrm.initial_analyzers(cdb)
     args = get_args(cdb)
 
     if args.analyzer_info:
-        for azr in _ANALYZERS:
+        for azr in azrm.get_all_analyzers():
             if azr.codename() == args.analyzer_info:
                 print(textwrap.dedent(azr.info()).strip(' \n'))
                 print('  Current Custom Data: {}'.format(
-                    get_custom_data_in_cdb(cdb, azr)))
+                    azrm.get_custom_data_in_cdb(cdb, azr)))
                 sys.exit(0)
     if args.analyzer_custom:
-        set_custom_data(cdb, args.analyzer_custom)
+        azrm.set_custom_data(cdb, args.analyzer_custom)
         sys.exit(0)
     if args.output_dir:
         cdb.set_option('output_dir', args.output_dir)

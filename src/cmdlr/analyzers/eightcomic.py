@@ -47,8 +47,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
     def site(cls):
         return 'comicvip.com'
 
-    @classmethod
-    def info(cls):
+    def info(self):
         return """
             ## 8Comic Analyzer ## -------------------------
             #

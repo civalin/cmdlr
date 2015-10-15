@@ -104,14 +104,13 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
         E.g., "vipcomic.com"
         '''
 
-    @classmethod
     @abc.abstractmethod
-    def info(cls):
+    def info(self):
         '''
         Return Multi-line info message for end user. Include everything
         which the end user need to known.
         Recommend include:
-            1. Author,
+            1. Author, Maintainer,
             2. E-mail,
             3. Custom data fields description.
             4. etc.
@@ -121,7 +120,13 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
         '''
         args:
             custom_data:
-                A dict format datapack. Each key and value are str format.
+                A dict format datapack which setting by end user.
+                All keys and values will be str type.
+                Analyzer can use those datas to do some user independent
+                task (e.g., login).
+
+                The default custom_data is {}. Make sure {} can create
+                a object and not crash.
         '''
 
     def convert_to_local_comic_id(self, comic_id):
