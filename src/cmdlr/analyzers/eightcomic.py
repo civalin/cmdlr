@@ -35,31 +35,31 @@ class EightComicException(comicanalyzer.ComicAnalyzerException):
 
 class EightAnalyzer(comicanalyzer.ComicAnalyzer):
 
-    @property
-    def codename(self):
+    @classmethod
+    def codename(cls):
         return '8c'
 
-    @property
-    def name(self):
+    @classmethod
+    def name(cls):
         return '8comic'
 
-    @property
-    def site(self):
+    @classmethod
+    def site(cls):
         return 'comicvip.com'
 
-    @property
-    def help(self):
+    @classmethod
+    def info(cls):
         return """
-            ## 8Comic Analyzer ## ------------------------
+            ## 8Comic Analyzer ## -------------------------
             #
-            #   This analyzer will focus on comicvip.com.
+            #   This analyzer are focus on comicvip.com.
             #
-            #   Custom data: None
+            #   Custom data: Not required
             #
             #   LICENSE: MIT
-            #   Author: Civa Lin<larina.wf@gmail.com>
+            #   Maintainer: Civa Lin<larina.wf@gmail.com>
             #
-            #---------------------------------------------
+            #----------------------------------------------
         """
 
     def url_to_comic_id(self, comic_entry_url):

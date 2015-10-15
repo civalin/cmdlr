@@ -35,13 +35,17 @@ class DownloadError(Exception):
 class Downloader():
     """
         General Download Toolkit
+
+        TODO: Accept extra configure data like cookies or a retry period
+              which generated from some analyzer to deal some site.
     """
     @classmethod
     def get(cls, url, **kwargs):
         '''
-            urllib.request.urlopen wrapper
+            urllib.request.urlopen wrapper.
+
             return:
-                binary data which it
+                binary data pack which be downloaded.
         '''
         while True:
             try:

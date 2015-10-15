@@ -47,15 +47,55 @@ VERSION = '2.0.0'
 _ANALYZERS = []
 
 
-def initial_analyzers():
-    _ANALYZERS.extend([
-        cls({}) for cls in comicanalyzer.ComicAnalyzer.__subclasses__()])
+def get_custom_data_key(azr):
+    return 'analyzer_custom_data_' + azr.codename()
+
+
+def set_custom_data(cdb, custom_data):
+    try:
+        (codename, data) = custom_data.split('/', 1)
+        if data == '':
+            data = {}
+        else:
+            pairs = [pair.split('=', 1) for pair in data.split(',')]
+            data = {key: value for key, value in pairs}
+    except ValueError:
+        print('"{}" cannot be parsed. Cancel.'.format(
+            custom_data))
+        return
+    for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
+        if cls.codename() == codename:
+            try:
+                cls(data)
+                key = get_custom_data_key(cls)
+                print('{} <= {}'.format(cls.name(), data))
+                cdb.set_option(key, data)
+                print('Updated done!')
+            except:
+                print('Custom data test failed. Cancel.')
+            return
+    print('Analyzer codename: "{}" not found. Cancel.'.format(codename))
+
+
+def get_custom_data_in_cdb(cdb, cls):
+    key = get_custom_data_key(cls)
+    data = cdb.get_option(key)
+    if not (data and type(data) == dict):
+        data = {}
+    return data
+
+
+def initial_analyzers(cdb):
+    for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
+        data = get_custom_data_in_cdb(cdb, cls)
+        azr = cls(data)
+        _ANALYZERS.append(azr)
 
 
 def get_analyzer_by_comic_id(comic_id):
-    for analyzer in _ANALYZERS:
-        if comic_id.split('/')[0] == analyzer.codename:
-            return analyzer
+    for azr in _ANALYZERS:
+        if comic_id.split('/')[0] == azr.codename():
+            return azr
     return None
 
 
@@ -157,15 +197,16 @@ def list_info(cdb, verbose):
         len(set(v['comic_id'] for v in no_downloaded_volumes)),
         len(no_downloaded_volumes),
         ))
+    last_refresh_time = cdb.get_option('last_refresh_time')
     print('    Last refresh:       {}'.format(
-        cdb.get_option('last_refresh_time')))
+        DT.datetime.strftime(last_refresh_time, '%Y-%m-%d %H:%M:%S')))
     print('    Download Directory: "{}"'.format(
         cdb.get_option('output_dir')))
     counter = collections.Counter([
         get_analyzer_by_comic_id(comic_info['comic_id'])
         for comic_info in all_comics])
     print('    Used Analyzers:     {}'.format(
-        ', '.join(['{}({}):{}'.format(azr.name, azr.codename, count)
+        ', '.join(['{}({}):{}'.format(azr.name(), azr.codename(), count)
                    for azr, count in counter.items()])))
 
 
@@ -203,10 +244,10 @@ def refresh_all(cdb, verbose):
 
 
 def download_subscribed(cdb, verbose):
-    def download(url, path):
+    def download(url, filepath, **kwargs):
         try:
-            downloader.save(url, str(path))
-            print('OK: "{}"'.format(str(path)))
+            downloader.save(url, filepath, **kwargs)
+            print('OK: "{}"'.format(filepath))
         except downloader.DownloadError:
             pass
 
@@ -223,7 +264,8 @@ def download_subscribed(cdb, verbose):
                                              volume['extra_data']):
                 path = volume_dir / data['local_filename']
                 if not (path.exists() and path.stat().st_size):
-                    executor.submit(download, data['url'], path)
+                    executor.submit(
+                        download, filepath=str(path), **data)
         cdb.set_volume_is_downloaded(
             volume['comic_id'], volume['volume_id'], True)
 
@@ -231,7 +273,8 @@ def download_subscribed(cdb, verbose):
 def get_args(cdb):
     def parse_args():
         analyzers_desc_text = '\n'.join([
-            '    ' + azr.name + '(' + azr.codename + ') - ' + azr.site
+            '    {}({}) - {}'.format(
+                azr.name(), azr.codename(), azr.site())
             for azr in _ANALYZERS])
 
         parser = argparse.ArgumentParser(
@@ -292,10 +335,17 @@ def get_args(cdb):
         #          '\n(Current value: {})'.format(cdb.cbz))
 
         parser.add_argument(
-            '--help-analyzer', metavar='NAME', dest='help_analyzer',
+            '--azr', metavar='CODENAME', dest='analyzer_info',
             type=str, default=None,
-            choices=[azr.name for azr in _ANALYZERS],
-            help='Show the analyzer\'s help message.')
+            choices=[azr.codename() for azr in _ANALYZERS],
+            help='Show the analyzer\'s info message.')
+
+        parser.add_argument(
+            '--azr-custom', metavar='DATA', dest='analyzer_custom',
+            type=str, default=None,
+            help='Set analyzer\'s custom data.\n'
+                 'Format: "codename/key1=value1,key2=value2"\n'
+                 'Check the analyzer\'s help message for more info.')
 
         parser.add_argument(
             '--version', action='version', version=VERSION)
@@ -308,15 +358,20 @@ def get_args(cdb):
 
 
 def main():
-    initial_analyzers()
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/.cmdlr.db'))
+    initial_analyzers(cdb)
     args = get_args(cdb)
 
-    if args.help_analyzer:
+    if args.analyzer_info:
         for azr in _ANALYZERS:
-            if azr.name == args.help_analyzer:
-                print(textwrap.dedent(azr.help).strip(' \n'))
+            if azr.codename() == args.analyzer_info:
+                print(textwrap.dedent(azr.info()).strip(' \n'))
+                print('  Current Custom Data: {}'.format(
+                    get_custom_data_in_cdb(cdb, azr)))
                 sys.exit(0)
+    if args.analyzer_custom:
+        set_custom_data(cdb, args.analyzer_custom)
+        sys.exit(0)
     if args.output_dir:
         cdb.set_option('output_dir', args.output_dir)
     if args.threads is not None:

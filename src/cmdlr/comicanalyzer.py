@@ -74,7 +74,7 @@ class ComicAnalyzerException(Exception):
 class ComicAnalyzer(metaclass=abc.ABCMeta):
     '''Base class of all comic analyzer'''
 
-    @property
+    @classmethod
     @abc.abstractmethod
     def codename(cls):
         '''
@@ -85,9 +85,9 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
         e.g., co, sm, rd
         '''
 
-    @property
+    @classmethod
     @abc.abstractmethod
-    def name(self):
+    def name(cls):
         '''
         Return analyzer name.
         Recommand include the target site name.
@@ -95,20 +95,20 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
         E.g., 8comic
         '''
 
-    @property
+    @classmethod
     @abc.abstractmethod
-    def site(self):
+    def site(cls):
         '''
         Return short site url.
 
         E.g., "vipcomic.com"
         '''
 
-    @property
+    @classmethod
     @abc.abstractmethod
-    def help(self):
+    def info(cls):
         '''
-        Return Multi-line help message for end user. Include everything
+        Return Multi-line info message for end user. Include everything
         which the end user need to known.
         Recommend include:
             1. Author,
@@ -125,13 +125,13 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
         '''
 
     def convert_to_local_comic_id(self, comic_id):
-        if comic_id.startswith(self.codename + '/'):
-            return comic_id[len(self.codename) + 1:]
+        if comic_id.startswith(self.codename() + '/'):
+            return comic_id[len(self.codename()) + 1:]
         else:
             return None
 
     def convert_to_comic_id(self, local_comic_id):
-        return self.codename + '/' + local_comic_id
+        return self.codename() + '/' + local_comic_id
 
     @abc.abstractmethod
     def url_to_comic_id(self, comic_entry_url):
@@ -186,6 +186,6 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
             yield:
                 {
                     'url': <image_url>,
-                    'local_filename': <local_filename>,  # e.g., 12.jpg
+                    'local_filename': <local_filename>,  # e.g., 012.jpg
                 }
         '''

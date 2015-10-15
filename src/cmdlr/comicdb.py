@@ -29,9 +29,6 @@ import datetime as DT
 import pickle
 
 
-_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S'
-
-
 def extend_sqlite3_datatype():
     sqlite3.register_adapter(DT.datetime, pickle.dumps)
     sqlite3.register_converter('DATETIME', pickle.loads)
@@ -101,10 +98,13 @@ class ComicDB():
         '''
             return the option value
         '''
-        return pickle.loads(self.conn.execute(
+        data = self.conn.execute(
                 'SELECT "value" FROM "options" where option = :option',
-                {'option': option}
-            ).fetchone()['value'])
+                {'option': option}).fetchone()
+        if data:
+            return pickle.loads(data['value'])
+        else:
+            return None
 
     def set_option(self, option, value):
         '''
