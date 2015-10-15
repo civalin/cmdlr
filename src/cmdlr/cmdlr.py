@@ -295,8 +295,8 @@ def main():
 
     if args.output_dir:
         cdb.output_dir = args.output_dir
-    if args.threads:
-        cdb.threads = args.threads
+    if args.threads is not None:
+        cdb.threads = min(max(args.threads, 1), 10)  # threads range
     if args.subscribe_comic_entrys:
         for entry in args.subscribe_comic_entrys:
             subscribe(cdb, entry, args.verbose)
