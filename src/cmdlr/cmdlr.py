@@ -217,8 +217,8 @@ def download_subscribed(cdb, verbose):
                                              volume['volume_id'],
                                              volume['extra_data']):
                 path = volume_dir / data['local_filename']
-                # if not (path.exists() and path.stat().st_size):
-                executor.submit(download, data['url'], path)
+                if not (path.exists() and path.stat().st_size):
+                    executor.submit(download, data['url'], path)
         cdb.set_volume_is_downloaded(
             volume['comic_id'], volume['volume_id'], True)
 
@@ -263,20 +263,26 @@ def get_args(cdb):
             help='Download subscribed comic books.')
 
         parser.add_argument(
-            "-v", "--verbose", action="count", dest='verbose',
+            "-v", action="count", dest='verbose',
             default=0, help="Increase output verbosity. E.g., -v, -vvv")
 
         parser.add_argument(
             '--output-dir', metavar='DIR', dest='output_dir',
             type=str, default=None,
-            help='Change download folder.'
+            help='Set download folder.'
                  '\n(Current value: {})'.format(cdb.output_dir))
 
         parser.add_argument(
             '--threads', metavar='NUM', dest='threads',
-            type=int, default=None,
-            help='Change downloading threads count.'
+            type=int, default=None, choices=range(1, 11),
+            help='Set download threads count.'
                  '\n(Current value: {})'.format(cdb.threads))
+
+        # parser.add_argument(
+        #     '--cbz', metavar='', dest='threads',
+        #     type=bool, default=None,
+        #     help='Set download threads count.'
+        #          '\n(Current value: {})'.format(cdb.threads))
 
         parser.add_argument(
             '--version', action='version', version=VERSION)
@@ -296,19 +302,19 @@ def main():
     if args.output_dir:
         cdb.output_dir = args.output_dir
     if args.threads is not None:
-        cdb.threads = min(max(args.threads, 1), 10)  # threads range
+        cdb.threads = args.threads
+    if args.unsubscribe_comic_entrys:
+        for comic_entry in args.unsubscribe_comic_entrys:
+            unsubscribe(cdb, comic_entry, args.verbose)
     if args.subscribe_comic_entrys:
         for entry in args.subscribe_comic_entrys:
             subscribe(cdb, entry, args.verbose)
     if args.refresh:
         refresh_all(cdb, args.verbose + 1)
-    if args.unsubscribe_comic_entrys:
-        for comic_entry in args.unsubscribe_comic_entrys:
-            unsubscribe(cdb, comic_entry, args.verbose)
-    if args.list_info:
-        list_info(cdb, args.verbose + 1)
     if args.download:
         download_subscribed(cdb, args.verbose)
+    if args.list_info:
+        list_info(cdb, args.verbose + 1)
 
 
 if __name__ == "__main__":
