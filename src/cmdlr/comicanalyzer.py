@@ -76,7 +76,7 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def codename(self):
+    def codename(cls):
         '''
         Return analyzer code name.
         Keep it SHORT and CLEAR. and not conflict with other analyzer.
@@ -102,6 +102,26 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
         Return short site url.
 
         E.g., "vipcomic.com"
+        '''
+
+    @property
+    @abc.abstractmethod
+    def help(self):
+        '''
+        Return Multi-line help message for end user. Include everything
+        which the end user need to known.
+        Recommend include:
+            1. Author,
+            2. E-mail,
+            3. Custom data fields description.
+            4. etc.
+        '''
+
+    def __init__(self, custom_data):
+        '''
+        args:
+            custom_data:
+                A dict format datapack. Each key and value are str format.
         '''
 
     def convert_to_local_comic_id(self, comic_id):

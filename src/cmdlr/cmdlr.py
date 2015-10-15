@@ -48,7 +48,7 @@ _ANALYZERS = []
 
 def initial_analyzers():
     _ANALYZERS.extend([
-        cls() for cls in comicanalyzer.ComicAnalyzer.__subclasses__()])
+        cls({}) for cls in comicanalyzer.ComicAnalyzer.__subclasses__()])
 
 
 def get_analyzer_by_comic_id(comic_id):
@@ -135,7 +135,8 @@ def unsubscribe(cdb, comic_entry, verbose):
         return None
     text = get_comic_info_text(cdb, comic_info, verbose)
     cdb.delete_comic(comic_id)
-    comic_dir = pathlib.Path(cdb.output_dir) / comic_info['title']
+    comic_dir = pathlib.Path(
+        cdb.get_option('output_dir')) / comic_info['title']
     shutil.rmtree(str(comic_dir), ignore_errors=True)
     print('[removed]     ' + text)
 
@@ -155,8 +156,10 @@ def list_info(cdb, verbose):
         len(set(v['comic_id'] for v in no_downloaded_volumes)),
         len(no_downloaded_volumes),
         ))
-    print('    Last refresh:       {}'.format(cdb.last_refresh_time))
-    print('    Download Directory: "{}"'.format(cdb.output_dir))
+    print('    Last refresh:       {}'.format(
+        cdb.get_option('last_refresh_time')))
+    print('    Download Directory: "{}"'.format(
+        cdb.get_option('output_dir')))
     counter = collections.Counter([
         get_analyzer_by_comic_id(comic_info['comic_id'])
         for comic_info in all_comics])
@@ -188,9 +191,10 @@ def refresh_all(cdb, verbose):
                 ' {:>5} '.format('{}/{}'.format(index + 1, length)),
                 get_comic_info_text(cdb, comic_info, verbose)])
             print(text)
-            cdb.last_refresh_time = DT.datetime.now()
+            cdb.set_option('last_refresh_time', DT.datetime.now())
 
-    with CF.ThreadPoolExecutor(max_workers=cdb.threads) as executor:
+    with CF.ThreadPoolExecutor(
+            max_workers=cdb.get_option('threads')) as executor:
         all_comics = cdb.get_all_comics()
         for comic_info in all_comics:
             executor.submit(get_data_one, comic_info)
@@ -205,8 +209,8 @@ def download_subscribed(cdb, verbose):
         except downloader.DownloadError:
             pass
 
-    output_dir = cdb.output_dir
-    threads = cdb.threads
+    output_dir = cdb.get_option('output_dir')
+    threads = cdb.get_option('threads')
     for volume in cdb.get_no_downloaded_volumes():
         volume_dir = pathlib.Path(
             output_dir) / volume['title'] / volume['name']
@@ -270,19 +274,26 @@ def get_args(cdb):
             '--output-dir', metavar='DIR', dest='output_dir',
             type=str, default=None,
             help='Set download folder.'
-                 '\n(Current value: {})'.format(cdb.output_dir))
+                 '\n(Current value: {})'.format(
+                     cdb.get_option('output_dir')))
 
         parser.add_argument(
             '--threads', metavar='NUM', dest='threads',
             type=int, default=None, choices=range(1, 11),
             help='Set download threads count.'
-                 '\n(Current value: {})'.format(cdb.threads))
+                 '\n(Current value: {})'.format(
+                     cdb.get_option('threads')))
 
         # parser.add_argument(
         #     '--cbz', metavar='BOOLEAN', dest='cbz',
         #     type=bool, default=None,
         #     help='Switch .'
         #          '\n(Current value: {})'.format(cdb.cbz))
+
+        parser.add_argument(
+            '--help-analyzer', metavar='CODENAME', dest='help_analyzer',
+            type=str, default=None,
+            help='Show the analyzer\'s help message.')
 
         parser.add_argument(
             '--version', action='version', version=VERSION)
@@ -300,9 +311,9 @@ def main():
     args = get_args(cdb)
 
     if args.output_dir:
-        cdb.output_dir = args.output_dir
+        cdb.set_option('output_dir', args.output_dir)
     if args.threads is not None:
-        cdb.threads = args.threads
+        cdb.set_option('threads', args.threads)
     if args.unsubscribe_comic_entrys:
         for comic_entry in args.unsubscribe_comic_entrys:
             unsubscribe(cdb, comic_entry, args.verbose)

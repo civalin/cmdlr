@@ -78,10 +78,10 @@ class ComicDB():
                     'value BLOB'
                     ');'
                 )
-                self.__set_option(
+                self.set_option(
                     'output_dir', os.path.expanduser('~/comics'))
-                self.__set_option('last_refresh_time', None)
-                self.__set_option('threads', 2)
+                self.set_option('last_refresh_time', None)
+                self.set_option('threads', 2)
                 set_db_version(1)
 
             db_version = get_db_version()
@@ -97,7 +97,7 @@ class ComicDB():
         self.conn.execute('PRAGMA foreign_keys = ON;')
         migrate()
 
-    def __get_option(self, option):
+    def get_option(self, option):
         '''
             return the option value
         '''
@@ -106,7 +106,7 @@ class ComicDB():
                 {'option': option}
             ).fetchone()['value'])
 
-    def __set_option(self, option, value):
+    def set_option(self, option, value):
         '''
             set the option value, the value must be str or None.
         '''
@@ -122,40 +122,6 @@ class ComicDB():
                 ' VALUES (:option, :value)',
                 data)
         self.conn.commit()
-
-    @property
-    def output_dir(self):
-        return self.__get_option('output_dir')
-
-    @output_dir.setter
-    def output_dir(self, output_dir):
-        self.__set_option('output_dir', output_dir)
-
-    @property
-    def last_refresh_time(self):
-        '''
-            Record last refresh time.
-            return:
-                None or datetime format
-        '''
-        return self.__get_option('last_refresh_time')
-
-    @last_refresh_time.setter
-    def last_refresh_time(self, last_refresh_time):
-        '''
-            args:
-                last_refresh_time:
-                    must be datetime format
-        '''
-        self.__set_option('last_refresh_time', last_refresh_time)
-
-    @property
-    def threads(self):
-        return self.__get_option('threads')
-
-    @threads.setter
-    def threads(self, threads):
-        self.__set_option('threads', threads)
 
     def upsert_comic(self, comic_info):
         '''
