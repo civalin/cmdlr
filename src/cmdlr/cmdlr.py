@@ -279,10 +279,10 @@ def get_args(cdb):
                  '\n(Current value: {})'.format(cdb.threads))
 
         # parser.add_argument(
-        #     '--cbz', metavar='', dest='threads',
+        #     '--cbz', metavar='BOOLEAN', dest='cbz',
         #     type=bool, default=None,
-        #     help='Set download threads count.'
-        #          '\n(Current value: {})'.format(cdb.threads))
+        #     help='Switch .'
+        #          '\n(Current value: {})'.format(cdb.cbz))
 
         parser.add_argument(
             '--version', action='version', version=VERSION)

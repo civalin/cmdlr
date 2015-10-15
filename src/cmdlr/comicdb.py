@@ -75,13 +75,13 @@ class ComicDB():
                 self.conn.execute(
                     'CREATE TABLE options ('
                     'option TEXT PRIMARY KEY NOT NULL,'
-                    'value TEXT'
+                    'value BLOB'
                     ');'
                 )
                 self.__set_option(
                     'output_dir', os.path.expanduser('~/comics'))
                 self.__set_option('last_refresh_time', None)
-                self.__set_option('threads', str(2))
+                self.__set_option('threads', 2)
                 set_db_version(1)
 
             db_version = get_db_version()
@@ -101,15 +101,16 @@ class ComicDB():
         '''
             return the option value
         '''
-        return self.conn.execute(
-            'SELECT "value" FROM "options" where option = :option',
-            {'option': option}).fetchone()['value']
+        return pickle.loads(self.conn.execute(
+                'SELECT "value" FROM "options" where option = :option',
+                {'option': option}
+            ).fetchone()['value'])
 
     def __set_option(self, option, value):
         '''
             set the option value, the value must be str or None.
         '''
-        data = {'value': value, 'option': option}
+        data = {'value': pickle.dumps(value), 'option': option}
         cursor = self.conn.execute(
             'UPDATE "options" SET "value" = :value'
             ' WHERE "option" = :option',
@@ -137,13 +138,7 @@ class ComicDB():
             return:
                 None or datetime format
         '''
-        lrt_strformat = self.__get_option('last_refresh_time')
-        if lrt_strformat is None:
-            return None
-        else:
-            last_refresh_time = DT.datetime.strptime(
-                lrt_strformat, _DATETIME_FORMAT)
-            return last_refresh_time
+        return self.__get_option('last_refresh_time')
 
     @last_refresh_time.setter
     def last_refresh_time(self, last_refresh_time):
@@ -152,20 +147,15 @@ class ComicDB():
                 last_refresh_time:
                     must be datetime format
         '''
-        if last_refresh_time is None:
-            self.__set_option(None)
-        else:
-            lrt_strformat = DT.datetime.strftime(
-                last_refresh_time, '%Y-%m-%dT%H:%M:%S')
-            self.__set_option('last_refresh_time', lrt_strformat)
+        self.__set_option('last_refresh_time', last_refresh_time)
 
     @property
     def threads(self):
-        return int(self.__get_option('threads'))
+        return self.__get_option('threads')
 
     @threads.setter
     def threads(self, threads):
-        self.__set_option('threads', str(threads))
+        self.__set_option('threads', threads)
 
     def upsert_comic(self, comic_info):
         '''
