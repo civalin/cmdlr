@@ -50,14 +50,16 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
     @property
     def help(self):
         return """
-            8Comic Analyzer
-
-                This analyzer will focus on comicvip.com.
-
-                Custom data: None
-
-                LICENSE: MIT
-                Author: Civa Lin<larina.wf@gmail.com>
+            ## 8Comic Analyzer ## ------------------------
+            #
+            #   This analyzer will focus on comicvip.com.
+            #
+            #   Custom data: None
+            #
+            #   LICENSE: MIT
+            #   Author: Civa Lin<larina.wf@gmail.com>
+            #
+            #---------------------------------------------
         """
 
     def url_to_comic_id(self, comic_entry_url):

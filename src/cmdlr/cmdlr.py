@@ -28,6 +28,7 @@
 import concurrent.futures as CF
 import datetime as DT
 import os
+import sys
 import argparse
 import pathlib
 import textwrap
@@ -291,8 +292,9 @@ def get_args(cdb):
         #          '\n(Current value: {})'.format(cdb.cbz))
 
         parser.add_argument(
-            '--help-analyzer', metavar='CODENAME', dest='help_analyzer',
+            '--help-analyzer', metavar='NAME', dest='help_analyzer',
             type=str, default=None,
+            choices=[azr.name for azr in _ANALYZERS],
             help='Show the analyzer\'s help message.')
 
         parser.add_argument(
@@ -310,6 +312,11 @@ def main():
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/.cmdlr.db'))
     args = get_args(cdb)
 
+    if args.help_analyzer:
+        for azr in _ANALYZERS:
+            if azr.name == args.help_analyzer:
+                print(textwrap.dedent(azr.help).strip(' \n'))
+                sys.exit(0)
     if args.output_dir:
         cdb.set_option('output_dir', args.output_dir)
     if args.threads is not None:
