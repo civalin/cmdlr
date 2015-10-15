@@ -97,12 +97,11 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
 
     @property
     @abc.abstractmethod
-    def desc(self):
+    def site(self):
         '''
-        Return analyzer short description.
-        Recommend include siteurl for user friendly.
+        Return short site url.
 
-        e.g., "vipcomic.com"
+        E.g., "vipcomic.com"
         '''
 
     def convert_to_local_comic_id(self, comic_id):

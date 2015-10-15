@@ -44,7 +44,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
         return '8comic'
 
     @property
-    def desc(self):
+    def site(self):
         return 'comicvip.com'
 
     def url_to_comic_id(self, comic_entry_url):

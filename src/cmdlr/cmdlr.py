@@ -226,7 +226,7 @@ def download_subscribed(cdb, verbose):
 def get_args(cdb):
     def parse_args():
         analyzers_desc_text = '\n'.join([
-            '    ' + azr.name + '(' + azr.codename + ') - ' + azr.desc
+            '    ' + azr.name + '(' + azr.codename + ') - ' + azr.site
             for azr in _ANALYZERS])
 
         parser = argparse.ArgumentParser(
