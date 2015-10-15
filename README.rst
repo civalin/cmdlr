@@ -71,7 +71,7 @@ Check comic sites update
     cmdlr -r
 
     # or
-    cmdlr -rd  # check update then download
+    cmdlr -rd  # check updated then download
 
 Subscription Database
 ==========================
@@ -82,6 +82,21 @@ You can backup database manually if you want.
 
     ~/.cmdlr.db
 
+How to create a new analyzer plugin?
+======================================
+
+Very easy!
+
+1. Clone ``cmdlr`` project from http://bitbucket.org/civalin/cmdlr.
+2. Check ``src/cmdlr/comicanalyzer.py`` to learn what function you need to implement. And reference other analyzer plugin to create yours.
+3. Put your ``.py`` file into ``src/cmdlr/analyzers`` directory.
+4. Run ``./cmdlr.py`` to testing the plugin.
+5. When you done, don't forget make a pull request to me. Thanks!
+
+I recommend plugin use the ``cmdlr.Downloader.save()`` & ``cmdlr.downloader.get()`` function to download data, but it is not necessary. you can choice any tools freely.
+
+Also, you can using you prefer tools to parsing data. like ``lxml``.
+
 Changelog
 =========
 
@@ -90,7 +105,8 @@ Changelog
 
 Fully rewrite version
 
-- Backend db: ``tinydb`` -> ``sqlite``
+- Backend DB: ``tinydb`` -> ``sqlite``
+- Collect more data.
 - Remove search function.
 - make it extensible.
 

@@ -27,7 +27,6 @@
 
 import concurrent.futures as CF
 import datetime as DT
-import sys
 import os
 import argparse
 import pathlib
@@ -35,27 +34,19 @@ import textwrap
 import shutil
 import queue
 import collections
-# import importlib
 
 from . import comicdb
 from . import comicanalyzer
 from . import downloader
-from .analyzers import eightcomic
+
+from . analyzers import *
 
 
 VERSION = '2.0.0'
 _ANALYZERS = []
 
 
-def import_analyzers_modules():
-    analyzers_dir = pathlib.Path(__file__).parent / 'analyzers'
-    sys.path.append(str(analyzers_dir))
-    # for path in analyzers_dir.glob('*.py'):
-    #     if path.stem == '__init__':
-    #         continue
-    #     ANALYZER_MODULES.append(importlib.import_module(path.stem))
-    # remove python editor unuse alert.
-    (eightcomic, )
+def initial_analyzers():
     _ANALYZERS.extend([
         cls() for cls in comicanalyzer.ComicAnalyzer.__subclasses__()])
 
@@ -298,7 +289,7 @@ def get_args(cdb):
 
 
 def main():
-    import_analyzers_modules()
+    initial_analyzers()
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/.cmdlr.db'))
     args = get_args(cdb)
 
