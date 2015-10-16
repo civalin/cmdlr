@@ -121,8 +121,12 @@ def list_info(cdb, verbose):
         len(no_downloaded_volumes),
         ))
     last_refresh_time = cdb.get_option('last_refresh_time')
-    print('    Last refresh:       {}'.format(
-        DT.datetime.strftime(last_refresh_time, '%Y-%m-%d %H:%M:%S')))
+    if last_refresh_time:
+        lrt_str = DT.datetime.strftime(
+            last_refresh_time, '%Y-%m-%d %H:%M:%S')
+    else:
+        lrt_str = None
+    print('    Last refresh:       {}'.format(lrt_str))
     print('    Download Directory: "{}"'.format(
         cdb.get_option('output_dir')))
     counter = collections.Counter([
@@ -180,7 +184,7 @@ def refresh_all(cdb, verbose):
 def download_subscribed(cdb, verbose):
     def download(url, filepath, **kwargs):
         try:
-            downloader.save(url, filepath, **kwargs)
+            downloader.save(url, filepath)
             print('OK: "{}"'.format(filepath))
         except downloader.DownloadError:
             pass
@@ -199,9 +203,30 @@ def download_subscribed(cdb, verbose):
                 path = volume_dir / data['local_filename']
                 if not (path.exists() and path.stat().st_size):
                     executor.submit(
-                        download, filepath=str(path), **data)
+                        download, data['url'], filepath=str(path))
         cdb.set_volume_is_downloaded(
             volume['comic_id'], volume['volume_id'], True)
+
+
+def as_new(cdb, comic_entry, verbose):
+    azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
+    if azr is None:
+        return None
+    comic_info = cdb.get_comic(comic_id)
+    if comic_info is None:
+        print('"{}" are not exists.'.format(comic_entry))
+        return None
+    cdb.set_all_volumes_no_downloaded(comic_id)
+    text = get_comic_info_text(cdb, comic_info, verbose)
+    print('[as new]     ' + text)
+
+
+def print_analyzer_info(cdb, codename):
+    for azr in azrm.get_all_analyzers():
+        if azr.codename() == codename:
+            print(textwrap.dedent(azr.info()).strip(' \n'))
+            print('  Current Custom Data: {}'.format(
+                azrm.get_custom_data_in_cdb(cdb, azr)))
 
 
 def get_args(cdb):
@@ -227,7 +252,13 @@ def get_args(cdb):
         parser.add_argument(
             '-u', '--unsubscribe', metavar='COMIC',
             dest='unsubscribe_comic_entrys', type=str, nargs='+',
-            help='Unsubscribe some comic books.')
+            help='Unsubscribe some comic books.\n'
+                 'It will DELETE all files about this comic.')
+
+        parser.add_argument(
+            '--as-new', metavar='COMIC',
+            dest='as_new_comics', type=str, nargs='+',
+            help='Reset all volumes to no downloaded.\n')
 
         parser.add_argument(
             '-l', '--list-info', dest='list_info',
@@ -297,12 +328,7 @@ def main():
     args = get_args(cdb)
 
     if args.analyzer_info:
-        for azr in azrm.get_all_analyzers():
-            if azr.codename() == args.analyzer_info:
-                print(textwrap.dedent(azr.info()).strip(' \n'))
-                print('  Current Custom Data: {}'.format(
-                    azrm.get_custom_data_in_cdb(cdb, azr)))
-                sys.exit(0)
+        print_analyzer_info(cdb, args.analyzer_info)
     if args.analyzer_custom:
         azrm.set_custom_data(cdb, args.analyzer_custom)
         sys.exit(0)
@@ -310,6 +336,9 @@ def main():
         cdb.set_option('output_dir', args.output_dir)
     if args.threads is not None:
         cdb.set_option('threads', args.threads)
+    if args.as_new_comics:
+        for comic_entry in args.as_new_comics:
+            as_new(cdb, comic_entry, args.verbose)
     if args.unsubscribe_comic_entrys:
         for comic_entry in args.unsubscribe_comic_entrys:
             unsubscribe(cdb, comic_entry, args.verbose)

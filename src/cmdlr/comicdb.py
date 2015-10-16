@@ -219,11 +219,10 @@ class ComicDB():
             })
         self.conn.commit()
 
-    def set_all_volumes_is_not_downloaded(self):
-        '''
-            Set is_downloaded of all volumes to False.
-        '''
-        self.conn.execute('UPDATE volumes SET is_downloaded = 0')
+    def set_all_volumes_no_downloaded(self, comic_id):
+        self.conn.execute(('UPDATE volumes SET is_downloaded = 0'
+                           ' WHERE comic_id = :comic_id'),
+                          {'comic_id': comic_id})
         self.conn.commit()
 
     def get_no_downloaded_volumes(self):
