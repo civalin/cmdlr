@@ -28,13 +28,13 @@
 import concurrent.futures as CF
 import datetime as DT
 import os
-import sys
 import argparse
 import pathlib
 import textwrap
 import shutil
 import queue
 import collections
+import zipfile
 
 from . import comicdb
 from . import downloader
@@ -191,6 +191,7 @@ def download_subscribed(cdb, verbose):
 
     output_dir = cdb.get_option('output_dir')
     threads = cdb.get_option('threads')
+    cbz = cdb.get_option('cbz')
     for volume in cdb.get_no_downloaded_volumes():
         volume_dir = pathlib.Path(
             output_dir) / volume['title'] / volume['name']
@@ -201,11 +202,19 @@ def download_subscribed(cdb, verbose):
                                              volume['volume_id'],
                                              volume['extra_data']):
                 path = volume_dir / data['local_filename']
-                if not (path.exists() and path.stat().st_size):
-                    executor.submit(
-                        download, data['url'], filepath=str(path))
+                # if not (path.exists() and path.stat().st_size):
+                executor.submit(
+                    download, data['url'], filepath=str(path))
         cdb.set_volume_is_downloaded(
             volume['comic_id'], volume['volume_id'], True)
+        if cbz:
+            cbz_path = volume_dir.with_suffix('.cbz')
+            with zipfile.ZipFile(str(cbz_path) + '.cbz', 'w') as zfile:
+                for path in volume_dir.glob('**/*'):
+                    zip_path = path.relative_to(volume_dir.parent)
+                    zfile.write(str(path), zip_path)
+            print('Archived: "{}"'.format(cbz_path))
+            shutil.rmtree(str(volume_dir))
 
 
 def as_new(cdb, comic_entry, verbose):
@@ -293,11 +302,10 @@ def get_args(cdb):
                  '\n(Current value: {})'.format(
                      cdb.get_option('threads')))
 
-        # parser.add_argument(
-        #     '--cbz', metavar='BOOLEAN', dest='cbz',
-        #     type=bool, default=None,
-        #     help='Switch .'
-        #          '\n(Current value: {})'.format(cdb.cbz))
+        parser.add_argument(
+            '--cbz', dest='cbz', action='store_true',
+            help='Toggle convert volumes to cbz format.'
+                 '\n(Current value: {})'.format(cdb.get_option('cbz')))
 
         parser.add_argument(
             '--azr', metavar='CODENAME', dest='analyzer_info',
@@ -331,11 +339,12 @@ def main():
         print_analyzer_info(cdb, args.analyzer_info)
     if args.analyzer_custom:
         azrm.set_custom_data(cdb, args.analyzer_custom)
-        sys.exit(0)
     if args.output_dir:
         cdb.set_option('output_dir', args.output_dir)
     if args.threads is not None:
         cdb.set_option('threads', args.threads)
+    if args.cbz:
+        cdb.set_option('cbz', not cdb.get_option('cbz'))
     if args.as_new_comics:
         for comic_entry in args.as_new_comics:
             as_new(cdb, comic_entry, args.verbose)
