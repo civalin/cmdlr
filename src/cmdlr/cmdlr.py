@@ -86,7 +86,7 @@ def subscribe(cdb, comic_entry, verbose):
     comic_info = azr.get_comic_info(comic_id)
     cdb.upsert_comic(comic_info)
     text = get_comic_info_text(cdb, comic_info, verbose)
-    print('[subscribed]  ' + text)
+    print('[SUBSCRIBED]  ' + text)
 
 
 def unsubscribe(cdb, comic_entry, verbose):
@@ -102,7 +102,7 @@ def unsubscribe(cdb, comic_entry, verbose):
     comic_dir = pathlib.Path(
         cdb.get_option('output_dir')) / comic_info['title']
     shutil.rmtree(str(comic_dir), ignore_errors=True)
-    print('[removed]     ' + text)
+    print('[DELETED]     ' + text)
 
 
 def list_info(cdb, verbose):
@@ -218,7 +218,7 @@ def as_new(cdb, comic_entry, verbose):
         return None
     cdb.set_all_volumes_no_downloaded(comic_id)
     text = get_comic_info_text(cdb, comic_info, verbose)
-    print('[as new]     ' + text)
+    print('[AS NEW]     ' + text)
 
 
 def print_analyzer_info(cdb, codename):
