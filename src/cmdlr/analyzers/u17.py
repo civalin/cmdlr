@@ -126,7 +126,7 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
 
     def get_volume_pages(self, comic_id, volume_id, extra_data):
         def get_volume_url(volume_id):
-            return 'http://www.u17.com/chapter/{}.html'.format(
+            return 'http://www.u17.com/chapter/{}.html?t=old'.format(
                 volume_id)
 
         def get_pages(volume_html):
