@@ -63,6 +63,10 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
             #----------------------------------------------------------
         """
 
+    def __init__(self, custom_data):
+        super().__init__(custom_data)
+        # raise comicanalyzer.ComicAnalyzerDisableException  # disable plugin
+
     def url_to_comic_id(self, comic_entry_url):
         match = re.search('comicvip.com/html/(\d+).html',
                           comic_entry_url)

@@ -71,8 +71,15 @@ def get_custom_data_in_cdb(cdb, cls):
 def initial_analyzers(cdb):
     for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
         data = get_custom_data_in_cdb(cdb, cls)
-        azr = cls(data)
-        _ANALYZERS.append(azr)
+        try:
+            azr = cls(data)
+            _ANALYZERS.append(azr)
+        except comicanalyzer.ComicAnalyzerDisableException:
+            continue
+        except:
+            print(('** Error: Analyzer "{} ({})" cannot be initialized.\n'
+                   '    -> Current custom data: {}').format(
+                cls.name(), cls.codename(), data))
 
 
 def get_analyzer_by_comic_id(comic_id):

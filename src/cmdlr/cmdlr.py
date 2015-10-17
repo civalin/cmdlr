@@ -93,7 +93,7 @@ def subscribe(cdb, comic_entry, verbose):
 def unsubscribe(cdb, comic_entry, verbose):
     azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
-        return None
+        comic_id = comic_entry
     comic_info = cdb.get_comic(comic_id)
     if comic_info is None:
         print('"{}" are not exists.'.format(comic_entry))
@@ -166,7 +166,7 @@ def refresh_all(cdb, verbose):
         for index in range(length):
             comic_info = que.get()
             if comic_info is None:
-                return
+                continue
             else:
                 cdb.upsert_comic(comic_info)
                 text = ''.join([
@@ -218,6 +218,10 @@ def download_subscribed(cdb, skip_exists, verbose):
         os.makedirs(str(volume_dir), exist_ok=True)
         convert_cbz_to_dir_if_cbz_exists(volume_dir)
         azr = azrm.get_analyzer_by_comic_id(volume['comic_id'])
+        if azr is None:
+            print(('Skip: Analyzer not exists -> '
+                   '{title} ({comic_id}): {name}').format(**volume))
+            continue
         with CF.ThreadPoolExecutor(max_workers=threads) as executor:
             for data in azr.get_volume_pages(volume['comic_id'],
                                              volume['volume_id'],

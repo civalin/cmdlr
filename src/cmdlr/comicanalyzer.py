@@ -49,7 +49,7 @@
 #     A volume identifier scope in a comic.
 #     e.g., "13"
 #
-#   volume_name: (str)
+#   name: (str)
 #     A short volume description.
 #     e.g., "vol1"
 #
@@ -69,6 +69,13 @@ import abc
 
 class ComicAnalyzerException(Exception):
     pass
+
+
+class ComicAnalyzerDisableException(ComicAnalyzerException):
+    '''
+    Raise in ComicAnalyzer's __init__() will disable this analyzer
+    without warning messages.
+    '''
 
 
 class ComicAnalyzer(metaclass=abc.ABCMeta):
@@ -121,12 +128,14 @@ class ComicAnalyzer(metaclass=abc.ABCMeta):
         args:
             custom_data:
                 A dict format datapack which setting by end user.
-                All keys and values will be str type.
                 Analyzer can use those datas to do some user independent
-                task (e.g., login).
+                task (e.g., login, filename pattern).
 
-                The default custom_data is {}. Make sure {} can create
-                a object and not crash.
+                The default custom_data == {}.
+                All keys and values will be *str* type. parsing by yourself
+                and beware user may assign invalid data.
+
+                Make sure __init__() never raise a exception to outside.
         '''
 
     def convert_to_local_comic_id(self, comic_id):
