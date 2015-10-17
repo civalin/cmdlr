@@ -52,10 +52,16 @@ class Downloader():
                 response = UR.urlopen(url, timeout=60, **kwargs)
                 break
             except UE.HTTPError as err:  # Like 404 no find
-                print('Skip {url} ->\n  {err}'.format(
-                    url=url,
-                    err=err))
-                raise DownloadError
+                if err.code in (408, 503, 504, 507, 509):
+                    print('Retry {url} ->\n  {err}'.format(
+                        url=url,
+                        err=err))
+                    continue
+                else:
+                    print('Skip {url} ->\n  {err}'.format(
+                        url=url,
+                        err=err))
+                    raise DownloadError()
             except UE.URLError as err:  # Like timeout
                 print('Retry {url} ->\n  {err}'.format(
                     url=url,

@@ -41,7 +41,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
 
     @classmethod
     def name(cls):
-        return '8comic'
+        return '8Comic 無限動漫'
 
     @classmethod
     def site(cls):
@@ -49,16 +49,18 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
 
     def info(self):
         return """
-            ## 8Comic Analyzer ## -------------------------
+            ## 8Comic 無限動漫 Analyzer ## ----------------------------
             #
             #   This analyzer are focus on comicvip.com.
+            #   Typical comic url:
+            #       http://www.comicvip.com/html/<number>.html
             #
             #   Custom data: Not required
             #
             #   LICENSE: MIT
-            #   Maintainer: Civa Lin<larina.wf@gmail.com>
+            #   Author: Civa Lin<larinawf@gmail.com>
             #
-            #----------------------------------------------
+            #----------------------------------------------------------
         """
 
     def url_to_comic_id(self, comic_entry_url):

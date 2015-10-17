@@ -41,6 +41,7 @@ from . import downloader
 from . import azrmanager as azrm
 
 VERSION = '2.0.0'
+DBPATH = '~/.cmdlr.db'
 
 
 def get_comic_info_text(cdb, comic_info, verbose=0):
@@ -133,7 +134,8 @@ def list_info(cdb, verbose):
         azrm.get_analyzer_by_comic_id(comic_info['comic_id'])
         for comic_info in all_comics])
     print('    Used Analyzers:     {}'.format(
-        ', '.join(['{}({}):{}'.format(azr.name(), azr.codename(), count)
+        ', '.join(['{} ({}): {}'.format(
+            azr.name(), azr.codename(), count)
                    for azr, count in counter.items()
                    if azr is not None])))
 
@@ -189,6 +191,24 @@ def download_subscribed(cdb, skip_exists, verbose):
         except downloader.DownloadError:
             pass
 
+    def convert_cbz_to_dir_if_cbz_exists(volume_dir):
+        cbz_path = volume_dir.with_suffix('.cbz')
+        if not cbz_path.exists():
+            return
+        else:
+            with zipfile.ZipFile(str(cbz_path), 'r') as zfile:
+                zfile.extractall(str(volume_dir.parent))
+            os.remove(str(cbz_path))
+
+    def convert_to_cbz(volume_dir):
+        cbz_path = volume_dir.with_suffix('.cbz')
+        with zipfile.ZipFile(str(cbz_path), 'w') as zfile:
+            for path in volume_dir.glob('**/*'):
+                zip_path = path.relative_to(volume_dir.parent)
+                zfile.write(str(path), str(zip_path))
+        shutil.rmtree(str(volume_dir))
+        return cbz_path
+
     output_dir = cdb.get_option('output_dir')
     threads = cdb.get_option('threads')
     cbz = cdb.get_option('cbz')
@@ -196,6 +216,7 @@ def download_subscribed(cdb, skip_exists, verbose):
         volume_dir = pathlib.Path(
             output_dir) / volume['title'] / volume['name']
         os.makedirs(str(volume_dir), exist_ok=True)
+        convert_cbz_to_dir_if_cbz_exists(volume_dir)
         azr = azrm.get_analyzer_by_comic_id(volume['comic_id'])
         with CF.ThreadPoolExecutor(max_workers=threads) as executor:
             for data in azr.get_volume_pages(volume['comic_id'],
@@ -210,13 +231,8 @@ def download_subscribed(cdb, skip_exists, verbose):
         cdb.set_volume_is_downloaded(
             volume['comic_id'], volume['volume_id'], True)
         if cbz:
-            cbz_path = volume_dir.with_suffix('.cbz')
-            with zipfile.ZipFile(str(cbz_path) + '.cbz', 'w') as zfile:
-                for path in volume_dir.glob('**/*'):
-                    zip_path = path.relative_to(volume_dir.parent)
-                    zfile.write(str(path), zip_path)
-            shutil.rmtree(str(volume_dir))
-            print('Archived: "{}"'.format(cbz_path))
+            cbz_path = convert_to_cbz(volume_dir)
+            print('## Archived: "{}"'.format(cbz_path))
 
 
 def as_new(cdb, comic_entry, verbose):
@@ -254,7 +270,7 @@ def get_args(cdb):
             '--version', action='version', version=VERSION)
 
         analyzers_desc_text = '\n'.join([
-            '    {}({}) - {}'.format(
+            '    {} ({})   - {}'.format(
                 azr.name(), azr.codename(), azr.site())
             for azr in azrm.get_all_analyzers()])
 
@@ -341,7 +357,7 @@ def get_args(cdb):
 
 
 def main():
-    cdb = comicdb.ComicDB(dbpath=os.path.expanduser('~/.cmdlr.db'))
+    cdb = comicdb.ComicDB(dbpath=os.path.expanduser(DBPATH))
     azrm.initial_analyzers(cdb)
     args = get_args(cdb)
 
@@ -351,10 +367,14 @@ def main():
         azrm.set_custom_data(cdb, args.analyzer_custom)
     if args.output_dir:
         cdb.set_option('output_dir', args.output_dir)
+        print('Output directory: "{}"'.format(
+            cdb.get_option('output_dir')))
     if args.threads is not None:
         cdb.set_option('threads', args.threads)
+        print('Thread count: {}'.format(cdb.get_option('thread')))
     if args.cbz:
         cdb.set_option('cbz', not cdb.get_option('cbz'))
+        print('Cbz mode: {}'.format(cdb.get_option('cbz')))
     if args.as_new_comics:
         for comic_entry in args.as_new_comics:
             as_new(cdb, comic_entry, args.verbose)
