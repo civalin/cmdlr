@@ -181,7 +181,7 @@ def refresh_all(cdb, verbose):
         post_process(cdb, len(all_comics), verbose)
 
 
-def download_subscribed(cdb, verbose):
+def download_subscribed(cdb, skip_exists, verbose):
     def download(url, filepath, **kwargs):
         try:
             downloader.save(url, filepath)
@@ -202,9 +202,11 @@ def download_subscribed(cdb, verbose):
                                              volume['volume_id'],
                                              volume['extra_data']):
                 path = volume_dir / data['local_filename']
-                # if not (path.exists() and path.stat().st_size):
-                executor.submit(
-                    download, data['url'], filepath=str(path))
+                if skip_exists and path.exists():
+                    continue
+                else:
+                    executor.submit(
+                        download, data['url'], filepath=str(path))
         cdb.set_volume_is_downloaded(
             volume['comic_id'], volume['volume_id'], True)
         if cbz:
@@ -213,8 +215,8 @@ def download_subscribed(cdb, verbose):
                 for path in volume_dir.glob('**/*'):
                     zip_path = path.relative_to(volume_dir.parent)
                     zfile.write(str(path), zip_path)
-            print('Archived: "{}"'.format(cbz_path))
             shutil.rmtree(str(volume_dir))
+            print('Archived: "{}"'.format(cbz_path))
 
 
 def as_new(cdb, comic_entry, verbose):
@@ -240,88 +242,96 @@ def print_analyzer_info(cdb, codename):
 
 def get_args(cdb):
     def parse_args():
+        parser = argparse.ArgumentParser(
+            formatter_class=argparse.RawTextHelpFormatter,
+            description='Subscribe and download your comic books!')
+
+        parser.add_argument(
+            "-v", action="count", dest='verbose', default=0,
+            help="Increase output verbosity. E.g., -v, -vvv")
+
+        parser.add_argument(
+            '--version', action='version', version=VERSION)
+
         analyzers_desc_text = '\n'.join([
             '    {}({}) - {}'.format(
                 azr.name(), azr.codename(), azr.site())
             for azr in azrm.get_all_analyzers()])
 
-        parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawTextHelpFormatter,
-            description='Subscribe and download your comic books!\n'
-                        '\n'
-                        '  Enabled analyzers:\n' + analyzers_desc_text
-            )
+        azg = parser.add_argument_group(
+            'Analyzers Management',
+            '\n## Current enabled analyzers ##\n' + analyzers_desc_text)
 
-        parser.add_argument(
-            '-s', '--subscribe', metavar='COMIC',
-            dest='subscribe_comic_entrys', type=str, nargs='+',
-            help='Subscribe some comic books.\n'
-                 'COMIC can be a url or comic_id.')
-
-        parser.add_argument(
-            '-u', '--unsubscribe', metavar='COMIC',
-            dest='unsubscribe_comic_entrys', type=str, nargs='+',
-            help='Unsubscribe some comic books.\n'
-                 'It will DELETE all files about this comic.')
-
-        parser.add_argument(
-            '--as-new', metavar='COMIC',
-            dest='as_new_comics', type=str, nargs='+',
-            help='Reset all volumes to no downloaded.\n')
-
-        parser.add_argument(
-            '-l', '--list-info', dest='list_info',
-            action='store_const', const=True, default=False,
-            help='List all subscribed books info.')
-
-        parser.add_argument(
-            '-r', '--refresh', dest='refresh',
-            action='store_const', const=True, default=False,
-            help='Update all subscribed comic info.')
-
-        parser.add_argument(
-            '-d', '--download', dest='download',
-            action='store_const', const=True, default=False,
-            help='Download subscribed comic books.')
-
-        parser.add_argument(
-            "-v", action="count", dest='verbose',
-            default=0, help="Increase output verbosity. E.g., -v, -vvv")
-
-        parser.add_argument(
-            '--output-dir', metavar='DIR', dest='output_dir',
-            type=str, default=None,
-            help='Set download folder.'
-                 '\n(Current value: {})'.format(
-                     cdb.get_option('output_dir')))
-
-        parser.add_argument(
-            '--threads', metavar='NUM', dest='threads',
-            type=int, default=None, choices=range(1, 11),
-            help='Set download threads count.'
-                 '\n(Current value: {})'.format(
-                     cdb.get_option('threads')))
-
-        parser.add_argument(
-            '--cbz', dest='cbz', action='store_true',
-            help='Toggle convert volumes to cbz format.'
-                 '\n(Current value: {})'.format(cdb.get_option('cbz')))
-
-        parser.add_argument(
+        azg.add_argument(
             '--azr', metavar='CODENAME', dest='analyzer_info',
             type=str, default=None,
             choices=[azr.codename() for azr in azrm.get_all_analyzers()],
             help='Show the analyzer\'s info message.')
 
-        parser.add_argument(
+        azg.add_argument(
             '--azr-custom', metavar='DATA', dest='analyzer_custom',
             type=str, default=None,
             help='Set analyzer\'s custom data.\n'
                  'Format: "codename/key1=value1,key2=value2"\n'
-                 'Check the analyzer\'s help message for more info.')
+                 'Check analyzer\'s info message for more detail.')
 
-        parser.add_argument(
-            '--version', action='version', version=VERSION)
+        smg = parser.add_argument_group('Subscription Management')
+
+        smg.add_argument(
+            '-s', '--subscribe', metavar='COMIC',
+            dest='subscribe_comic_entrys', type=str, nargs='+',
+            help='Subscribe some comic books.\n'
+                 'COMIC can be a url or comic_id.')
+
+        smg.add_argument(
+            '-u', '--unsubscribe', metavar='COMIC',
+            dest='unsubscribe_comic_entrys', type=str, nargs='+',
+            help='Unsubscribe some comic books.\n'
+                 'It will *DELETE* all files about this comic.')
+
+        smg.add_argument(
+            '-l', '--list-info', dest='list_info', action='store_true',
+            help='List all subscribed books info.')
+
+        smg.add_argument(
+            '-r', '--refresh', dest='refresh', action='store_true',
+            help='Update all subscribed comic info.')
+
+        smg.add_argument(
+            '--as-new', metavar='COMIC',
+            dest='as_new_comics', type=str, nargs='+',
+            help='Set all volumes to "no downloaded" status.\n')
+
+        downloading_group = parser.add_argument_group('Downloading')
+
+        downloading_group.add_argument(
+            '-d', '--download', dest='download', action='store_true',
+            help='Download all no downloaded volumes.')
+
+        downloading_group.add_argument(
+            '--skip-exists', dest='skip_exists', action='store_true',
+            help='Do not re-download when localfile exists.\n'
+                 'Must use with "-d" option.')
+
+        options_setting_group = parser.add_argument_group('Options Setting')
+
+        options_setting_group.add_argument(
+            '--output-dir', metavar='DIR', dest='output_dir',
+            type=str, default=None,
+            help='Set comics directory.\n'
+                 '(= "{}")'.format(
+                     cdb.get_option('output_dir')))
+
+        options_setting_group.add_argument(
+            '--threads', metavar='NUM', dest='threads',
+            type=int, default=None, choices=range(1, 11),
+            help='Set download threads count. (= {})'.format(
+                 cdb.get_option('threads')))
+
+        options_setting_group.add_argument(
+            '--cbz', dest='cbz', action='store_true',
+            help='Toggle new incoming volumes to cbz format.'
+                 ' (= {})'.format(cdb.get_option('cbz')))
 
         args = parser.parse_args()
         return args
@@ -357,7 +367,9 @@ def main():
     if args.refresh:
         refresh_all(cdb, args.verbose + 1)
     if args.download:
-        download_subscribed(cdb, args.verbose)
+        download_subscribed(cdb, args.skip_exists, args.verbose)
+    elif args.skip_exists:
+        print('Warning: The "--skip-exists" only work with "--download".')
     if args.list_info:
         list_info(cdb, args.verbose + 1)
 

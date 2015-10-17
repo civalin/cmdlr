@@ -231,7 +231,9 @@ class ComicDB():
             'SELECT * FROM comics INNER JOIN volumes'
             ' ON comics.comic_id = volumes.comic_id'
             ' WHERE volumes.is_downloaded = 0'
-            ' ORDER BY comic_id').fetchall()
+            ' ORDER BY comics.title ASC,'
+            '          comics.comic_id ASC,'
+            '          volumes.name ASC').fetchall()
 
     def get_all_comics(self):
         return [self.get_comic(row['comic_id'])
