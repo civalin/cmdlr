@@ -91,6 +91,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
             match_desc = re.search(r'line-height:25px">(.*?)</td>',
                                    comic_html)
             desc = match_desc.group(1).strip()
+            desc = re.sub('<.+?>', '', desc)
             return desc
 
         comic_url = self.comic_id_to_url(comic_id)

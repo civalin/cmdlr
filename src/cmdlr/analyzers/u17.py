@@ -95,6 +95,7 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
                 comic_html,
                 re.M | re.DOTALL)
             desc = match_desc.group(1).strip()
+            desc = re.sub('<.+?>', '', desc)
             return desc
 
         def get_volumes(comic_html):
