@@ -56,7 +56,6 @@ class ComicDB():
                     'comic_id TEXT PRIMARY KEY NOT NULL,'  # e.g., xx123
                     'title TEXT NOT NULL,'            # e.g., 海賊王
                     'desc TEXT NOT NULL,'             # e.g., 關於海賊的漫畫
-                    'created_time DATETIME NOT NULL,'
                     'extra_data DICT'    # extra data package
                     ');'
                 )
@@ -66,6 +65,7 @@ class ComicDB():
                     '  ON DELETE CASCADE,'
                     'volume_id TEXT NOT NULL,'      # vol NO. e.g., 15
                     'name TEXT NOT NULL,'           # vol name. e.g., 第15回
+                    'created_time DATETIME NOT NULL,'
                     'is_downloaded BOOLEAN NOT NULL DEFAULT 0'
                     ');'
                 )
@@ -77,6 +77,8 @@ class ComicDB():
                 )
                 self.set_option(
                     'output_dir', os.path.expanduser('~/comics'))
+                self.set_option(
+                    'backup_dir', os.path.expanduser('~/comics_backup'))
                 self.set_option('last_refresh_time', None)
                 self.set_option('threads', 2)
                 self.set_option('cbz', False)
@@ -132,67 +134,48 @@ class ComicDB():
             This function will also maintain the volumes table.
         '''
         def upsert_volume(volume):
+            now = DT.datetime.now()
+            data = {
+                    'comic_id': comic_info['comic_id'],
+                    'volume_id': volume['volume_id'],
+                    'created_time': now,
+                    'name': volume['name'],
+                }
             cursor = self.conn.execute(
                 'UPDATE volumes SET'
                 ' name = name'
                 ' WHERE comic_id = :comic_id AND'
-                '       volume_id = :volume_id',
-                {
-                    'comic_id': comic_info['comic_id'],
-                    'volume_id': volume['volume_id'],
-                    'name': volume['name'],
-                }
-            )
+                '       volume_id = :volume_id', data)
             if cursor.rowcount == 0:
                 self.conn.execute(
                     'INSERT INTO volumes'
-                    ' (comic_id, volume_id, name)'
+                    ' (comic_id, volume_id, name, created_time)'
                     ' VALUES ('
                     ' :comic_id,'
                     ' :volume_id,'
-                    ' :name'
-                    ' )',
-                    {
-                        'comic_id': comic_info['comic_id'],
-                        'volume_id': volume['volume_id'],
-                        'name': volume['name'],
-                    }
-                )
+                    ' :name,'
+                    ' :created_time'
+                    ' )', data)
 
-        now = DT.datetime.now()
-        cursor = self.conn.execute(
-            'UPDATE comics SET'
-            ' desc = :desc,'
-            ' title = :title,'
-            ' created_time = :created_time,'
-            ' extra_data = :extra_data'
-            ' WHERE comic_id = :comic_id',
-            {
-                'comic_id': comic_info['comic_id'],
-                'title': comic_info['title'],
-                'desc': comic_info['desc'],
-                'created_time': now,
-                'extra_data': comic_info['extra_data'],
-            })
-        if cursor.rowcount == 0:
-            self.conn.execute(
-                'INSERT INTO comics'
-                ' (comic_id, title, desc, created_time, extra_data)'
-                ' VALUES ('
-                ' :comic_id,'
-                ' :title,'
-                ' :desc,'
-                ' :created_time,'
-                ' :extra_data'
-                ' )',
-                {
-                    'comic_id': comic_info['comic_id'],
-                    'title': comic_info['title'],
-                    'desc': comic_info['desc'],
-                    'created_time': now,
-                    'extra_data': comic_info['extra_data'],
-                })
+        def upsert_comic(comic_info):
+            cursor = self.conn.execute(
+                'UPDATE comics SET'
+                ' desc = :desc,'
+                ' title = :title,'
+                ' extra_data = :extra_data'
+                ' WHERE comic_id = :comic_id', comic_info)
+            if cursor.rowcount == 0:
+                self.conn.execute(
+                    'INSERT INTO comics'
+                    ' (comic_id, title, desc, extra_data)'
+                    ' VALUES ('
+                    ' :comic_id,'
+                    ' :title,'
+                    ' :desc,'
+                    ' :extra_data'
+                    ' )', comic_info)
 
+        upsert_comic(comic_info)
         for volume in comic_info['volumes']:
             upsert_volume(volume)
 
@@ -273,6 +256,11 @@ class ComicDB():
             'no_downloaded_count': 0,
             'no_downloaded_names': [],
             }
+        if len(volumes):
+            data['last_incoming_time'] = max(
+                v['created_time'] for v in volumes)
+        else:
+            data['last_incoming_time'] = None
         for volume in volumes:
             if(volume['is_downloaded']):
                 data['downloaded_count'] = data['downloaded_count'] + 1

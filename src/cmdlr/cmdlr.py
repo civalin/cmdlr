@@ -55,6 +55,7 @@ def get_comic_info_text(cdb, comic_info, verbose=0):
                 [name.lstrip('w') for name in
                  volumes_status['no_downloaded_names'][:2]]),
             'downloaded_count': volumes_status['downloaded_count'],
+            'last_incoming_time': volumes_status['last_incoming_time'],
             'total': volumes_status['total'],
             }
     texts = []
@@ -80,17 +81,63 @@ def get_comic_info_text(cdb, comic_info, verbose=0):
     return text
 
 
+def get_comic_dir(output_dir, comic_info):
+    return pathlib.Path(output_dir) / comic_info['title']
+
+
+def get_backup_comic_dir(backup_dir, comic_info):
+    return pathlib.Path(backup_dir) / '{}({})'.format(
+        comic_info['title'], comic_info['comic_id'].replace('/', '@'))
+
+
 def subscribe(cdb, comic_entry, verbose):
+    def try_revive_from_backup(comic_info):
+        def merge_dir(root_src_dir, root_dst_dir):
+            for src_dir, dirs, files in os.walk(root_src_dir):
+                dst_dir = src_dir.replace(root_src_dir, root_dst_dir)
+                if not os.path.exists(dst_dir):
+                    os.mkdir(dst_dir)
+                for file in files:
+                    src_file = os.path.join(src_dir, file)
+                    dst_file = os.path.join(dst_dir, file)
+                    if os.path.exists(dst_file):
+                        os.remove(dst_file)
+                    shutil.move(src_file, dst_dir)
+
+        output_dir = cdb.get_option('output_dir')
+        backup_dir = cdb.get_option('backup_dir')
+        if backup_dir == "":
+            return
+        backup_comic_dir = get_backup_comic_dir(backup_dir, comic_info)
+        if backup_comic_dir.exists():
+            comic_dir = get_comic_dir(output_dir, comic_info)
+            merge_dir(str(backup_comic_dir), str(comic_dir))
+            shutil.rmtree(str(backup_comic_dir))
+
     azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
         return None
     comic_info = azr.get_comic_info(comic_id)
     cdb.upsert_comic(comic_info)
+    try_revive_from_backup(comic_info)
     text = get_comic_info_text(cdb, comic_info, verbose)
     print('[SUBSCRIBED]  ' + text)
 
 
 def unsubscribe(cdb, comic_entry, verbose):
+    def backup_or_remove_data(cdb, comic_info):
+        output_dir = cdb.get_option('output_dir')
+        backup_dir = cdb.get_option('backup_dir')
+        comic_dir = get_comic_dir(output_dir, comic_info)
+        if backup_dir == "":
+            shutil.rmtree(str(comic_dir), ignore_errors=True)
+        else:
+            os.makedirs(backup_dir, exist_ok=True)
+            backup_comic_dir = get_backup_comic_dir(backup_dir, comic_info)
+            if backup_comic_dir.exists():
+                os.rmtree(str(backup_comic_dir))
+            shutil.move(str(comic_dir), str(backup_comic_dir))
+
     azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
         comic_id = comic_entry
@@ -98,11 +145,10 @@ def unsubscribe(cdb, comic_entry, verbose):
     if comic_info is None:
         print('"{}" are not exists.'.format(comic_entry))
         return None
+
     text = get_comic_info_text(cdb, comic_info, verbose)
+    backup_or_remove_data(cdb, comic_info)
     cdb.delete_comic(comic_id)
-    comic_dir = pathlib.Path(
-        cdb.get_option('output_dir')) / comic_info['title']
-    shutil.rmtree(str(comic_dir), ignore_errors=True)
     print('[DELETED]     ' + text)
 
 
@@ -213,15 +259,14 @@ def download_subscribed(cdb, skip_exists, verbose):
     threads = cdb.get_option('threads')
     cbz = cdb.get_option('cbz')
     for volume in cdb.get_no_downloaded_volumes():
-        volume_dir = pathlib.Path(
-            output_dir) / volume['title'] / volume['name']
-        os.makedirs(str(volume_dir), exist_ok=True)
-        convert_cbz_to_dir_if_cbz_exists(volume_dir)
         azr = azrm.get_analyzer_by_comic_id(volume['comic_id'])
         if azr is None:
             print(('Skip: Analyzer not exists -> '
                    '{title} ({comic_id}): {name}').format(**volume))
             continue
+        volume_dir = get_comic_dir(output_dir, volume) / volume['name']
+        os.makedirs(str(volume_dir), exist_ok=True)
+        convert_cbz_to_dir_if_cbz_exists(volume_dir)
         with CF.ThreadPoolExecutor(max_workers=threads) as executor:
             for data in azr.get_volume_pages(volume['comic_id'],
                                              volume['volume_id'],
@@ -339,8 +384,15 @@ def get_args(cdb):
             '--output-dir', metavar='DIR', dest='output_dir',
             type=str, default=None,
             help='Set comics directory.\n'
-                 '(= "{}")'.format(
-                     cdb.get_option('output_dir')))
+                 '(= "{}")'.format(cdb.get_option('output_dir')))
+
+        options_setting_group.add_argument(
+            '--backup-dir', metavar='DIR', dest='backup_dir',
+            type=str, default=None,
+            help='Set comics backup directory. Unsubscribed comics will\n'
+                 'be moved in here. If value = "", unsubscribed comics\n'
+                 'will be *DELETE* forever.\n'
+                 '(= "{}")'.format(cdb.get_option('backup_dir')))
 
         options_setting_group.add_argument(
             '--threads', metavar='NUM', dest='threads',
@@ -369,10 +421,14 @@ def main():
         print_analyzer_info(cdb, args.analyzer_info)
     if args.analyzer_custom:
         azrm.set_custom_data(cdb, args.analyzer_custom)
-    if args.output_dir:
+    if args.output_dir is not None:
         cdb.set_option('output_dir', args.output_dir)
         print('Output directory: "{}"'.format(
             cdb.get_option('output_dir')))
+    if args.backup_dir is not None:
+        cdb.set_option('backup_dir', args.backup_dir)
+        print('Backup directory: "{}"'.format(
+            cdb.get_option('backup_dir')))
     if args.threads is not None:
         cdb.set_option('threads', args.threads)
         print('Thread count: {}'.format(cdb.get_option('thread')))
