@@ -45,6 +45,8 @@ DBPATH = '~/.cmdlr.db'
 
 
 def get_comic_info_text(cdb, comic_info, verbose=0):
+    verbose = verbose % 4
+
     volumes_status = cdb.get_comic_volumes_status(
         comic_info['comic_id'])
     data = {'comic_id': comic_info['comic_id'],
@@ -315,7 +317,7 @@ def get_args(cdb):
 
         parser.add_argument(
             "-v", action="count", dest='verbose', default=0,
-            help="Increase output verbosity. E.g., -v, -vvv")
+            help="Change output verbosity. E.g., -v, -vvv")
 
         parser.add_argument(
             '--version', action='version', version=VERSION)
