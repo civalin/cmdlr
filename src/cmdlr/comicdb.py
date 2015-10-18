@@ -57,7 +57,7 @@ class ComicDB():
                 self.conn.execute(
                     'CREATE TABLE comics ('           # 已訂閱的漫畫
                     'comic_id TEXT PRIMARY KEY NOT NULL,'  # e.g., xx123
-                    'title TEXT NOT NULL,'            # e.g., 海賊王
+                    'title TEXT NOT NULL UNIQUE,'     # e.g., 海賊王
                     'desc TEXT NOT NULL,'             # e.g., 關於海賊的漫畫
                     'extra_data DICT'    # extra data package
                     ');'
