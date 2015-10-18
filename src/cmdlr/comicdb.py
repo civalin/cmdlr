@@ -144,12 +144,19 @@ class ComicDB():
                     'created_time': now,
                     'name': volume['name'],
                 }
-            cursor = self.conn.execute(
-                'UPDATE volumes SET'
-                ' name = name'
+            cursor = self.conn.execute(  # check already exists
+                'SELECT volume_id FROM volumes'
                 ' WHERE comic_id = :comic_id AND'
                 '       volume_id = :volume_id', data)
-            if cursor.rowcount == 0:
+            if cursor.rowcount >= 1:
+                self.conn.execute(  # maybe need to update volume name?
+                    'UPDATE volumes SET'
+                    ' name = :name,'
+                    ' is_downloaded = 0'
+                    ' WHERE comic_id = :comic_id AND'
+                    '       volume_id = :volume_id AND'
+                    '       name != :name', data)
+            elif cursor.rowcount == 0:
                 self.conn.execute(
                     'INSERT INTO volumes'
                     ' (comic_id, volume_id, name, created_time)'
@@ -164,7 +171,7 @@ class ComicDB():
             cursor = self.conn.execute(
                 'UPDATE comics SET'
                 ' desc = :desc,'
-                ' title = :title,'
+                # ' title = :title,'  # title never be changed
                 ' extra_data = :extra_data'
                 ' WHERE comic_id = :comic_id', comic_info)
             if cursor.rowcount == 0:
@@ -177,9 +184,6 @@ class ComicDB():
                     ' :desc,'
                     ' :extra_data'
                     ' )', comic_info)
-
-        def safe_pathname(string):
-            '\?*<":>'
 
         def data_normalized(comic_info):
             comic_info['title'] = comic_info['title'].translate(
