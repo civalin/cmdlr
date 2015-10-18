@@ -129,14 +129,16 @@ def unsubscribe(cdb, comic_entry, verbose):
         output_dir = cdb.get_option('output_dir')
         backup_dir = cdb.get_option('backup_dir')
         comic_dir = get_comic_dir(output_dir, comic_info)
-        if backup_dir == "":
-            shutil.rmtree(str(comic_dir), ignore_errors=True)
-        else:
-            os.makedirs(backup_dir, exist_ok=True)
-            backup_comic_dir = get_backup_comic_dir(backup_dir, comic_info)
-            if backup_comic_dir.exists():
-                os.rmtree(str(backup_comic_dir))
-            shutil.move(str(comic_dir), str(backup_comic_dir))
+        if comic_dir.exists():
+            if backup_dir == "":
+                shutil.rmtree(str(comic_dir), ignore_errors=True)
+            else:
+                os.makedirs(backup_dir, exist_ok=True)
+                backup_comic_dir = get_backup_comic_dir(
+                    backup_dir, comic_info)
+                if backup_comic_dir.exists():
+                    os.rmtree(str(backup_comic_dir))
+                shutil.move(str(comic_dir), str(backup_comic_dir))
 
     azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
