@@ -40,9 +40,6 @@ extend_sqlite3_datatype()
 
 
 class ComicDB():
-    translate_table = str.maketrans(
-        '\?*<":>+[]/', '＼？＊＜”：＞＋〔〕／')
-
     def __init__(self, dbpath):
         def migrate():
             def get_db_version():
@@ -194,13 +191,6 @@ class ComicDB():
                      '       volume_id not in ({})').format(volume_ids_text)
             self.conn.execute(query).fetchall()
 
-        def data_normalized(comic_info):
-            comic_info['title'] = comic_info['title'].translate(
-                self.translate_table)
-            for v in comic_info['volumes']:
-                v['name'] = v['name'].translate(self.translate_table)
-
-        data_normalized(comic_info)
         upsert_comic(comic_info)
         for volume in comic_info['volumes']:
             upsert_volume(comic_info['comic_id'], volume)

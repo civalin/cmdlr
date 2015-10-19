@@ -29,7 +29,6 @@ import concurrent.futures as CF
 import datetime as DT
 import os
 import argparse
-import pathlib
 import textwrap
 import shutil
 import queue
@@ -39,6 +38,7 @@ import zipfile
 from . import comicdb
 from . import downloader
 from . import azrmanager as azrm
+from . import comicpath
 
 VERSION = '2.0.0'
 DBPATH = '~/.cmdlr.db'
@@ -83,16 +83,9 @@ def get_comic_info_text(cdb, comic_info, verbose=0):
     return text
 
 
-def get_comic_dir(output_dir, comic_info):
-    return pathlib.Path(output_dir) / comic_info['title']
-
-
-def get_backup_comic_dir(backup_dir, comic_info):
-    return pathlib.Path(backup_dir) / '{}({})'.format(
-        comic_info['title'], comic_info['comic_id'].replace('/', '@'))
-
-
 def subscribe(cdb, comic_entry, verbose):
+    cpath = comicpath.get_cpath(cdb)
+
     def try_revive_from_backup(comic_info):
         def merge_dir(root_src_dir, root_dst_dir):
             for src_dir, dirs, files in os.walk(root_src_dir):
@@ -106,19 +99,17 @@ def subscribe(cdb, comic_entry, verbose):
                         os.remove(dst_file)
                     shutil.move(src_file, dst_dir)
 
-        output_dir = cdb.get_option('output_dir')
-        backup_dir = cdb.get_option('backup_dir')
-        if backup_dir == "":
-            return
-        backup_comic_dir = get_backup_comic_dir(backup_dir, comic_info)
-        if backup_comic_dir.exists():
-            comic_dir = get_comic_dir(output_dir, comic_info)
-            merge_dir(str(backup_comic_dir), str(comic_dir))
-            shutil.rmtree(str(backup_comic_dir))
+        if cpath.backup_dir is not None:
+            backup_comic_dir = cpath.get_backup_comic_dir(comic_info)
+            comic_dir = cpath.get_comic_dir(comic_info)
+            if backup_comic_dir.exists():
+                merge_dir(str(backup_comic_dir), str(comic_dir))
+                shutil.rmtree(str(backup_comic_dir))
 
     azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
         return None
+
     comic_info = azr.get_comic_info(comic_id)
     cdb.upsert_comic(comic_info)
     try_revive_from_backup(comic_info)
@@ -127,17 +118,16 @@ def subscribe(cdb, comic_entry, verbose):
 
 
 def unsubscribe(cdb, comic_entry, verbose):
+    cpath = comicpath.get_cpath(cdb)
+
     def backup_or_remove_data(cdb, comic_info):
-        output_dir = cdb.get_option('output_dir')
-        backup_dir = cdb.get_option('backup_dir')
-        comic_dir = get_comic_dir(output_dir, comic_info)
+        comic_dir = cpath.get_comic_dir(comic_info)
         if comic_dir.exists():
-            if backup_dir == "":
+            if cpath.backup_dir is None:
                 shutil.rmtree(str(comic_dir), ignore_errors=True)
             else:
-                os.makedirs(backup_dir, exist_ok=True)
-                backup_comic_dir = get_backup_comic_dir(
-                    backup_dir, comic_info)
+                os.makedirs(str(cpath.backup_dir), exist_ok=True)
+                backup_comic_dir = cpath.get_backup_comic_dir(comic_info)
                 if backup_comic_dir.exists():
                     os.rmtree(str(backup_comic_dir))
                 shutil.move(str(comic_dir), str(backup_comic_dir))
@@ -157,6 +147,8 @@ def unsubscribe(cdb, comic_entry, verbose):
 
 
 def list_info(cdb, verbose):
+    cpath = comicpath.get_cpath(cdb)
+
     all_comics = cdb.get_all_comics()
     for comic_info in all_comics:
         text = get_comic_info_text(cdb, comic_info, verbose)
@@ -178,8 +170,7 @@ def list_info(cdb, verbose):
     else:
         lrt_str = None
     print('    Last refresh:       {}'.format(lrt_str))
-    print('    Download Directory: "{}"'.format(
-        cdb.get_option('output_dir')))
+    print('    Download Directory: "{}"'.format(cpath.output_dir))
     counter = collections.Counter([
         azrm.get_analyzer_by_comic_id(comic_info['comic_id'])
         for comic_info in all_comics])
@@ -234,6 +225,8 @@ def refresh_all(cdb, verbose):
 
 
 def download_subscribed(cdb, skip_exists, verbose):
+    cpath = comicpath.get_cpath(cdb)
+
     def download(url, filepath, **kwargs):
         try:
             downloader.save(url, filepath)
@@ -241,50 +234,53 @@ def download_subscribed(cdb, skip_exists, verbose):
         except downloader.DownloadError:
             pass
 
-    def convert_cbz_to_dir_if_cbz_exists(volume_dir):
-        cbz_path = volume_dir.with_suffix('.cbz')
-        if not cbz_path.exists():
+    def convert_cbz_to_dir_if_cbz_exists(cv_info):
+        volume_cbz_path = cpath.get_volume_cbz(cv_info, cv_info)
+        comic_dir_path = cpath.get_comic_dir(cv_info)
+        if not volume_cbz_path.exists():
             return
         else:
-            with zipfile.ZipFile(str(cbz_path), 'r') as zfile:
-                zfile.extractall(str(volume_dir.parent))
-            os.remove(str(cbz_path))
+            with zipfile.ZipFile(str(volume_cbz_path), 'r') as zfile:
+                zfile.extractall(str(comic_dir_path))
+            os.remove(str(volume_cbz_path))
 
-    def convert_to_cbz(volume_dir):
-        cbz_path = volume_dir.with_suffix('.cbz')
-        with zipfile.ZipFile(str(cbz_path), 'w') as zfile:
-            for path in volume_dir.glob('**/*'):
-                zip_path = path.relative_to(volume_dir.parent)
-                zfile.write(str(path), str(zip_path))
-        shutil.rmtree(str(volume_dir))
-        return cbz_path
+    def convert_to_cbz(cv_info):
+        volume_cbz_path = cpath.get_volume_cbz(cv_info, cv_info)
+        volume_dir_path = cpath.get_volume_dir(cv_info, cv_info)
+        comic_dir_path = cpath.get_comic_dir(cv_info)
+        with zipfile.ZipFile(str(volume_cbz_path), 'w') as zfile:
+            for path in volume_dir_path.glob('**/*'):
+                in_zip_path = path.relative_to(comic_dir_path)
+                zfile.write(str(path), str(in_zip_path))
+        shutil.rmtree(str(volume_dir_path))
+        return volume_cbz_path
 
-    output_dir = cdb.get_option('output_dir')
     threads = cdb.get_option('threads')
     cbz = cdb.get_option('cbz')
-    for volume in cdb.get_no_downloaded_volumes():
-        azr = azrm.get_analyzer_by_comic_id(volume['comic_id'])
+
+    for cv_info in cdb.get_no_downloaded_volumes():
+        azr = azrm.get_analyzer_by_comic_id(cv_info['comic_id'])
         if azr is None:
             print(('Skip: Analyzer not exists -> '
-                   '{title} ({comic_id}): {name}').format(**volume))
+                   '{title} ({comic_id}): {name}').format(**cv_info))
             continue
-        volume_dir = get_comic_dir(output_dir, volume) / volume['name']
+        volume_dir = cpath.get_volume_dir(cv_info, cv_info)
         os.makedirs(str(volume_dir), exist_ok=True)
-        convert_cbz_to_dir_if_cbz_exists(volume_dir)
+        convert_cbz_to_dir_if_cbz_exists(cv_info)
         with CF.ThreadPoolExecutor(max_workers=threads) as executor:
-            for data in azr.get_volume_pages(volume['comic_id'],
-                                             volume['volume_id'],
-                                             volume['extra_data']):
-                path = volume_dir / data['local_filename']
-                if skip_exists and path.exists():
+            for pagedata in azr.get_volume_pages(cv_info['comic_id'],
+                                                 cv_info['volume_id'],
+                                                 cv_info['extra_data']):
+                pagepath = cpath.get_page_path(cv_info, cv_info, pagedata)
+                if skip_exists and pagepath.exists():
                     continue
                 else:
                     executor.submit(
-                        download, data['url'], filepath=str(path))
+                        download, pagedata['url'], filepath=str(pagepath))
         cdb.set_volume_is_downloaded(
-            volume['comic_id'], volume['volume_id'], True)
+            cv_info['comic_id'], cv_info['volume_id'], True)
         if cbz:
-            cbz_path = convert_to_cbz(volume_dir)
+            cbz_path = convert_to_cbz(cv_info)
             print('## Archived: "{}"'.format(cbz_path))
 
 
@@ -311,6 +307,8 @@ def print_analyzer_info(cdb, codename):
 
 def get_args(cdb):
     def parse_args():
+        cpath = comicpath.get_cpath(cdb)
+
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter,
             description='Subscribe and download your comic books!')
@@ -385,22 +383,26 @@ def get_args(cdb):
         options_setting_group = parser.add_argument_group('Options Setting')
 
         options_setting_group.add_argument(
-            '--output-dir', metavar='DIR', dest='output_dir',
-            type=str, default=None,
+            '--output-dir', metavar='DIR', dest='output_dir', type=str,
             help='Set comics directory.\n'
-                 '(= "{}")'.format(cdb.get_option('output_dir')))
+                 '(= "{}")'.format(cpath.output_dir))
+
+        if cpath.backup_dir is None:
+            backup_dir_str = 'None'
+        else:
+            backup_dir_str = '"{}"'.format(cpath.backup_dir)
 
         options_setting_group.add_argument(
-            '--backup-dir', metavar='DIR', dest='backup_dir',
-            type=str, default=None,
+            '--backup-dir', metavar='DIR', dest='backup_dir', type=str,
+            nargs='?', default=False,  # False == Not
             help='Set comics backup directory. Unsubscribed comics will\n'
-                 'be moved in here. If value = "", unsubscribed comics\n'
-                 'will be *DELETE* forever.\n'
-                 '(= "{}")'.format(cdb.get_option('backup_dir')))
+                 'be moved in here. If blank (None) unsubscribed\n'
+                 'comics will be *DELETE* forever.\n'
+                 '(= {})'.format(backup_dir_str))
 
         options_setting_group.add_argument(
-            '--threads', metavar='NUM', dest='threads',
-            type=int, default=None, choices=range(1, 11),
+            '--threads', metavar='NUM', dest='threads', type=int,
+            choices=range(1, 11),
             help='Set download threads count. (= {})'.format(
                  cdb.get_option('threads')))
 
@@ -427,11 +429,11 @@ def main():
         azrm.set_custom_data(cdb, args.analyzer_custom)
     if args.output_dir is not None:
         cdb.set_option('output_dir', args.output_dir)
-        print('Output directory: "{}"'.format(
+        print('Output directory: {}'.format(
             cdb.get_option('output_dir')))
-    if args.backup_dir is not None:
+    if args.backup_dir is not False:  # False == Not set, None == blank
         cdb.set_option('backup_dir', args.backup_dir)
-        print('Backup directory: "{}"'.format(
+        print('Backup directory: {}'.format(
             cdb.get_option('backup_dir')))
     if args.threads is not None:
         cdb.set_option('threads', args.threads)
