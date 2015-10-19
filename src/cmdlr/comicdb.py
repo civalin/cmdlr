@@ -136,19 +136,19 @@ class ComicDB():
 
             This function will also maintain the volumes table.
         '''
-        def upsert_volume(volume):
+        def upsert_volume(comic_id, volume):
             now = DT.datetime.now()
             data = {
-                    'comic_id': comic_info['comic_id'],
+                    'comic_id': comic_id,
                     'volume_id': volume['volume_id'],
                     'created_time': now,
                     'name': volume['name'],
                 }
-            volume_exists = self.conn.execute(  # check already exists
-                'SELECT volume_id FROM volumes'
+            volume_count = self.conn.execute(  # check already exists
+                'SELECT COUNT(*) FROM volumes'
                 ' WHERE comic_id = :comic_id AND'
-                '       volume_id = :volume_id', data).fetchone()
-            if volume_exists is None:
+                '       volume_id = :volume_id', data).fetchone()[0]
+            if volume_count == 0:
                 self.conn.execute(
                     'INSERT INTO volumes'
                     ' (comic_id, volume_id, name, created_time)'
@@ -185,6 +185,15 @@ class ComicDB():
                     ' :extra_data'
                     ' )', comic_info)
 
+        def remove_unexists_volume(comic_info):
+            volume_ids_text = ', '.join(
+                ['"' + v['volume_id'] + '"'
+                    for v in comic_info['volumes']])
+            query = ('DELETE FROM volumes'
+                     ' WHERE comic_id = comic_id AND'
+                     '       volume_id not in ({})').format(volume_ids_text)
+            self.conn.execute(query).fetchall()
+
         def data_normalized(comic_info):
             comic_info['title'] = comic_info['title'].translate(
                 self.translate_table)
@@ -194,7 +203,8 @@ class ComicDB():
         data_normalized(comic_info)
         upsert_comic(comic_info)
         for volume in comic_info['volumes']:
-            upsert_volume(volume)
+            upsert_volume(comic_info['comic_id'], volume)
+        remove_unexists_volume(comic_info)
 
         self.conn.commit()
 
