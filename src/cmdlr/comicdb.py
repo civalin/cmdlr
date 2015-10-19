@@ -144,19 +144,11 @@ class ComicDB():
                     'created_time': now,
                     'name': volume['name'],
                 }
-            cursor = self.conn.execute(  # check already exists
+            volume_exists = self.conn.execute(  # check already exists
                 'SELECT volume_id FROM volumes'
                 ' WHERE comic_id = :comic_id AND'
-                '       volume_id = :volume_id', data)
-            if cursor.rowcount >= 1:
-                self.conn.execute(  # maybe need to update volume name?
-                    'UPDATE volumes SET'
-                    ' name = :name,'
-                    ' is_downloaded = 0'
-                    ' WHERE comic_id = :comic_id AND'
-                    '       volume_id = :volume_id AND'
-                    '       name != :name', data)
-            elif cursor.rowcount == 0:
+                '       volume_id = :volume_id', data).fetchone()
+            if volume_exists is None:
                 self.conn.execute(
                     'INSERT INTO volumes'
                     ' (comic_id, volume_id, name, created_time)'
@@ -166,6 +158,14 @@ class ComicDB():
                     ' :name,'
                     ' :created_time'
                     ' )', data)
+            else:
+                self.conn.execute(  # maybe need to update volume name?
+                    'UPDATE volumes SET'
+                    ' name = :name,'
+                    ' is_downloaded = 0'
+                    ' WHERE comic_id = :comic_id AND'
+                    '       volume_id = :volume_id AND'
+                    '       name != :name', data)
 
         def upsert_comic(comic_info):
             cursor = self.conn.execute(
