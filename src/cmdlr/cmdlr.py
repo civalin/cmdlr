@@ -99,12 +99,11 @@ def subscribe(cdb, comic_entry, verbose):
                         os.remove(dst_file)
                     shutil.move(src_file, dst_dir)
 
-        if cpath.backup_dir is not None:
-            backup_comic_dir = cpath.get_backup_comic_dir(comic_info)
-            comic_dir = cpath.get_comic_dir(comic_info)
-            if backup_comic_dir.exists():
-                merge_dir(str(backup_comic_dir), str(comic_dir))
-                shutil.rmtree(str(backup_comic_dir))
+        backup_comic_dir = cpath.get_backup_comic_dir(comic_info)
+        comic_dir = cpath.get_comic_dir(comic_info)
+        if backup_comic_dir.exists():
+            merge_dir(str(backup_comic_dir), str(comic_dir))
+            shutil.rmtree(str(backup_comic_dir))
 
     azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
@@ -117,20 +116,20 @@ def subscribe(cdb, comic_entry, verbose):
     print('[SUBSCRIBED]  ' + text)
 
 
-def unsubscribe(cdb, comic_entry, verbose):
+def unsubscribe(cdb, comic_entry, request_backup, verbose):
     cpath = comicpath.get_cpath(cdb)
 
-    def backup_or_remove_data(cdb, comic_info):
+    def backup_or_remove_data(cdb, comic_info, request_backup):
         comic_dir = cpath.get_comic_dir(comic_info)
         if comic_dir.exists():
-            if cpath.backup_dir is None:
-                shutil.rmtree(str(comic_dir), ignore_errors=True)
-            else:
+            if request_backup:
                 os.makedirs(str(cpath.backup_dir), exist_ok=True)
                 backup_comic_dir = cpath.get_backup_comic_dir(comic_info)
                 if backup_comic_dir.exists():
                     os.rmtree(str(backup_comic_dir))
                 shutil.move(str(comic_dir), str(backup_comic_dir))
+            else:
+                shutil.rmtree(str(comic_dir), ignore_errors=True)
 
     azr, comic_id = azrm.get_analyzer_and_comic_id(comic_entry)
     if azr is None:
@@ -141,9 +140,12 @@ def unsubscribe(cdb, comic_entry, verbose):
         return None
 
     text = get_comic_info_text(cdb, comic_info, verbose)
-    backup_or_remove_data(cdb, comic_info)
+    backup_or_remove_data(cdb, comic_info, request_backup)
     cdb.delete_comic(comic_id)
-    print('[DELETED]     ' + text)
+    if request_backup:
+        print('[UNSUB & BAK] ' + text)
+    else:
+        print('[UNSUB & DEL] ' + text)
 
 
 def list_info(cdb, verbose):
@@ -353,8 +355,12 @@ def get_args(cdb):
         smg.add_argument(
             '-u', '--unsubscribe', metavar='COMIC',
             dest='unsubscribe_comic_entrys', type=str, nargs='+',
-            help='Unsubscribe some comic books.\n'
-                 'It will *DELETE* all files about this comic.')
+            help='Unsubscribe some comic books.')
+
+        smg.add_argument(
+            '--no-backup', dest='no_backup', action='store_true',
+            help='No backup downloaded files when unsubscribed.\n'
+                 'Must use with "-u" option')
 
         smg.add_argument(
             '-l', '--list-info', dest='list_info', action='store_true',
@@ -380,25 +386,19 @@ def get_args(cdb):
             help='Do not re-download when localfile exists.\n'
                  'Must use with "-d" option.')
 
-        options_setting_group = parser.add_argument_group('Options Setting')
+        options_setting_group = parser.add_argument_group(
+            'Setting Management')
 
         options_setting_group.add_argument(
             '--output-dir', metavar='DIR', dest='output_dir', type=str,
             help='Set comics directory.\n'
                  '(= "{}")'.format(cpath.output_dir))
 
-        if cpath.backup_dir is None:
-            backup_dir_str = 'None'
-        else:
-            backup_dir_str = '"{}"'.format(cpath.backup_dir)
-
         options_setting_group.add_argument(
             '--backup-dir', metavar='DIR', dest='backup_dir', type=str,
-            nargs='?', default=False,  # False == Not
             help='Set comics backup directory. Unsubscribed comics will\n'
-                 'be moved in here. If blank (None) unsubscribed\n'
-                 'comics will be *DELETE* forever.\n'
-                 '(= {})'.format(backup_dir_str))
+                 'be moved in here.'
+                 '(= "{}")'.format(cpath.backup_dir))
 
         options_setting_group.add_argument(
             '--threads', metavar='NUM', dest='threads', type=int,
@@ -419,43 +419,54 @@ def get_args(cdb):
 
 
 def main():
+    def options_setting(cdb, args):
+        if args.analyzer_custom:
+            azrm.set_custom_data(cdb, args.analyzer_custom)
+        if args.output_dir is not None:
+            cdb.set_option('output_dir', args.output_dir)
+            print('Output directory: {}'.format(
+                cdb.get_option('output_dir')))
+        if args.backup_dir is not None:
+            cdb.set_option('backup_dir', args.backup_dir)
+            print('Backup directory: {}'.format(
+                cdb.get_option('backup_dir')))
+        if args.threads is not None:
+            cdb.set_option('threads', args.threads)
+            print('Thread count: {}'.format(cdb.get_option('thread')))
+        if args.cbz:
+            cdb.set_option('cbz', not cdb.get_option('cbz'))
+            print('Cbz mode: {}'.format(cdb.get_option('cbz')))
+
+    def subscription_management(cdb, args):
+        if args.as_new_comics:
+            for comic_entry in args.as_new_comics:
+                as_new(cdb, comic_entry, args.verbose)
+        if args.unsubscribe_comic_entrys:
+            for comic_entry in args.unsubscribe_comic_entrys:
+                unsubscribe(
+                    cdb, comic_entry, not args.no_backup, args.verbose)
+        elif args.no_backup:
+            print('Warning: The "--no-backup" are useless without'
+                  ' "--unsubscribe"')
+        if args.subscribe_comic_entrys:
+            for entry in args.subscribe_comic_entrys:
+                subscribe(cdb, entry, args.verbose)
+        if args.refresh:
+            refresh_all(cdb, args.verbose + 1)
+        if args.download:
+            download_subscribed(cdb, args.skip_exists, args.verbose)
+        elif args.skip_exists:
+            print('Warning: The "--skip-exists" are useless without'
+                  ' "--download".')
+
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser(DBPATH))
     azrm.initial_analyzers(cdb)
     args = get_args(cdb)
 
+    options_setting(cdb, args)
+    subscription_management(cdb, args)
     if args.analyzer_info:
         print_analyzer_info(cdb, args.analyzer_info)
-    if args.analyzer_custom:
-        azrm.set_custom_data(cdb, args.analyzer_custom)
-    if args.output_dir is not None:
-        cdb.set_option('output_dir', args.output_dir)
-        print('Output directory: {}'.format(
-            cdb.get_option('output_dir')))
-    if args.backup_dir is not False:  # False == Not set, None == blank
-        cdb.set_option('backup_dir', args.backup_dir)
-        print('Backup directory: {}'.format(
-            cdb.get_option('backup_dir')))
-    if args.threads is not None:
-        cdb.set_option('threads', args.threads)
-        print('Thread count: {}'.format(cdb.get_option('thread')))
-    if args.cbz:
-        cdb.set_option('cbz', not cdb.get_option('cbz'))
-        print('Cbz mode: {}'.format(cdb.get_option('cbz')))
-    if args.as_new_comics:
-        for comic_entry in args.as_new_comics:
-            as_new(cdb, comic_entry, args.verbose)
-    if args.unsubscribe_comic_entrys:
-        for comic_entry in args.unsubscribe_comic_entrys:
-            unsubscribe(cdb, comic_entry, args.verbose)
-    if args.subscribe_comic_entrys:
-        for entry in args.subscribe_comic_entrys:
-            subscribe(cdb, entry, args.verbose)
-    if args.refresh:
-        refresh_all(cdb, args.verbose + 1)
-    if args.download:
-        download_subscribed(cdb, args.skip_exists, args.verbose)
-    elif args.skip_exists:
-        print('Warning: The "--skip-exists" only work with "--download".')
     if args.list_info:
         list_info(cdb, args.verbose + 1)
 

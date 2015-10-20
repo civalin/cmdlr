@@ -50,10 +50,7 @@ class ComicPath():
 
     def __init__(self, output_dir, backup_dir):
         self.__output_dir = output_dir
-        if backup_dir:
-            self.__backup_dir = backup_dir
-        else:
-            self.__backup_dir = None
+        self.__backup_dir = backup_dir
         # self.__chinese_mode = chinese_mode
 
     @property
@@ -64,12 +61,9 @@ class ComicPath():
 
     @property
     def backup_dir(self):
-        if self.__backup_dir:
-            return pathlib.Path(
-                StringProcess.replace_unsafe_characters_for_path(
-                    self.__backup_dir))
-        else:
-            return None
+        return pathlib.Path(
+            StringProcess.replace_unsafe_characters_for_path(
+                self.__backup_dir))
 
     def get_comic_dir(self, comic_info):
         return self.output_dir / StringProcess.modified(
@@ -88,11 +82,8 @@ class ComicPath():
         return volume_dir / StringProcess.modified(page['local_filename'])
 
     def get_backup_comic_dir(self, comic_info):
-        if self.__backup_dir is None:
-            return None
-        else:
-            return self.backup_dir / StringProcess.modified(
-                '{title}({comic_id})'.format(**comic_info))
+        return self.backup_dir / StringProcess.modified(
+            '{title}({comic_id})'.format(**comic_info))
 
 
 def get_cpath(cdb):
