@@ -85,7 +85,7 @@ You can backup database manually if you want.
 How to create a new analyzer plugin?
 ======================================
 
-Very easy!
+Very easy:
 
 1. Clone ``cmdlr`` project from http://bitbucket.org/civalin/cmdlr.
 2. Check ``src/cmdlr/comicanalyzer.py`` to learn what function you need to implement. And reference other analyzer plugin to create yours.
@@ -93,7 +93,7 @@ Very easy!
 4. Run ``./cmdlr.py`` to testing the plugin.
 5. When you done, don't forget make a pull request to me. Thanks!
 
-I recommend use the ``cmdlr.Downloader.save()`` & ``cmdlr.downloader.get()`` function to download data, but it is not necessary. you can choice any tools freely. Also, using any prefer tools to parsing data. like ``lxml``.
+I recommend you using the ``cmdlr.downloader.save()`` & ``cmdlr.downloader.get()`` function to download data, but it is not necessary. you can choice any tools freely. Also, you can using any prefer tools to parsing data. like ``lxml``.
 
 Happy hacking! :D
 

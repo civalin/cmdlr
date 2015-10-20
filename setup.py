@@ -29,33 +29,39 @@
 import sys
 
 from setuptools import setup
-import src.cmdlr.cmdlr
+import src.cmdlr.info
 
 if not sys.version_info >= (3, 4, 0):
-    print("ERROR: You cannot install because python version should >= 3.4")
+    print("ERROR: You cannot install because python version < 3.4")
     sys.exit(1)
 
 setup(
-    name='cmdlr',
-    version=src.cmdlr.cmdlr.VERSION,
-    author='Civa Lin',
-    author_email='larinawf@gmail.com',
-    license='MIT',
-    url='https://bitbucket.org/civalin/cmdlr',
-    description="A script to download comic book from 8comic website",
+    name=src.cmdlr.info.PROJECT_NAME,
+    version=src.cmdlr.info.VERSION,
+    author=src.cmdlr.info.AUTHOR,
+    author_email=src.cmdlr.info.AUTHOR_EMAIL,
+    license=src.cmdlr.info.LICENSE,
+    url=src.cmdlr.info.PROJECT_URL,
+    description=src.cmdlr.info.DESCRIPTION,
     long_description='''''',
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
-        "Topic :: System :: Archiving"],
+        "Programming Language :: SQL",
+        "Environment :: Console",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: Microsoft :: Windows",
+        "Operating System :: MacOS",
+        "Topic :: Multimedia :: Graphics :: Capture"
+        "Topic :: System :: Archiving :: Mirroring"],
     install_requires=['hanziconv'],
     setup_requires=[],
     package_dir={'': 'src'},
     packages=['cmdlr', 'cmdlr.analyzers'],
     entry_points={
-        'console_scripts': ['cmdlr = cmdlr.cmdlr:main'],
-        'setuptools.installation': ['eggsecutable = cmdlr.cmdlr:main']
+        'console_scripts': ['cmdlr = cmdlr.cmdline:main'],
+        'setuptools.installation': ['eggsecutable = cmdlr.cmdline:main']
         },
-    keywords='comic archive',
+    keywords='comic download archive',
     )
