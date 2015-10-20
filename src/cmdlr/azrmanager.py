@@ -101,7 +101,6 @@ def get_analyzer_and_comic_id(comic_entry):
     if azr is None:
         azr = get_analyzer_by_comic_id(comic_entry)
         if azr is None:
-            print('"{}" not fits any analyzers.'.format(comic_entry))
             return (None, None)
         else:
             comic_id = comic_entry
