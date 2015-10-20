@@ -79,9 +79,10 @@ class ComicDB():
                     'output_dir', os.path.expanduser('~/comics'))
                 self.set_option(
                     'backup_dir', os.path.expanduser('~/comics_backup'))
-                self.set_option('last_refresh_time', None)
+                self.set_option('last_refresh_time', 'none')
                 self.set_option('threads', 2)
                 self.set_option('cbz', False)
+                self.set_option('hanzi_mode', 'none')
                 set_db_version(1)
 
             db_version = get_db_version()

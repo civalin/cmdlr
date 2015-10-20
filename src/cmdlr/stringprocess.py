@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# coding=utf-8
-
 #########################################################################
 #  The MIT License (MIT)
 #
@@ -26,36 +23,33 @@
 #  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ##########################################################################
 
-import sys
+import hanziconv
 
-from setuptools import setup
-import src.cmdlr.cmdlr
 
-if not sys.version_info >= (3, 4, 0):
-    print("ERROR: You cannot install because python version should >= 3.4")
-    sys.exit(1)
+class StringProcess():
+    trans_component_table = str.maketrans(
+        '\?*<":>+[]/', '＼？＊＜”：＞＋〔〕／')
+    trans_path_table = str.maketrans(
+        '?*<":>+[]', '？＊＜”：＞＋〔〕')
 
-setup(
-    name='cmdlr',
-    version=src.cmdlr.cmdlr.VERSION,
-    author='Civa Lin',
-    author_email='larinawf@gmail.com',
-    license='MIT',
-    url='https://bitbucket.org/civalin/cmdlr',
-    description="A script to download comic book from 8comic website",
-    long_description='''''',
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Topic :: System :: Archiving"],
-    install_requires=['hanziconv'],
-    setup_requires=[],
-    package_dir={'': 'src'},
-    packages=['cmdlr', 'cmdlr.analyzers'],
-    entry_points={
-        'console_scripts': ['cmdlr = cmdlr.cmdlr:main'],
-        'setuptools.installation': ['eggsecutable = cmdlr.cmdlr:main']
-        },
-    keywords='comic archive',
-    )
+    def __init__(self, hanzi_mode=None):
+        self.__hanzi_mode = hanzi_mode
+
+    def replace_unsafe_characters(self, string):
+        return string.translate(type(self).trans_component_table)
+
+    def replace_unsafe_characters_for_path(self, string):
+        return string.translate(type(self).trans_path_table)
+
+    def hanziconv(self, string):
+        '''convert chinese characters Simplified <-> Trnditional'''
+        if self.__hanzi_mode == 'trad':
+            string = hanziconv.HanziConv.toTraditional(string)
+        elif self.__hanzi_mode == 'simp':
+            string = hanziconv.HanziConv.toSimplified(string)
+        return string
+
+    def component_modified(self, component):
+        safe_component = self.replace_unsafe_characters(component)
+        answer = self.hanziconv(safe_component)
+        return answer

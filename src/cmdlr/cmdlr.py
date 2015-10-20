@@ -39,22 +39,24 @@ from . import comicdb
 from . import downloader
 from . import azrmanager as azrm
 from . import comicpath
+from . import stringprocess
 
 VERSION = '2.0.0'
 DBPATH = '~/.cmdlr.db'
 
 
-def get_comic_info_text(cdb, comic_info, verbose=0):
+def get_comic_info_text(cdb, comic_info, hanzi_mode, verbose=0):
     verbose = verbose % 4
+    sp = stringprocess.StringProcess(hanzi_mode=hanzi_mode)
 
     volumes_status = cdb.get_comic_volumes_status(
         comic_info['comic_id'])
     data = {'comic_id': comic_info['comic_id'],
-            'title': comic_info['title'],
-            'desc': comic_info['desc'],
+            'title': sp.hanziconv(comic_info['title']),
+            'desc': sp.hanziconv(comic_info['desc']),
             'no_downloaded_count': volumes_status['no_downloaded_count'],
             'no_downloaded_names': ','.join(
-                [name.lstrip('w') for name in
+                [sp.hanziconv(name) for name in
                  volumes_status['no_downloaded_names'][:2]]),
             'downloaded_count': volumes_status['downloaded_count'],
             'last_incoming_time': volumes_status['last_incoming_time'],
@@ -112,7 +114,8 @@ def subscribe(cdb, comic_entry, verbose):
     comic_info = azr.get_comic_info(comic_id)
     cdb.upsert_comic(comic_info)
     try_revive_from_backup(comic_info)
-    text = get_comic_info_text(cdb, comic_info, verbose)
+    text = get_comic_info_text(
+        cdb, comic_info, cdb.get_option('hanzi_mode'), verbose)
     print('[SUBSCRIBED]  ' + text)
 
 
@@ -139,7 +142,8 @@ def unsubscribe(cdb, comic_entry, request_backup, verbose):
         print('"{}" are not exists.'.format(comic_entry))
         return None
 
-    text = get_comic_info_text(cdb, comic_info, verbose)
+    text = get_comic_info_text(
+        cdb, comic_info, cdb.get_option('hanzi_mode'), verbose)
     backup_or_remove_data(cdb, comic_info, request_backup)
     cdb.delete_comic(comic_id)
     if request_backup:
@@ -150,10 +154,11 @@ def unsubscribe(cdb, comic_entry, request_backup, verbose):
 
 def list_info(cdb, verbose):
     cpath = comicpath.get_cpath(cdb)
+    hanzi_mode = cdb.get_option('hanzi_mode')
 
     all_comics = cdb.get_all_comics()
     for comic_info in all_comics:
-        text = get_comic_info_text(cdb, comic_info, verbose)
+        text = get_comic_info_text(cdb, comic_info, hanzi_mode, verbose)
         print(text)
     print('  ------------------------------------------')
     print('    Total:              {:>4} comics / {:>6} volumes'.format(
@@ -166,11 +171,11 @@ def list_info(cdb, verbose):
         len(no_downloaded_volumes),
         ))
     last_refresh_time = cdb.get_option('last_refresh_time')
-    if last_refresh_time:
+    if type(last_refresh_time) == DT.datetime:
         lrt_str = DT.datetime.strftime(
             last_refresh_time, '%Y-%m-%d %H:%M:%S')
     else:
-        lrt_str = None
+        lrt_str = 'none'
     print('    Last refresh:       {}'.format(lrt_str))
     print('    Download Directory: "{}"'.format(cpath.output_dir))
     counter = collections.Counter([
@@ -185,6 +190,7 @@ def list_info(cdb, verbose):
 
 def refresh_all(cdb, verbose):
     que = queue.Queue()
+    hanzi_mode = cdb.get_option('hanzi_mode')
 
     def get_data_one(comic_info):
         azr = azrm.get_analyzer_by_comic_id(comic_info['comic_id'])
@@ -214,7 +220,9 @@ def refresh_all(cdb, verbose):
                 cdb.upsert_comic(comic_info)
                 text = ''.join([
                     ' {:>5} '.format('{}/{}'.format(index + 1, length)),
-                    get_comic_info_text(cdb, comic_info, verbose)])
+                    get_comic_info_text(
+                        cdb, comic_info, hanzi_mode, verbose)
+                    ])
                 print(text)
                 cdb.set_option('last_refresh_time', DT.datetime.now())
 
@@ -295,7 +303,8 @@ def as_new(cdb, comic_entry, verbose):
         print('"{}" are not exists.'.format(comic_entry))
         return None
     cdb.set_all_volumes_no_downloaded(comic_id)
-    text = get_comic_info_text(cdb, comic_info, verbose)
+    text = get_comic_info_text(
+        cdb, comic_info, cdb.get_option('hanzi_mode'), verbose)
     print('[AS NEW]     ' + text)
 
 
@@ -411,6 +420,12 @@ def get_args(cdb):
             help='Toggle new incoming volumes to cbz format.'
                  ' (= {})'.format(cdb.get_option('cbz')))
 
+        options_setting_group.add_argument(
+            '--hanzi-mode', metavar="MODE", dest='hanzi_mode', type=str,
+            choices=['trad', 'simp', 'none'],
+            help='Change download directories characters set for chinese.\n'
+                 ' (= "{}")'.format(cdb.get_option('hanzi_mode')))
+
         args = parser.parse_args()
         return args
 
@@ -436,6 +451,10 @@ def main():
         if args.cbz:
             cdb.set_option('cbz', not cdb.get_option('cbz'))
             print('Cbz mode: {}'.format(cdb.get_option('cbz')))
+        if args.hanzi_mode:
+            cdb.set_option('hanzi_mode', args.hanzi_mode)
+            print('Chinese charactors mode: {}'.format(
+                cdb.get_option('hanzi_mode')))
 
     def subscription_management(cdb, args):
         if args.as_new_comics:
