@@ -25,6 +25,7 @@
 
 
 import os
+import sys
 import argparse
 
 from . import comicdownloader
@@ -143,8 +144,8 @@ def get_args(cdb):
 
         options_setting_group.add_argument(
             '--hanzi-mode', metavar="MODE", dest='hanzi_mode', type=str,
-            choices=['trad', 'simp', 'none'],
-            help='Select characters set converting of chinese.\n'
+            choices=['trad', 'simp'],
+            help='Select characters set converting rule for chinese.\n'
                  'Choice one = %(choices)s. (= "{}")'.format(
                      cdb.get_option('hanzi_mode')))
 
@@ -156,27 +157,38 @@ def get_args(cdb):
 
 
 def main():
-    def options_setting(cdb, args):
+    def options_setting(cdb, cmdlr, args):
+        def move_cpath(cdb, cmdlr):
+            output_dir = cdb.get_option('output_dir')
+            backup_dir = cdb.get_option('backup_dir')
+            hanzi_mode = cdb.get_option('hanzi_mode')
+            dst_cpath = comicpath.ComicPath(
+                output_dir, backup_dir, hanzi_mode)
+            cmdlr.move_cpath(dst_cpath)
+
         if args.analyzer_custom:
             azrm.set_custom_data(cdb, args.analyzer_custom)
-        if args.output_dir is not None:
-            cdb.set_option('output_dir', args.output_dir)
-            print('Output directory: {}'.format(
-                cdb.get_option('output_dir')))
-        if args.backup_dir is not None:
-            cdb.set_option('backup_dir', args.backup_dir)
-            print('Backup directory: {}'.format(
-                cdb.get_option('backup_dir')))
         if args.threads is not None:
             cdb.set_option('threads', args.threads)
             print('Thread count: {}'.format(cdb.get_option('thread')))
         if args.cbz:
             cdb.set_option('cbz', not cdb.get_option('cbz'))
             print('Cbz mode: {}'.format(cdb.get_option('cbz')))
-        if args.hanzi_mode:
-            cdb.set_option('hanzi_mode', args.hanzi_mode)
-            print('Chinese charactors mode: {}'.format(
-                cdb.get_option('hanzi_mode')))
+        if args.output_dir or args.backup_dir or args.hanzi_mode:
+            if args.output_dir:
+                cdb.set_option('output_dir', args.output_dir)
+                print('Output directory: {}'.format(
+                    cdb.get_option('output_dir')))
+            if args.backup_dir:
+                cdb.set_option('backup_dir', args.backup_dir)
+                print('Backup directory: {}'.format(
+                    cdb.get_option('backup_dir')))
+            if args.hanzi_mode:
+                cdb.set_option('hanzi_mode', args.hanzi_mode)
+                print('Chinese charactors mode: {}'.format(
+                    cdb.get_option('hanzi_mode')))
+            move_cpath(cdb, cmdlr)
+            sys.exit(0)
 
     def subscription_management(cmdlr, args):
         if args.as_new_comics:
@@ -210,7 +222,7 @@ def main():
     azrm.initial_analyzers(cdb)
     args = get_args(cdb)
 
-    options_setting(cdb, args)
     cmdlr = comicdownloader.ComicDownloader(cdb)
+    options_setting(cdb, cmdlr, args)
     subscription_management(cmdlr, args)
     print_information(cmdlr, args)

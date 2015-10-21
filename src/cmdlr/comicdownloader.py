@@ -35,14 +35,11 @@ import zipfile
 from . import downloader
 from . import azrmanager as azrm
 from . import comicpath
-from . import stringprocess
 
 
 class ComicDownloader():
     def __init__(self, cdb):
         self.__cdb = cdb
-        self.__sp = stringprocess.StringProcess(
-            hanzi_mode=cdb.get_option('hanzi_mode'))
         self.__cpath = comicpath.get_cpath(cdb)
         self.__threads = cdb.get_option('threads')
         self.__cbz = cdb.get_option('cbz')
@@ -53,11 +50,11 @@ class ComicDownloader():
                 comic_info['comic_id'])
             data = {
                 'comic_id': comic_info['comic_id'],
-                'title': self.__sp.hanziconv(comic_info['title']),
-                'desc': self.__sp.hanziconv(comic_info['desc']),
+                'title': self.__cpath.sp.hanziconv(comic_info['title']),
+                'desc': self.__cpath.sp.hanziconv(comic_info['desc']),
                 'no_downloaded_count': volumes_status['no_downloaded_count'],
                 'no_downloaded_names': ','.join(
-                    [self.__sp.hanziconv(name) for name in
+                    [self.__cpath.sp.hanziconv(name) for name in
                      volumes_status['no_downloaded_names'][:2]]),
                 'downloaded_count': volumes_status['downloaded_count'],
                 'last_incoming_time': volumes_status['last_incoming_time'],
@@ -100,7 +97,7 @@ class ComicDownloader():
                 for src_dir, dirs, files in os.walk(root_src_dir):
                     dst_dir = src_dir.replace(root_src_dir, root_dst_dir)
                     if not os.path.exists(dst_dir):
-                        os.mkdir(dst_dir)
+                        os.makedirs(dst_dir)
                     for file in files:
                         src_file = os.path.join(src_dir, file)
                         dst_file = os.path.join(dst_dir, file)
@@ -352,3 +349,42 @@ class ComicDownloader():
                 print(textwrap.dedent(azr.info()).strip(' \n'))
                 print('  Current Custom Data: {}'.format(
                     azrm.get_custom_data_in_cdb(self.__cdb, azr)))
+
+    def move_cpath(self, dst_cpath):
+        def move_path(src, dst):
+            if not dst.parent.exists():
+                dst.parent.mkdir(parents=True)
+            src.replace(dst)
+
+        def move_output_dir(src_cpath, dst_cpath):
+            if src_cpath.output_dir.exists():
+                for src_path in src_cpath.output_dir.glob('**/*'):
+                    relative_src_path = src_path.relative_to(
+                        src_cpath.output_dir)
+                    relative_dst_path_str = dst_cpath.sp.path_modified(
+                        str(relative_src_path))
+                    dst_path = dst_cpath.output_dir / relative_dst_path_str
+                    move_path(src_path, dst_path)
+                try:
+                    src_cpath.output_dir.rmdir()
+                except OSError:
+                    pass
+
+        def move_backup_dir(src_cpath, dst_cpath):
+            if src_cpath.backup_dir.exists():
+                for src_path in src_cpath.backup_dir.glob('**/*'):
+                    relative_src_path = src_path.relative_to(
+                        src_cpath.backup_dir)
+                    relative_dst_path_str = dst_cpath.sp.path_modified(
+                        str(relative_src_path))
+                    dst_path = dst_cpath.backup_dir / relative_dst_path_str
+                    move_path(src_path, dst_path)
+                try:
+                    src_cpath.backup_dir.rmdir()
+                except OSError:
+                    pass
+
+        src_cpath = self.__cpath
+        move_output_dir(src_cpath, dst_cpath)
+        move_backup_dir(src_cpath, dst_cpath)
+        self.__cpath = dst_cpath

@@ -34,27 +34,27 @@ class ComicPath():
     def __init__(self, output_dir, backup_dir, hanzi_mode=None):
         self.__output_dir = output_dir
         self.__backup_dir = backup_dir
-        self.__sp = stringprocess.StringProcess(hanzi_mode=hanzi_mode)
+        self.sp = stringprocess.StringProcess(hanzi_mode=hanzi_mode)
 
     @property
     def output_dir(self):
         return pathlib.Path(
-            self.__sp.replace_unsafe_characters_for_path(
+            self.sp.replace_unsafe_characters_for_path(
                 self.__output_dir))
 
     @property
     def backup_dir(self):
         return pathlib.Path(
-            self.__sp.replace_unsafe_characters_for_path(
+            self.sp.replace_unsafe_characters_for_path(
                 self.__backup_dir))
 
     def get_comic_dir(self, comic_info):
-        return self.output_dir / self.__sp.component_modified(
+        return self.output_dir / self.sp.component_modified(
             comic_info['title'])
 
     def get_volume_dir(self, comic_info, volume_info):
         return self.get_comic_dir(
-            comic_info) / self.__sp.component_modified(volume_info['name'])
+            comic_info) / self.sp.component_modified(volume_info['name'])
 
     def get_volume_cbz(self, comic_info, volume_info):
         return self.get_volume_dir(comic_info, volume_info).with_suffix(
@@ -62,11 +62,11 @@ class ComicPath():
 
     def get_page_path(self, comic_info, volume_info, page):
         volume_dir = self.get_volume_dir(comic_info, volume_info)
-        return volume_dir / self.__sp.component_modified(
+        return volume_dir / self.sp.component_modified(
             page['local_filename'])
 
     def get_backup_comic_dir(self, comic_info):
-        return self.backup_dir / self.__sp.component_modified(
+        return self.backup_dir / self.sp.component_modified(
             '{title}({comic_id})'.format(**comic_info))
 
 

@@ -53,3 +53,8 @@ class StringProcess():
         safe_component = self.replace_unsafe_characters(component)
         answer = self.hanziconv(safe_component)
         return answer
+
+    def path_modified(self, path):
+        safe_path = self.replace_unsafe_characters_for_path(path)
+        answer = self.hanziconv(safe_path)
+        return answer
