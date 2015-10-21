@@ -132,6 +132,19 @@ def get_args(cdb):
                  '(= "{}")'.format(cpath.backup_dir))
 
         options_setting_group.add_argument(
+            '--hanzi-mode', metavar="MODE", dest='hanzi_mode', type=str,
+            choices=['trad', 'simp'],
+            help='Select characters set converting rule for chinese.\n'
+                 'Choice one = %(choices)s. (= "{}")'.format(
+                     cdb.get_option('hanzi_mode')))
+
+        options_setting_group.add_argument(
+            '--without-move', dest='without_move', action='store_true',
+            help='Don\'t move the real files to new directories.\n'
+                 'Must using with "--output-dir", "--backup-dir"\n'
+                 'or "--hanzi-mode" option.')
+
+        options_setting_group.add_argument(
             '--threads', metavar='NUM', dest='threads', type=int,
             choices=range(1, 11),
             help='Set download threads count. (= {})'.format(
@@ -141,13 +154,6 @@ def get_args(cdb):
             '--cbz', dest='cbz', action='store_true',
             help='Toggle new incoming volumes to cbz format.'
                  ' (= {})'.format(cdb.get_option('cbz')))
-
-        options_setting_group.add_argument(
-            '--hanzi-mode', metavar="MODE", dest='hanzi_mode', type=str,
-            choices=['trad', 'simp'],
-            help='Select characters set converting rule for chinese.\n'
-                 'Choice one = %(choices)s. (= "{}")'.format(
-                     cdb.get_option('hanzi_mode')))
 
         args = parser.parse_args()
         return args
@@ -187,8 +193,12 @@ def main():
                 cdb.set_option('hanzi_mode', args.hanzi_mode)
                 print('Chinese charactors mode: {}'.format(
                     cdb.get_option('hanzi_mode')))
-            move_cpath(cdb, cmdlr)
+            if not args.without_move:
+                move_cpath(cdb, cmdlr)
             sys.exit(0)
+        elif args.without_move:
+            print('Warning: The "--without-move" are useless without\n'
+                  ' "--output-dir", "--backup-dir" or "--hanzi-mode".')
 
     def subscription_management(cmdlr, args):
         if args.as_new_comics:
