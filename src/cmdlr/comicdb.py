@@ -188,9 +188,9 @@ class ComicDB():
                 ['"' + v['volume_id'] + '"'
                     for v in comic_info['volumes']])
             query = ('DELETE FROM volumes'
-                     ' WHERE comic_id = comic_id AND'
+                     ' WHERE comic_id = :comic_id AND'
                      '       volume_id not in ({})').format(volume_ids_text)
-            self.conn.execute(query).fetchall()
+            self.conn.execute(query, comic_info)
 
         upsert_comic(comic_info)
         for volume in comic_info['volumes']:
