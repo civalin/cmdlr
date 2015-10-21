@@ -35,21 +35,47 @@ class DownloadError(Exception):
 class Downloader():
     """
         General Download Toolkit
-
-        TODO: Accept extra configure data like cookies or a retry period
-              which generated from some analyzer to deal some site.
     """
-    @classmethod
-    def get(cls, url, **kwargs):
+    def __init__(self, config):
+        """
+            args:
+                config: <dict>
+                    a Downloader config dict.
+                    {
+                        'proxies': <dict>,  # default: None (use env setting)
+                            # e.g., {'http': 'http://proxy.hinet.net:80/'}
+                    }
+        """
+        proxyhandler = UR.ProxyHandler(proxies=config.get('proxies', None))
+        self.__opener = UR.build_opener(proxyhandler)
+
+    def get(self, url, **options):
         '''
             urllib.request.urlopen wrapper.
+
+            args:
+                options:
+                {
+                    timeout: <positive int>,  # default: 60
+                    method: <string>,  # default: None (auto select GET/POST)
+                    headers: <dict>,   # default: {},
+                        # e.g., {'User-Agent': Mozilla/5.0 Firefox/41.0}
+                    data: <bytes>,     # Post data, default: None
+                }
 
             return:
                 binary data pack which be downloaded.
         '''
+        req = UR.Request(
+                url,
+                data=options.get('data', None),
+                headers=options.get('headers', {}),
+                method=options.get('method', None),
+                )
         while True:
             try:
-                response = UR.urlopen(url, timeout=60, **kwargs)
+                resp = self.__opener.open(req,
+                                          timeout=options.get('timeout', 60))
                 break
             except UE.HTTPError as err:  # Like 404 no find
                 if err.code in (408, 503, 504, 507, 509):
@@ -67,11 +93,10 @@ class Downloader():
                     url=url,
                     err=err))
                 continue
-        binary_data = response.read()
+        binary_data = resp.read()
         return binary_data
 
-    @classmethod
-    def save(cls, url, filepath, **kwargs):
+    def save(self, url, filepath, **options):
         '''
             args:
                 url:
@@ -79,12 +104,13 @@ class Downloader():
                 filepath:
                     the file location want to save
         '''
-        binary_data = cls.get(url, **kwargs)
+        binary_data = self.get(url, **options)
         dirname = os.path.dirname(filepath)
         os.makedirs(dirname, exist_ok=True)
         with open(filepath, 'wb') as f:
             f.write(binary_data)
 
 
-get = Downloader.get
-save = Downloader.save
+_downloader = Downloader({})
+get = _downloader.get
+save = _downloader.save
