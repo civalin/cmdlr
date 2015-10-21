@@ -82,7 +82,7 @@ class ComicDB():
                 self.set_option('last_refresh_time', 'none')
                 self.set_option('threads', 2)
                 self.set_option('cbz', False)
-                self.set_option('hanzi_mode', 'none')
+                self.set_option('hanzi_mode', 'trad')
                 set_db_version(1)
 
             db_version = get_db_version()

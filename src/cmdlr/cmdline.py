@@ -135,14 +135,14 @@ def get_args(cdb):
             '--hanzi-mode', metavar="MODE", dest='hanzi_mode', type=str,
             choices=['trad', 'simp'],
             help='Select characters set converting rule for chinese.\n'
-                 'Choice one = %(choices)s. (= "{}")'.format(
+                 'Choice one of [%(choices)s]. (= "{}")'.format(
                      cdb.get_option('hanzi_mode')))
 
         options_setting_group.add_argument(
-            '--without-move', dest='without_move', action='store_true',
-            help='Don\'t move the real files to new directories.\n'
-                 'Must using with "--output-dir", "--backup-dir"\n'
-                 'or "--hanzi-mode" option.')
+            '--move', dest='move', action='store_true',
+            help='Move *ALL* real files in directories to new location.\n'
+                 'Recommend use this with "--output-dir",\n'
+                 '"--backup-dir" and "--hanzi-mode".')
 
         options_setting_group.add_argument(
             '--threads', metavar='NUM', dest='threads', type=int,
@@ -180,6 +180,7 @@ def main():
         if args.cbz:
             cdb.set_option('cbz', not cdb.get_option('cbz'))
             print('Cbz mode: {}'.format(cdb.get_option('cbz')))
+
         if args.output_dir or args.backup_dir or args.hanzi_mode:
             if args.output_dir:
                 cdb.set_option('output_dir', args.output_dir)
@@ -193,11 +194,11 @@ def main():
                 cdb.set_option('hanzi_mode', args.hanzi_mode)
                 print('Chinese charactors mode: {}'.format(
                     cdb.get_option('hanzi_mode')))
-            if not args.without_move:
+            if args.move:
                 move_cpath(cdb, cmdlr)
             sys.exit(0)
-        elif args.without_move:
-            print('Warning: The "--without-move" are useless without\n'
+        elif args.move:
+            print('Warning: The "--move" are useless without\n'
                   ' "--output-dir", "--backup-dir" or "--hanzi-mode".')
 
     def subscription_management(cmdlr, args):
