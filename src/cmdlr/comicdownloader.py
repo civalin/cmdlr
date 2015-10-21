@@ -354,11 +354,15 @@ class ComicDownloader():
         def move_path(src, dst):
             if not dst.parent.exists():
                 dst.parent.mkdir(parents=True)
-            src.replace(dst)
+            try:
+                src.replace(dst)
+            except:
+                src.rmdir()
 
         def move_output_dir(src_cpath, dst_cpath):
             if src_cpath.output_dir.exists():
-                for src_path in src_cpath.output_dir.glob('**/*'):
+                for src_path in sorted(
+                        src_cpath.output_dir.glob('**/*'), reverse=True):
                     relative_src_path = src_path.relative_to(
                         src_cpath.output_dir)
                     relative_dst_path_str = dst_cpath.sp.path_modified(
@@ -372,7 +376,8 @@ class ComicDownloader():
 
         def move_backup_dir(src_cpath, dst_cpath):
             if src_cpath.backup_dir.exists():
-                for src_path in src_cpath.backup_dir.glob('**/*'):
+                for src_path in sorted(
+                        src_cpath.backup_dir.glob('**/*'), reverse=True):
                     relative_src_path = src_path.relative_to(
                         src_cpath.backup_dir)
                     relative_dst_path_str = dst_cpath.sp.path_modified(
