@@ -24,6 +24,7 @@
 ##########################################################################
 
 import re
+import html
 
 from .. import comicanalyzer
 from .. import downloader
@@ -96,6 +97,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
                                    comic_html)
             desc = match_desc.group(1).strip()
             desc = re.sub('<.+?>', '', desc)
+            desc = html.unescape(desc)
             return desc
 
         comic_url = self.comic_id_to_url(comic_id)

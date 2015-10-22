@@ -26,6 +26,7 @@
 import re
 import json
 import base64
+import html
 
 from .. import comicanalyzer
 from .. import downloader
@@ -96,6 +97,7 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
                 re.M | re.DOTALL)
             desc = match_desc.group(1).strip()
             desc = re.sub('<.+?>', '', desc)
+            desc = html.unescape(desc)
             return desc
 
         def get_volumes(comic_html):
