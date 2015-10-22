@@ -43,6 +43,11 @@ class ComicDownloader():
         self.__cpath = comicpath.get_cpath(cdb)
         self.__threads = cdb.get_option('threads')
         self.__cbz = cdb.get_option('cbz')
+        self.am = AM.AnalyzersManager(cdb)
+
+    @property
+    def cdb(self):
+        return self.__cdb
 
     def get_comic_info_text(self, comic_info, verbose=0):
         def get_data_package(comic_info):
@@ -112,7 +117,7 @@ class ComicDownloader():
                 merge_dir(str(backup_comic_dir), str(comic_dir))
                 shutil.rmtree(str(backup_comic_dir))
 
-        azr, comic_id = AM.get_analyzer_and_comic_id(comic_entry)
+        azr, comic_id = self.am.get_analyzer_and_comic_id(comic_entry)
         if azr is None:
             print('"{}" not fits any analyzers.'.format(comic_entry))
             return None
@@ -139,7 +144,7 @@ class ComicDownloader():
                     shutil.rmtree(str(comic_dir), ignore_errors=True)
 
         def get_comic_info(comic_entry):
-            azr, comic_id = AM.get_analyzer_and_comic_id(comic_entry)
+            azr, comic_id = self.am.get_analyzer_and_comic_id(comic_entry)
             if azr is None:
                 print('"{}" not fits any analyzers.'.format(comic_entry))
                 comic_id = comic_entry
@@ -199,7 +204,7 @@ class ComicDownloader():
 
         def print_analyzers_used():
             counter = collections.Counter([
-                AM.get_analyzer_by_comic_id(comic_info['comic_id'])
+                self.am.get_analyzer_by_comic_id(comic_info['comic_id'])
                 for comic_info in all_comics])
             print('    Used Analyzers:     {}'.format(
                 ', '.join(['{} ({}): {}'.format(
@@ -220,7 +225,7 @@ class ComicDownloader():
         que = queue.Queue()
 
         def get_data_one(comic_info):
-            azr = AM.get_analyzer_by_comic_id(comic_info['comic_id'])
+            azr = self.am.get_analyzer_by_comic_id(comic_info['comic_id'])
             if azr is None:
                 print(('Skip: Analyzer not exists -> {title} ({comic_id})'
                        ).format(**comic_info))
@@ -312,7 +317,7 @@ class ComicDownloader():
                 self.__cdb.set_volume_is_downloaded(
                     cv_info['comic_id'], cv_info['volume_id'], True)
 
-            azr = AM.get_analyzer_by_comic_id(cv_info['comic_id'])
+            azr = self.am.get_analyzer_by_comic_id(cv_info['comic_id'])
             if azr is None:
                 print(('Skip: Analyzer not exists -> '
                        '{title} ({comic_id}): {name}').format(**cv_info))
@@ -330,7 +335,7 @@ class ComicDownloader():
             volume_process(cv_info, skip_exists)
 
     def as_new(self, comic_entry, verbose):
-        azr, comic_id = AM.get_analyzer_and_comic_id(comic_entry)
+        azr, comic_id = self.am.get_analyzer_and_comic_id(comic_entry)
         if azr is None:
             print('"{}" not fits any analyzers.'.format(comic_entry))
             return None
@@ -342,13 +347,6 @@ class ComicDownloader():
         self.__cdb.set_all_volumes_no_downloaded(comic_id)
         text = self.get_comic_info_text(comic_info, verbose)
         print('[AS NEW]     ' + text)
-
-    def print_analyzer_info(self, codename):
-        for azr in AM.get_all_analyzers():
-            if azr.codename() == codename:
-                print(textwrap.dedent(azr.info()).strip(' \n'))
-                print('  Current Custom Data: {}'.format(
-                    AM.get_custom_data_in_cdb(self.__cdb, azr)))
 
     def move_cpath(self, dst_cpath):
         def move_path(src, dst):

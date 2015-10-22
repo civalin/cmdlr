@@ -83,6 +83,7 @@ class ComicDB():
                 self.set_option('threads', 2)
                 self.set_option('cbz', False)
                 self.set_option('hanzi_mode', 'trad')
+                self.set_option('analyzers_custom_data', {})
                 set_db_version(1)
 
             db_version = get_db_version()
@@ -98,7 +99,7 @@ class ComicDB():
         self.conn.execute('PRAGMA foreign_keys = ON;')
         migrate()
 
-    def get_option(self, option):
+    def get_option(self, option, default=None):
         '''
             return the option value
         '''
@@ -108,7 +109,7 @@ class ComicDB():
         if data:
             return pickle.loads(data['value'])
         else:
-            return None
+            return default
 
     def set_option(self, option, value):
         '''

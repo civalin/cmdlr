@@ -31,15 +31,15 @@ import argparse
 from . import comicdownloader
 from . import comicdb
 from . import comicpath
-from . import analyzersmanager as AM
 from . import info
 
 
 DBPATH = '~/.cmdlr.db'
 
 
-def get_args(cdb):
+def get_args(cmdlr):
     def parse_args():
+        cdb = cmdlr.cdb
         cpath = comicpath.get_cpath(cdb)
 
         parser = argparse.ArgumentParser(
@@ -54,9 +54,11 @@ def get_args(cdb):
             '--version', action='version', version=info.VERSION)
 
         analyzers_desc_text = '\n'.join([
-            '    {} ({})   - {}'.format(
-                azr.name(), azr.codename(), azr.site())
-            for azr in AM.get_all_analyzers()])
+            '    {:<4} - {} {}'.format(
+                azr.codename(), azr.name(), azr.site())
+            for azr in sorted(
+                cmdlr.am.analyzers.values(), key=lambda azr: azr.codename())
+            ])
 
         azg = parser.add_argument_group(
             'Analyzers Management',
@@ -65,7 +67,8 @@ def get_args(cdb):
         azg.add_argument(
             '--azr', metavar='CODENAME', dest='analyzer_info',
             type=str, default=None,
-            choices=[azr.codename() for azr in AM.get_all_analyzers()],
+            choices=[codename
+                     for codename in sorted(cmdlr.am.analyzers.keys())],
             help='Show the analyzer\'s info message.')
 
         azg.add_argument(
@@ -163,39 +166,39 @@ def get_args(cdb):
 
 
 def main():
-    def options_setting(cdb, cmdlr, args):
-        def move_cpath(cdb, cmdlr):
-            output_dir = cdb.get_option('output_dir')
-            backup_dir = cdb.get_option('backup_dir')
-            hanzi_mode = cdb.get_option('hanzi_mode')
+    def options_setting(cmdlr, args):
+        def move_cpath(cmdlr):
+            output_dir = cmdlr.cdb.get_option('output_dir')
+            backup_dir = cmdlr.cdb.get_option('backup_dir')
+            hanzi_mode = cmdlr.cdb.get_option('hanzi_mode')
             dst_cpath = comicpath.ComicPath(
                 output_dir, backup_dir, hanzi_mode)
             cmdlr.move_cpath(dst_cpath)
 
         if args.analyzer_custom:
-            AM.set_custom_data(cdb, args.analyzer_custom)
+            cmdlr.am.set_custom_data(args.analyzer_custom)
         if args.threads is not None:
-            cdb.set_option('threads', args.threads)
-            print('Thread count: {}'.format(cdb.get_option('thread')))
+            cmdlr.cdb.set_option('threads', args.threads)
+            print('Thread count: {}'.format(cmdlr.cdb.get_option('threads')))
         if args.cbz:
-            cdb.set_option('cbz', not cdb.get_option('cbz'))
-            print('Cbz mode: {}'.format(cdb.get_option('cbz')))
+            cmdlr.cdb.set_option('cbz', not cmdlr.cdb.get_option('cbz'))
+            print('Cbz mode: {}'.format(cmdlr.cdb.get_option('cbz')))
 
         if args.output_dir or args.backup_dir or args.hanzi_mode:
             if args.output_dir:
-                cdb.set_option('output_dir', args.output_dir)
+                cmdlr.cdb.set_option('output_dir', args.output_dir)
                 print('Output directory: {}'.format(
-                    cdb.get_option('output_dir')))
+                    cmdlr.cdb.get_option('output_dir')))
             if args.backup_dir:
-                cdb.set_option('backup_dir', args.backup_dir)
+                cmdlr.cdb.set_option('backup_dir', args.backup_dir)
                 print('Backup directory: {}'.format(
-                    cdb.get_option('backup_dir')))
+                    cmdlr.cdb.get_option('backup_dir')))
             if args.hanzi_mode:
-                cdb.set_option('hanzi_mode', args.hanzi_mode)
+                cmdlr.cdb.set_option('hanzi_mode', args.hanzi_mode)
                 print('Chinese charactors mode: {}'.format(
-                    cdb.get_option('hanzi_mode')))
+                    cmdlr.cdb.get_option('hanzi_mode')))
             if args.move:
-                move_cpath(cdb, cmdlr)
+                move_cpath(cmdlr)
             sys.exit(0)
         elif args.move:
             print('Warning: The "--move" are useless without\n'
@@ -225,15 +228,15 @@ def main():
 
     def print_information(cmdlr, args):
         if args.analyzer_info:
-            cmdlr.print_analyzer_info(args.analyzer_info)
+            cmdlr.am.print_analyzer_info(args.analyzer_info)
         if args.list_info:
             cmdlr.list_info(args.verbose + 1)
 
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser(DBPATH))
-    AM.initial_analyzers(cdb)
-    args = get_args(cdb)
-
     cmdlr = comicdownloader.ComicDownloader(cdb)
-    options_setting(cdb, cmdlr, args)
+    args = get_args(cmdlr)
+
+    options_setting(cmdlr, args)
+    cmdlr = comicdownloader.ComicDownloader(cdb)  # refresh
     subscription_management(cmdlr, args)
     print_information(cmdlr, args)

@@ -23,91 +23,103 @@
 #  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ##########################################################################
 
+import textwrap
+
 from . import comicanalyzer
 from . analyzers import *
 
 
-_ANALYZERS = []
+class AnalyzersManager():
+    custom_datas_key = 'analyzers_custom_data'
 
+    def __init__(self, cdb):
+        def initial_analyzers(custom_datas):
+            '''
+                args:
+                    custom_datas:
+                        {'<str codename>': <dict custom_data>}
+            '''
+            analyzers = {}
+            for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
+                custom_data = custom_datas.get(cls.codename())
+                try:
+                    azr = cls(custom_data)
+                    analyzers[azr.codename()] = azr
+                except comicanalyzer.ComicAnalyzerDisableException:
+                    continue
+                except:
+                    print(('** Error: Analyzer "{} ({})" cannot be'
+                           ' initialized.\n'
+                           '    -> Current custom data: {}').format(
+                        cls.name(), cls.codename(), custom_data))
+            return analyzers
 
-def _get_custom_data_key(azr):
-    return 'analyzer_custom_data_' + azr.codename()
+        self.__cdb = cdb
+        custom_datas = cdb.get_option(type(self).custom_datas_key, {})
+        self.analyzers = initial_analyzers(custom_datas)
 
-
-def set_custom_data(cdb, custom_data):
-    try:
-        (codename, data) = custom_data.split('/', 1)
-        if data == '':
-            data = {}
-        else:
-            pairs = [pair.split('=', 1) for pair in data.split(',')]
-            data = {key: value for key, value in pairs}
-    except ValueError:
-        print('"{}" cannot be parsed. Cancel.'.format(
-            custom_data))
-        return
-    for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
-        if cls.codename() == codename:
+    def set_custom_data(self, custom_data_str):
+        def parsed(custom_data_str):
             try:
-                cls(data)
-                key = _get_custom_data_key(cls)
-                print('{} <= {}'.format(cls.name(), data))
-                cdb.set_option(key, data)
+                (codename, data_str) = custom_data_str.split('/', 1)
+                if data_str == '':
+                    custom_data = {}
+                else:
+                    pairs = [item.split('=', 1)
+                             for item in data_str.split(',')]
+                    custom_data = {key: value for key, value in pairs}
+            except ValueError:
+                print('"{}" cannot be parsed. Cancel.'.format(
+                    custom_data_str))
+                return (None, None)
+            return (codename, custom_data)
+
+        codename, custom_data = parsed(custom_data_str)
+        if codename is None:
+            print('Analyzer codename: "{}" not found. Cancel.'.format(
+                codename))
+        else:
+            azr = self.analyzers.get(codename)
+            try:
+                type(azr)(custom_data)
+                key = type(self).custom_datas_key
+                custom_datas = self.__cdb.get_option(key)
+                custom_datas[codename] = custom_data
+                self.__cdb.set_option(key, custom_datas)
+                print('{} <= {}'.format(azr.name(), custom_data))
                 print('Updated done!')
             except:
                 print('Custom data test failed. Cancel.')
-            return
-    print('Analyzer codename: "{}" not found. Cancel.'.format(codename))
 
+    def get_analyzer_by_comic_id(self, comic_id):
+        codename = comic_id.split('/')[0]
+        return self.analyzers.get(codename)
 
-def get_custom_data_in_cdb(cdb, cls):
-    key = _get_custom_data_key(cls)
-    data = cdb.get_option(key)
-    if not (data and type(data) == dict):
-        data = {}
-    return data
+    def get_analyzer_and_comic_id(self, comic_entry):
+        def get_analyzer_by_url(url):
+            for azr in self.analyzers.values():
+                comic_id = azr.url_to_comic_id(url)
+                if comic_id:
+                    return azr
+            return None
 
-
-def initial_analyzers(cdb):
-    for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
-        data = get_custom_data_in_cdb(cdb, cls)
-        try:
-            azr = cls(data)
-            _ANALYZERS.append(azr)
-        except comicanalyzer.ComicAnalyzerDisableException:
-            continue
-        except:
-            print(('** Error: Analyzer "{} ({})" cannot be initialized.\n'
-                   '    -> Current custom data: {}').format(
-                cls.name(), cls.codename(), data))
-
-
-def get_analyzer_by_comic_id(comic_id):
-    for azr in _ANALYZERS:
-        if comic_id.split('/')[0] == azr.codename():
-            return azr
-    return None
-
-
-def get_analyzer_and_comic_id(comic_entry):
-    def get_analyzer_by_url(url):
-        for analyzer in _ANALYZERS:
-            comic_id = analyzer.url_to_comic_id(url)
-            if comic_id:
-                return analyzer
-        return None
-
-    azr = get_analyzer_by_url(comic_entry)
-    if azr is None:
-        azr = get_analyzer_by_comic_id(comic_entry)
+        azr = get_analyzer_by_url(comic_entry)
         if azr is None:
-            return (None, None)
+            azr = self.get_analyzer_by_comic_id(comic_entry)
+            if azr is None:
+                return (None, None)
+            else:
+                comic_id = comic_entry
         else:
-            comic_id = comic_entry
-    else:
-        comic_id = azr.url_to_comic_id(comic_entry)
-    return (azr, comic_id)
+            comic_id = azr.url_to_comic_id(comic_entry)
+        return (azr, comic_id)
 
-
-def get_all_analyzers():
-    return _ANALYZERS
+    def print_analyzer_info(self, codename):
+        azr = self.analyzers.get(codename)
+        if azr:
+            azr_info = textwrap.dedent(azr.info()).strip(' \n')
+            print(azr_info)
+            custom_datas = self.__cdb.get_option(
+                type(self).custom_datas_key, {})
+            custom_data = custom_datas.get(codename, {})
+            print('  Current Custom Data: {}'.format(custom_data))
