@@ -31,7 +31,7 @@ import argparse
 from . import comicdownloader
 from . import comicdb
 from . import comicpath
-from . import azrmanager as azrm
+from . import analyzersmanager as AM
 from . import info
 
 
@@ -56,7 +56,7 @@ def get_args(cdb):
         analyzers_desc_text = '\n'.join([
             '    {} ({})   - {}'.format(
                 azr.name(), azr.codename(), azr.site())
-            for azr in azrm.get_all_analyzers()])
+            for azr in AM.get_all_analyzers()])
 
         azg = parser.add_argument_group(
             'Analyzers Management',
@@ -65,7 +65,7 @@ def get_args(cdb):
         azg.add_argument(
             '--azr', metavar='CODENAME', dest='analyzer_info',
             type=str, default=None,
-            choices=[azr.codename() for azr in azrm.get_all_analyzers()],
+            choices=[azr.codename() for azr in AM.get_all_analyzers()],
             help='Show the analyzer\'s info message.')
 
         azg.add_argument(
@@ -173,7 +173,7 @@ def main():
             cmdlr.move_cpath(dst_cpath)
 
         if args.analyzer_custom:
-            azrm.set_custom_data(cdb, args.analyzer_custom)
+            AM.set_custom_data(cdb, args.analyzer_custom)
         if args.threads is not None:
             cdb.set_option('threads', args.threads)
             print('Thread count: {}'.format(cdb.get_option('thread')))
@@ -230,7 +230,7 @@ def main():
             cmdlr.list_info(args.verbose + 1)
 
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser(DBPATH))
-    azrm.initial_analyzers(cdb)
+    AM.initial_analyzers(cdb)
     args = get_args(cdb)
 
     cmdlr = comicdownloader.ComicDownloader(cdb)

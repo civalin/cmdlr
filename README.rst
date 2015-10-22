@@ -7,7 +7,7 @@ from online comic sites.
 Install
 =============
 
-Make sure your python >= 3.4, then...
+Make sure your python >= 3.4 and already install the pip, then...
 
 .. code:: bash
 
@@ -33,7 +33,7 @@ Subscribe a comic
 
     cmdlr -s <COMIC>
 
-The ``<COMIC>`` can be a comic_id or comic's url (the url usually is comic index page, but defined by analyzer independent).
+The ``<COMIC>`` can be a *comic_id* or *comic's url* (the url usually is comic index page, but defined by analyzer independent).
 
 Check current subscribed status
 -------------------------------
@@ -42,13 +42,13 @@ Check current subscribed status
 
     cmdlr -l
 
-It will listing all information in database. If you want more detail, please combine `-v` option multiple time like...
+It will listing all subscribed comics in your database. If want more detail, please combine `-v` option multiple time like...
 
 .. code:: bash
 
     cmdlr -lv
 
-or
+or more...
 
 .. code:: bash
 
@@ -70,13 +70,13 @@ Check comic sites update
 
     cmdlr -r
 
-    # or
+               # or
     cmdlr -rd  # check updated then download
 
 Subscription Database
 ==========================
 
-You can backup database manually if you want.
+You can backup database manually if you want. The database location is...
 
 .. code:: bash
 
@@ -93,7 +93,7 @@ Very easy:
 4. Run ``./cmdlr.py`` to testing the plugin.
 5. When you done, don't forget make a pull request to me. Thanks!
 
-I recommend you using the ``cmdlr.downloader.save()`` & ``cmdlr.downloader.get()`` function to download data, but it is not necessary. you can choice any tools freely. Also, you can using any prefer tools to parsing data. like ``lxml``.
+I recommend you using the build-in *Downloader* to download data, but it is not necessary. you can choice any tools freely. Also, you can using any prefer tools to parsing data. like ``lxml``.
 
 Happy hacking! :D
 
