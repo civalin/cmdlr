@@ -174,4 +174,4 @@ class AnalyzersManager():
         all_text = '\n'.join(texts)
         print(all_text)
         print('\n'
-              'Use "--azr CODENAME" to find current custom data and more info.')
+              'Use "-i CODENAME" to find current custom data and more info.')

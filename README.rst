@@ -4,6 +4,8 @@ cmdlr
 ``cmdlr`` is a extensible command line tool for download comic books
 from online comic sites.
 
+
+
 Install
 =============
 
@@ -13,6 +15,8 @@ Make sure your python >= 3.4 and already install the pip, then...
 
     pip3 install cmdlr
 
+
+
 How to use
 ==========
 
@@ -21,10 +25,17 @@ Set Your Local Comics Directory
 
 .. code:: bash
 
-    cmdlr --output-dir <DIR>
+    cmdlr opt --output-dir <DIR>
 
 
 Default comics directory is ``~/comics``.
+
+Check which site be supported 
+-----------------------------
+
+.. code:: bash
+
+    cmdlr azr --list
 
 Subscribe a comic
 -----------------
@@ -42,7 +53,7 @@ Check current subscribed status
 
     cmdlr -l
 
-It will listing all subscribed comics in your database. If want more detail, please combine `-v` option multiple time like...
+It will listing all subscribed comics in your database. If want more detail, please combine `-v` option like...
 
 .. code:: bash
 
@@ -61,7 +72,7 @@ Download all your comics
 
     cmdlr -d
 
-All "no downloaded volumes" will be downloaded into your's comics directory.
+All "no downloaded volumes" will be downloaded into your output directory.
 
 Check comic sites update
 ---------------------------
@@ -73,6 +84,8 @@ Check comic sites update
                # or
     cmdlr -rd  # check updated then download
 
+
+
 Subscription Database
 ==========================
 
@@ -82,6 +95,8 @@ You can backup database manually if you want. The database location is...
 
     ~/.cmdlr.db
 
+
+
 How to create a new analyzer plugin?
 ======================================
 
@@ -89,13 +104,15 @@ Very easy:
 
 1. Clone ``cmdlr`` project from http://bitbucket.org/civalin/cmdlr.
 2. Check ``src/cmdlr/comicanalyzer.py`` to learn what function you need to implement. And reference other analyzer plugin to create yours.
-3. Put your ``.py`` file into ``src/cmdlr/analyzers`` directory.
-4. Run ``./cmdlr.py`` to testing the plugin.
+3. Put your ``.py`` plugin file into ``src/cmdlr/analyzers`` directory.
+4. Run ``./cmdlr.py`` under project directory to test the plugin.
 5. When you done, don't forget make a pull request to me. Thanks!
 
-I recommend you using the build-in *Downloader* to download data, but it is not necessary. you can choice any tools freely. Also, you can using any prefer tools to parsing data. like ``lxml``.
+I recommend you using the build-in *Downloader* to download data, but it is not necessary. you can choice any tools freely. Also, you can using any prefer tools to parsing html data. like ``lxml``.
 
 Happy hacking! :D
+
+
 
 LICENSE
 =========
@@ -103,6 +120,8 @@ LICENSE
 MIT License
 
 Copyright (c) 2014~2015 CIVA LIN
+
+
 
 Changelog
 =========
