@@ -227,8 +227,8 @@ class ComicDownloader():
         def get_data_one(comic_info):
             azr = self.am.get_analyzer_by_comic_id(comic_info['comic_id'])
             if azr is None:
-                print(('Skip: Analyzer not exists -> {title} ({comic_id})'
-                       ).format(**comic_info))
+                print(('Skip: Analyzer not exists / disabled ->'
+                       ' {title} ({comic_id})').format(**comic_info))
                 que.put(None)
                 return
             try:
@@ -319,7 +319,7 @@ class ComicDownloader():
 
             azr = self.am.get_analyzer_by_comic_id(cv_info['comic_id'])
             if azr is None:
-                print(('Skip: Analyzer not exists -> '
+                print(('Skip: Analyzer not exists / disabled -> '
                        '{title} ({comic_id}): {name}').format(**cv_info))
                 return
 

@@ -24,6 +24,7 @@
 ##########################################################################
 
 import textwrap
+import itertools
 
 from . import comicanalyzer
 from . analyzers import *
@@ -33,30 +34,42 @@ class AnalyzersManager():
     custom_datas_key = 'analyzers_custom_data'
 
     def __init__(self, cdb):
-        def initial_analyzers(custom_datas):
+        def initial_analyzers(custom_datas, black_list):
             '''
                 args:
                     custom_datas:
                         {'<str codename>': <dict custom_data>}
             '''
-            analyzers = {}
-            for cls in comicanalyzer.ComicAnalyzer.__subclasses__():
-                custom_data = custom_datas.get(cls.codename())
+            analyzers, disabled_analyzers = {}, {}
+            for a_cls in comicanalyzer.ComicAnalyzer.__subclasses__():
+                custom_data = custom_datas.get(a_cls.codename())
                 try:
-                    azr = cls(custom_data)
-                    analyzers[azr.codename()] = azr
+                    azr = a_cls(custom_data)
+                    if a_cls.codename() in black_list:
+                        disabled_analyzers[azr.codename()] = azr
+                    else:
+                        analyzers[azr.codename()] = azr
                 except comicanalyzer.ComicAnalyzerDisableException:
                     continue
                 except:
                     print(('** Error: Analyzer "{} ({})" cannot be'
                            ' initialized.\n'
                            '    -> Current custom data: {}').format(
-                        cls.name(), cls.codename(), custom_data))
-            return analyzers
+                        a_cls.name(), a_cls.codename(), custom_data))
+            return analyzers, disabled_analyzers
 
         self.__cdb = cdb
         custom_datas = cdb.get_option(type(self).custom_datas_key, {})
-        self.analyzers = initial_analyzers(custom_datas)
+        black_list = cdb.get_option('analyzers_black_list', set())
+        self.analyzers, self.disabled_analyzers = initial_analyzers(
+            custom_datas, black_list)
+
+    @property
+    def all_analyzers(self):
+        return {key: value
+                for key, value in itertools.chain(
+                    self.analyzers.items(),
+                    self.disabled_analyzers.items())}
 
     def set_custom_data(self, custom_data_str):
         def parsed(custom_data_str):
@@ -114,8 +127,23 @@ class AnalyzersManager():
             comic_id = azr.url_to_comic_id(comic_entry)
         return (azr, comic_id)
 
+    def on(self, codename):
+        black_list = self.__cdb.get_option('analyzers_black_list', set())
+        try:
+            black_list.remove(codename)
+        except:
+            pass
+        self.__cdb.set_option('analyzers_black_list', black_list)
+        self.__init__(self.__cdb)
+
+    def off(self, codename):
+        black_list = self.__cdb.get_option('analyzers_black_list', set())
+        black_list.add(codename)
+        self.__cdb.set_option('analyzers_black_list', black_list)
+        self.__init__(self.__cdb)
+
     def print_analyzer_info(self, codename):
-        azr = self.analyzers.get(codename)
+        azr = self.all_analyzers.get(codename)
         if azr:
             azr_info = textwrap.dedent(azr.info()).strip(' \n')
             print(azr_info)
@@ -123,3 +151,27 @@ class AnalyzersManager():
                 type(self).custom_datas_key, {})
             custom_data = custom_datas.get(codename, {})
             print('  Current Custom Data: {}'.format(custom_data))
+
+    def print_analyzers_list(self):
+        texts = []
+        all_analyzers = sorted(itertools.chain(
+                self.analyzers.values(),
+                self.disabled_analyzers.values()),
+            key=lambda azr: azr.codename())
+        texts.append('## Analyzers table ## ---------------------------\n')
+
+        for azr in all_analyzers:
+            if azr.codename() in self.disabled_analyzers:
+                disabled = 'x'
+            else:
+                disabled = ''
+            text = '  {disabled:<1} {codename:<4} - {name} {site}'.format(
+                codename=azr.codename(),
+                name=azr.name(),
+                site=azr.site(),
+                disabled=disabled)
+            texts.append(text)
+        all_text = '\n'.join(texts)
+        print(all_text)
+        print('\n'
+              'Use "--azr CODENAME" to find current custom data and more info.')

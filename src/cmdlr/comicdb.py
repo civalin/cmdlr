@@ -84,6 +84,7 @@ class ComicDB():
                 self.set_option('cbz', False)
                 self.set_option('hanzi_mode', 'trad')
                 self.set_option('analyzers_custom_data', {})
+                self.set_option('analyzers_black_list', set())
                 set_db_version(1)
 
             db_version = get_db_version()

@@ -53,22 +53,13 @@ def get_args(cmdlr):
         parser.add_argument(
             '--version', action='version', version=info.VERSION)
 
-        analyzers_desc_text = '\n'.join([
-            '    {:<4} - {} {}'.format(
-                azr.codename(), azr.name(), azr.site())
-            for azr in sorted(
-                cmdlr.am.analyzers.values(), key=lambda azr: azr.codename())
-            ])
-
-        azg = parser.add_argument_group(
-            'Analyzers Management',
-            '\n## Current enabled analyzers ##\n' + analyzers_desc_text)
+        azg = parser.add_argument_group('Analyzers Management')
 
         azg.add_argument(
             '--azr', metavar='CODENAME', dest='analyzer_info',
             type=str, default=None,
             choices=[codename
-                     for codename in sorted(cmdlr.am.analyzers.keys())],
+                     for codename in sorted(cmdlr.am.all_analyzers.keys())],
             help='Show the analyzer\'s info message.')
 
         azg.add_argument(
@@ -77,6 +68,25 @@ def get_args(cmdlr):
             help='Set analyzer\'s custom data.\n'
                  'Format: "codename/key1=value1,key2=value2"\n'
                  'Check analyzer\'s info message for more detail.')
+
+        azg.add_argument(
+            '--azr-list', dest='list_analyzers', action='store_true',
+            help='List all analyzers and it is on/off.')
+
+        azg.add_argument(
+            '--azr-on', metavar='CODENAME', dest='analyzer_on',
+            type=str, default=None,
+            choices=[codename for codename
+                     in sorted(cmdlr.am.disabled_analyzers.keys())],
+            help='Turn on a analyzer.\n'
+                 'By default all analyzers are enabled.')
+
+        azg.add_argument(
+            '--azr-off', metavar='CODENAME', dest='analyzer_off',
+            type=str, default=None,
+            choices=[codename for codename
+                     in sorted(cmdlr.am.analyzers.keys())],
+            help='Turn off a analyzer.\n')
 
         smg = parser.add_argument_group('Subscription Management')
 
@@ -177,6 +187,12 @@ def main():
 
         if args.analyzer_custom:
             cmdlr.am.set_custom_data(args.analyzer_custom)
+        if args.analyzer_on or args.analyzer_off:
+            if args.analyzer_on:
+                cmdlr.am.on(args.analyzer_on)
+            if args.analyzer_off:
+                cmdlr.am.off(args.analyzer_off)
+            cmdlr.am.print_analyzers_list()
         if args.threads is not None:
             cmdlr.cdb.set_option('threads', args.threads)
             print('Thread count: {}'.format(cmdlr.cdb.get_option('threads')))
@@ -227,6 +243,8 @@ def main():
                   ' "--download".')
 
     def print_information(cmdlr, args):
+        if args.list_analyzers:
+            cmdlr.am.print_analyzers_list()
         if args.analyzer_info:
             cmdlr.am.print_analyzer_info(args.analyzer_info)
         if args.list_info:
