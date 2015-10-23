@@ -78,7 +78,7 @@ class Downloader():
                                           timeout=options.get('timeout', 60))
                 break
             except UE.HTTPError as err:  # Like 404 no find
-                if err.code in (408, 503, 504, 507, 509):
+                if err.code in (408, 502, 503, 504, 507, 509):
                     print('Retry {url} ->\n  {err}'.format(
                         url=url,
                         err=err))
