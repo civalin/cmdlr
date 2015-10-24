@@ -27,6 +27,7 @@
 import os
 import sys
 import argparse
+import textwrap
 
 from . import comicdownloader
 from . import comicdb
@@ -42,7 +43,7 @@ def get_args(cmdlr):
         def parser_setting():
             parser = argparse.ArgumentParser(
                 formatter_class=argparse.RawTextHelpFormatter,
-                description='Subscribe and download your comic books!')
+                description=textwrap.fill(info.DESCRIPTION, 70))
 
             parser.add_argument(
                 "-v", action="count", dest='verbose', default=0,
@@ -57,7 +58,7 @@ def get_args(cmdlr):
             azrparser = subparsers.add_parser(
                 'azr',
                 formatter_class=argparse.RawTextHelpFormatter,
-                help='Listing and custom any analyzers',
+                help='List and custom any analyzer plugins',
                 description='Usually you don\'t need to access the following '
                             'function.\n'
                             'But if some analyzers bother you, you '
@@ -103,7 +104,7 @@ def get_args(cmdlr):
             optparser = subparsers.add_parser(
                 'opt',
                 formatter_class=argparse.RawTextHelpFormatter,
-                help='Tweaks option like output directory and other things',
+                help='List and modify any options.',
                 description=None)
 
             optparser.add_argument(
@@ -194,8 +195,8 @@ def get_args(cmdlr):
         parser = parser_setting()
         subparsers = parser.add_subparsers(
             title='## Sub Commands ##',
-            help='Try "-h" to get help message and exit.\n'
-                 '(E.g., "%(prog)s azr -h")')
+            help='Use "-h" to get help messages of sub commands.\n'
+                 '(e.g., "%(prog)s opt -h")')
         azr_parser_setting(subparsers)
         opt_parser_setting(subparsers)
         subscription_group_setting(parser)
@@ -235,30 +236,40 @@ def main():
             cmdlr.move_cpath(dst_cpath)
 
         def print_threads():
-            print('Thread count:      {}'.format(
+            print('    Threads count:     {}'.format(
                 cmdlr.cdb.get_option('threads')))
 
         def print_cbz_mode():
-            print('Cbz mode:          {}'.format(cmdlr.cdb.get_option('cbz')))
+            print('    Convert to cbz:    {}'.format(
+                cmdlr.cdb.get_option('cbz')))
 
         def print_output_dir():
-            print('Output directory:  {}'.format(
+            print('    Output directory:  {}'.format(
                 cmdlr.cdb.get_option('output_dir')))
 
         def print_backup_dir():
-            print('Backup directory:  {}'.format(
+            print('    Backup directory:  {}'.format(
                 cmdlr.cdb.get_option('backup_dir')))
 
         def print_hanzi_mode():
-            print('Hanzi mode:        {}'.format(
-                cmdlr.cdb.get_option('hanzi_mode')))
+            hanzi_mode = cmdlr.cdb.get_option('hanzi_mode')
+            if hanzi_mode == 'trad':
+                hanzi_text = 'Traditional Chinese'
+            elif hanzi_mode == 'simp':
+                hanzi_text = 'Simplified Chinese'
+            else:
+                hanzi_text = 'Unknown'
+            print('    Hanzi mode:        {} - {}'.format(
+                hanzi_mode, hanzi_text))
 
         def print_all_options():
+            print('## Options table ## -----------------------------\n')
             print_output_dir()
             print_backup_dir()
             print_hanzi_mode()
             print_threads()
             print_cbz_mode()
+            print('\nUse "-h" to find how to modify.')
 
         if 'output_dir' not in args:
             return
