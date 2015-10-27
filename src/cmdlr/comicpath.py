@@ -53,8 +53,9 @@ class ComicPath():
             comic_info['title'])
 
     def get_volume_dir(self, comic_info, volume_info):
+        volume_dir = '{}_{}'.format(volume_info['title'], volume_info['name'])
         return self.get_comic_dir(
-            comic_info) / self.sp.component_modified(volume_info['name'])
+            comic_info) / self.sp.component_modified(volume_dir)
 
     def get_volume_cbz(self, comic_info, volume_info):
         return self.get_volume_dir(comic_info, volume_info).with_suffix(
