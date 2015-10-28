@@ -168,8 +168,9 @@ def get_args(cmdlr):
                      'Must using with "-u" option')
 
             subscription_group.add_argument(
-                '-l', '--list-info', dest='list_info', action='store_true',
-                help='List all subscribed books info.')
+                '-l', '--list', metavar='COMIC',
+                dest='list_info', type=str, nargs='*',
+                help='List all (or some) subscribed books info.')
 
             subscription_group.add_argument(
                 '-r', '--refresh', dest='refresh', action='store_true',
@@ -320,8 +321,12 @@ def main():
         elif args.skip_exists:
             print('Warning: The "--skip-exists" are useless without'
                   ' "--download".')
-        if args.list_info:
-            cmdlr.list_info(args.verbose + 1)
+        if args.list_info is not None:
+            if len(args.list_info) == 0:
+                cmdlr.list_info(args.verbose + 1)
+            else:
+                for comic_entry in args.list_info:
+                    cmdlr.print_comic_info(comic_entry, args.verbose + 2)
 
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser(DBPATH))
     cmdlr = comicdownloader.ComicDownloader(cdb)

@@ -96,6 +96,22 @@ class ComicDownloader():
         data = get_data_package(comic_info)
         return get_text_string(data, verbose)
 
+    def get_comic_info(self, comic_entry):
+        azr, comic_id = self.am.get_analyzer_and_comic_id(comic_entry)
+        if azr is None:
+            print('"{}" not fits any analyzers.'.format(comic_entry))
+            comic_id = comic_entry
+        comic_info = self.__cdb.get_comic(comic_id)
+        return comic_info
+
+    def print_comic_info(self, comic_entry, verbose):
+        comic_info = self.get_comic_info(comic_entry)
+        if comic_info is None:
+            print('"{}" are not exists.'.format(comic_entry))
+            return None
+        text = self.get_comic_info_text(comic_info, verbose)
+        print(text)
+
     def subscribe(self, comic_entry, verbose):
         def try_revive_from_backup(comic_info):
             def merge_dir(root_src_dir, root_dst_dir):
@@ -143,14 +159,6 @@ class ComicDownloader():
                 else:
                     shutil.rmtree(str(comic_dir), ignore_errors=True)
 
-        def get_comic_info(comic_entry):
-            azr, comic_id = self.am.get_analyzer_and_comic_id(comic_entry)
-            if azr is None:
-                print('"{}" not fits any analyzers.'.format(comic_entry))
-                comic_id = comic_entry
-            comic_info = self.__cdb.get_comic(comic_id)
-            return comic_info
-
         def get_info_text(comic_info, request_backup, verbose):
             text = self.get_comic_info_text(comic_info, verbose)
             if request_backup:
@@ -159,7 +167,7 @@ class ComicDownloader():
                 text = '[UNSUB & DEL] ' + text
             return text
 
-        comic_info = get_comic_info(comic_entry)
+        comic_info = self.get_comic_info(comic_entry)
         if comic_info is None:
             print('"{}" are not exists.'.format(comic_entry))
             return None
