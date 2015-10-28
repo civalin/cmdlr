@@ -32,31 +32,31 @@ from .. import comicanalyzer
 from .. import downloader
 
 
-class U17ComicException(comicanalyzer.ComicAnalyzerException):
+class CarToonAdException(comicanalyzer.ComicAnalyzerException):
     pass
 
 
-class U17Analyzer(comicanalyzer.ComicAnalyzer):
+class CarToonAdAnalyzer(comicanalyzer.ComicAnalyzer):
 
     @classmethod
     def codename(cls):
-        return 'u17'
+        return 'ctm'
 
     @classmethod
     def name(cls):
-        return '有妖氣'
+        return '動漫狂'
 
     @classmethod
     def site(cls):
-        return 'www.u17.com'
+        return 'www.cartoonmad.com'
 
     def info(self):
         return """
-            ## U17 有妖氣 Analyzer ## ---------------------------------
+            ## 動漫狂 Analyzer ## ---------------------------------
             #
-            #   This analyzer are focus on u17.com.
+            #   This analyzer are focus on cartoonmad.com.
             #   Typical comic url:
-            #       http://www.u17.com/comic/<number>.html
+            #       http://www.cartoonmad.com/comic/<number>.html
             #
             #   Custom data: Not required
             #
@@ -67,7 +67,7 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
         """
 
     def url_to_comic_id(self, comic_entry_url):
-        match = re.search('u17.com/comic/(\d+).html',
+        match = re.search('cartoonmad.com/comic/(\d{1,8}).html',
                           comic_entry_url)
         if match is None:
             return None
@@ -78,21 +78,21 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
     def comic_id_to_url(self, comic_id):
         local_comic_id = self.convert_to_local_comic_id(comic_id)
         if local_comic_id:
-            return 'http://www.u17.com/comic/{}.html'.format(
+            return 'http://www.cartoonmad.com/comic/{}.html'.format(
                 local_comic_id)
         else:
             return None
 
     def get_comic_info(self, comic_id):
         def get_title(comic_html):
-            match_title = re.search(r'(.*?)</h1>',
+            match_title = re.search(r'<a href=/comic/\d+.html>(.*?)</a>',
                                     comic_html)
             title = match_title.group(1).strip()
             return title
 
         def get_desc(comic_html):
             match_desc = re.search(
-                r'<p class="words" id="words">(.*?)</p>',
+                r'<META name="description" content="(.*?)">',
                 comic_html,
                 re.M | re.DOTALL)
             desc = match_desc.group(1).strip()
@@ -102,21 +102,21 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
 
         def get_volumes(comic_html):
             match_volumes = re.findall(
-                'id="cpt_(\d+)"\s*href="[^"]+?"'
-                '\s*title="([^"]+?)"\s*target="_blank"\s*>',
+                '<a href=/comic/(\d{9,}).html target=_blank>'
+                '(.*?)</a>',
                 comic_html,
                 re.M | re.DOTALL)
             volumes = [
                 {
-                    'volume_id': v[0].strip(),
-                    'name': '{:>04}_{}'.format(
-                        index + 1, v[1].split()[0].strip())}
+                    'volume_id': v[0],
+                    'name': '{}'.format(
+                        ' '.join(v[1].split()))}
                 for index, v in enumerate(match_volumes)]
             return volumes
 
         comic_url = self.comic_id_to_url(comic_id)
         comic_html = downloader.get(
-            comic_url).decode('utf8', errors='ignore')
+            comic_url).decode('big5', errors='ignore')
         answer = {
             'comic_id': comic_id,
             'title': get_title(comic_html),
@@ -128,26 +128,35 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
 
     def get_volume_pages(self, comic_id, volume_id, extra_data):
         def get_volume_url(volume_id):
-            return 'http://www.u17.com/chapter/{}.html?t=old'.format(
+            return 'http://web.cartoonad.com/comic/{}.html'.format(
                 volume_id)
 
         def get_pages(volume_html):
-            match_ori_pages_json = re.search(
-                "image_list: \$.evalJSON\('(.*?)'\)",
-                volume_html)
-            ori_pages_json = match_ori_pages_json.group(1)
-            ori_pages = json.loads(ori_pages_json)
-            pages_phase1 = [
-                (int(page), base64.b64decode(data['src']).decode('utf8'))
-                for page, data in ori_pages.items()]
+            def get_img_url_generator(volume_html):
+                match_img_url = re.search(
+                    '<img src="(http://web.+?)"',
+                    volume_html)
+                img_url = match_img_url.group(1)
+                components = img_url.split('/')
+                def get_img_url(page_number):
+                    components[6] = '{:0>3}.jpg'.format(page_number)
+                    return '/'.join(components)
+                return get_img_url
+
+            def get_page_count(volume_html):
+                match_options = re.findall(r'<option value=', volume_html)
+                return len(match_options)
+
+            get_img_url = get_img_url_generator(volume_html)
+            page_count = get_page_count(volume_html)
+            pages_phase1 = [get_img_url(page_number)
+                            for page_number in range(1, page_count + 1)]
             pages = [
                 {
                     'url': url,
-                    'local_filename': '{:03}.{}'.format(
-                        page,
-                        url.rsplit('.', 1)[1])
+                    'local_filename': '{}'.format(url.rsplit('/', 1)[1])
                 }
-                for page, url in sorted(pages_phase1)]
+                for url in pages_phase1]
             return pages
 
         volume_html = downloader.get(
