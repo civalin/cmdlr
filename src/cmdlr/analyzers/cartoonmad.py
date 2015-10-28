@@ -32,11 +32,11 @@ from .. import comicanalyzer
 from .. import downloader
 
 
-class CarToonAdException(comicanalyzer.ComicAnalyzerException):
+class CartoonmadException(comicanalyzer.ComicAnalyzerException):
     pass
 
 
-class CarToonAdAnalyzer(comicanalyzer.ComicAnalyzer):
+class CartoonmadAnalyzer(comicanalyzer.ComicAnalyzer):
 
     @classmethod
     def codename(cls):
@@ -92,7 +92,7 @@ class CarToonAdAnalyzer(comicanalyzer.ComicAnalyzer):
 
         def get_desc(comic_html):
             match_desc = re.search(
-                r'<META name="description" content="(.*?)">',
+                r'<td style="font-size:11pt;">(.*?)</td>',
                 comic_html,
                 re.M | re.DOTALL)
             desc = match_desc.group(1).strip()
