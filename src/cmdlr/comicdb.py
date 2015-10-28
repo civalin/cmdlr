@@ -66,7 +66,8 @@ class ComicDB():
                     'volume_id TEXT NOT NULL,'      # vol NO. e.g., 15
                     'name TEXT NOT NULL,'           # vol name. e.g., 第15回
                     'created_time DATETIME NOT NULL,'
-                    'is_downloaded BOOLEAN NOT NULL DEFAULT 0'
+                    'is_downloaded BOOLEAN NOT NULL DEFAULT 0,'
+                    'gone BOOLEAN NOT NULL DEFAULT 0'  # disappear in site
                     ');'
                 )
                 self.conn.execute(
@@ -159,19 +160,17 @@ class ComicDB():
                     ' :created_time'
                     ' )', data)
             else:
-                self.conn.execute(  # maybe need to update volume name?
+                self.conn.execute(
                     'UPDATE volumes SET'
-                    ' name = :name,'
-                    ' is_downloaded = 0'
+                    ' gone = 0'
                     ' WHERE comic_id = :comic_id AND'
-                    '       volume_id = :volume_id AND'
-                    '       name != :name', data)
+                    '       volume_id = :volume_id'
+                    , data)
 
         def upsert_comic(comic_info):
             cursor = self.conn.execute(
                 'UPDATE comics SET'
                 ' desc = :desc,'
-                # ' title = :title,'  # title never be changed
                 ' extra_data = :extra_data'
                 ' WHERE comic_id = :comic_id', comic_info)
             if cursor.rowcount == 0:
@@ -185,11 +184,12 @@ class ComicDB():
                     ' :extra_data'
                     ' )', comic_info)
 
-        def remove_unexists_volume(comic_info):
+        def mark_disappear_volume(comic_info):
             volume_ids_text = ', '.join(
                 ['"' + v['volume_id'] + '"'
                     for v in comic_info['volumes']])
-            query = ('DELETE FROM volumes'
+            query = ('UPDATE volumes SET'
+                     ' gone = 1'
                      ' WHERE comic_id = :comic_id AND'
                      '       volume_id not in ({})').format(volume_ids_text)
             self.conn.execute(query, comic_info)
@@ -197,7 +197,7 @@ class ComicDB():
         upsert_comic(comic_info)
         for volume in comic_info['volumes']:
             upsert_volume(comic_info['comic_id'], volume)
-        remove_unexists_volume(comic_info)
+        mark_disappear_volume(comic_info)
 
         self.conn.commit()
 
@@ -233,7 +233,8 @@ class ComicDB():
         return self.conn.execute(
             'SELECT * FROM comics INNER JOIN volumes'
             ' ON comics.comic_id = volumes.comic_id'
-            ' WHERE volumes.is_downloaded = 0'
+            ' WHERE volumes.is_downloaded = 0 AND'
+            '       volumes.gone = 0'
             ' ORDER BY comics.title ASC,'
             '          comics.comic_id ASC,'
             '          volumes.name ASC').fetchall()
@@ -266,26 +267,24 @@ class ComicDB():
         '''
             For UI display.
         '''
-        volumes = self.conn.execute(
+        volume_infos = self.conn.execute(
             'SELECT * FROM volumes'
             ' WHERE comic_id = :comic_id',
             {'comic_id': comic_id}).fetchall()
-        data = {
-            'total': len(volumes),
-            'downloaded_count': 0,
-            'no_downloaded_count': 0,
-            'no_downloaded_names': [],
-            }
-        if len(volumes):
-            data['last_incoming_time'] = max(
-                v['created_time'] for v in volumes)
+        if len(volume_infos):
+            last_incoming_time = max(v['created_time'] for v in volume_infos)
         else:
-            data['last_incoming_time'] = None
-        for volume in volumes:
-            if(volume['is_downloaded']):
+            last_incoming_time = None
+        data = {
+            'last_incoming_time': last_incoming_time,
+            'volume_infos': volume_infos,
+            'downloaded_count': 0,
+            'gone_count': 0,
+            }
+        for volume_info in volume_infos:
+            if volume_info['is_downloaded']:
                 data['downloaded_count'] = data['downloaded_count'] + 1
-            else:
-                data['no_downloaded_count'] = data['no_downloaded_count'] + 1
-                data['no_downloaded_names'].append(volume['name'])
+            if volume_info['gone']:
+                data['gone_count'] = data['gone_count'] + 1
 
         return data

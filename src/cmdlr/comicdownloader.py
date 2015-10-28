@@ -51,19 +51,20 @@ class ComicDownloader():
 
     def get_comic_info_text(self, comic_info, verbose=0):
         def get_data_package(comic_info):
-            volumes_status = self.__cdb.get_comic_volumes_status(
+            stat = self.__cdb.get_comic_volumes_status(
                 comic_info['comic_id'])
+            volumes_infos = stat['volume_infos']
+            total = len(volumes_infos)
             data = {
                 'comic_id': comic_info['comic_id'],
                 'title': self.__cpath.sp.hanziconv(comic_info['title']),
                 'desc': self.__cpath.sp.hanziconv(comic_info['desc']),
-                'no_downloaded_count': volumes_status['no_downloaded_count'],
-                'no_downloaded_names': ','.join(
-                    [self.__cpath.sp.hanziconv(name) for name in
-                     volumes_status['no_downloaded_names'][:2]]),
-                'downloaded_count': volumes_status['downloaded_count'],
-                'last_incoming_time': volumes_status['last_incoming_time'],
-                'total': volumes_status['total'],
+                'total': total,
+                'no_downloaded_count': total - stat['downloaded_count'],
+                'downloaded_count': stat['downloaded_count'],
+                'gone_count': stat['gone_count'],
+                'last_incoming_time': stat['last_incoming_time'],
+                'v_infos': volumes_infos,
                 }
             return data
 
@@ -76,20 +77,27 @@ class ComicDownloader():
                     texts.insert(0, '{no_downloaded_count:<+4} ')
                 else:
                     texts.insert(0, '     ')
-            if verbose >= 2:
-                if data['no_downloaded_count'] > 0:
-                    texts.append(' + {no_downloaded_names}')
-                if data['no_downloaded_count'] > 2:
-                    texts.append(',...')
+                if data['gone_count'] != 0:
+                    texts.append(' [{gone_count}]')
             text = ''.join(texts).format(**data)
-            if verbose >= 3:
+            if verbose >= 2:
                 text = '\n'.join([
                     text,
                     textwrap.indent(
                         textwrap.fill('{desc}'.format(**data), 35),
-                        '    '),
-                    ''
-                    ])
+                        '    ')])
+                if verbose >=3:
+                    texts2 = []
+                    for v in data['v_infos']:
+                        texts2.append('      - {name} {down} {gone}'.format(
+                            name=v['name'],
+                            down='' if v['is_downloaded'] else
+                                '[no downloaded]',
+                            gone='[disappeared]' if v['gone'] else '',
+                            ))
+                    text2 = '\n'.join(texts2)
+                    text = '\n'.join([text, text2])
+                text = text + '\n'
             return text
 
         verbose = verbose % 4

@@ -53,17 +53,17 @@ Check current subscribed status
 
     cmdlr -l
 
-It will listing all subscribed comics in your database. If want more detail, please combine `-v` option like...
+It will listing all subscribed comics in your database. If want differ detail level, please combine `-v` option like...
 
 .. code:: bash
 
-    cmdlr -lv
+    cmdlr -vl
 
 or more...
 
 .. code:: bash
 
-    cmdlr -lvv
+    cmdlr -l -vv
 
 Download all your comics
 -------------------------
