@@ -303,7 +303,7 @@ def main():
     def subscription_process(cmdlr, args):
         if args.as_new_comics:
             for comic_entry in args.as_new_comics:
-                cmdlr.as_new(comic_entry, args.verbose)
+                cmdlr.as_new(comic_entry, args.verbose + 1)
         if args.unsubscribe_comic_entrys:
             for comic_entry in args.unsubscribe_comic_entrys:
                 cmdlr.unsubscribe(
