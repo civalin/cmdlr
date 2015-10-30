@@ -108,8 +108,6 @@ Very easy:
 4. Run ``./cmdlr.py`` under project directory to test the plugin.
 5. When you done, don't forget make a pull request to me. Thanks!
 
-I recommend you using the build-in *Downloader* to download data, but it is not necessary. you can choice any tools freely. Also, you can using any prefer tools to parsing html data. like ``lxml``.
-
 Happy hacking! :D
 
 
@@ -129,7 +127,7 @@ Changelog
 2.0.0
 ---------
 
-Fully rewrite version
+This is a fully rewrite version
 
 - Backend DB: ``tinydb`` -> ``sqlite``
 - Collect more data.
