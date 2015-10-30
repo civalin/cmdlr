@@ -25,8 +25,8 @@
 
 
 VERSION = '2.0.0'
-DESCRIPTION = ('A extensible command line tool for download comic books '
-               'from online comic sites.')
+DESCRIPTION = ('A extensible command line tool use for subscribe online '
+               'comic sites.')
 LICENSE = 'MIT'
 AUTHOR = 'Civa Lin'
 AUTHOR_EMAIL = 'larinawf@gmail.com'

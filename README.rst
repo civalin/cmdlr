@@ -1,8 +1,7 @@
 cmdlr
 ################
 
-``cmdlr`` is a extensible command line tool for download comic books
-from online comic sites.
+``cmdlr`` is a extensible command line tool use for subscribe online comic sites.
 
 
 
