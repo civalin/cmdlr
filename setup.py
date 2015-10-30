@@ -53,7 +53,7 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS",
-        "Topic :: Multimedia :: Graphics :: Capture"
+        "Topic :: Multimedia :: Graphics :: Capture",
         "Topic :: System :: Archiving :: Mirroring"],
     install_requires=['hanziconv'],
     setup_requires=[],
