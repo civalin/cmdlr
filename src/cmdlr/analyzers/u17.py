@@ -141,7 +141,8 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
             ori_pages = json.loads(ori_pages_json)
             pages_phase1 = [
                 (int(page), base64.b64decode(data['src']).decode('utf8'))
-                for page, data in ori_pages.items()]
+                for page, data in ori_pages.items()
+                if data.get('url') is None]
             pages = [
                 {
                     'url': url,
