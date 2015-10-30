@@ -3,3 +3,5 @@
 .egg
 dist
 build
+.db
+~$

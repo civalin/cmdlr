@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
-import src.cmdlr.cmdlr as cmdlr
+import pathlib
 
-cmdlr.main()
+import src.cmdlr.cmdline as cmdline
+
+cmdline.DBPATH = str(pathlib.Path(__file__).parent / 'testing.db')
+cmdline.main()

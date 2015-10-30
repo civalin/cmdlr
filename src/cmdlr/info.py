@@ -22,3 +22,13 @@
 #  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ##########################################################################
+
+
+VERSION = '2.0.0'
+DESCRIPTION = ('A extensible command line tool for download comic books '
+               'from online comic sites.')
+LICENSE = 'MIT'
+AUTHOR = 'Civa Lin'
+AUTHOR_EMAIL = 'larinawf@gmail.com'
+PROJECT_URL = 'https://bitbucket.org/civalin/cmdlr'
+PROJECT_NAME = 'cmdlr'

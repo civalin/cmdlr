@@ -22,3 +22,11 @@
 #  TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 #  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ##########################################################################
+
+import pathlib
+
+__all__ = []
+for path in pathlib.Path(__file__).parent.glob('*.py'):
+    if path.stem == '__init__':
+        continue
+    __all__.append(path.stem)
