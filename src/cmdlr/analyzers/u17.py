@@ -52,7 +52,7 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
 
     def info(self):
         return """
-            ## U17 有妖氣 Analyzer ## ---------------------------------
+            ## 有妖氣 Analyzer ## -------------------------------------
             #
             #   This analyzer are focus on u17.com.
             #   Typical comic url:
@@ -60,8 +60,10 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
             #
             #   Custom data: Not required
             #
-            #   LICENSE: MIT
-            #   Author: Civa Lin<larinawf@gmail.com>
+            #   LICENSE:    MIT
+            #   Author:     Civa Lin<larinawf@gmail.com>
+            #   Bug report: https://bitbucket.org/civalin/cmdlr
+            #   Version:    2015.10.30
             #
             #----------------------------------------------------------
         """
