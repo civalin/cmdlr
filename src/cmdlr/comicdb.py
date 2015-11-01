@@ -28,6 +28,15 @@ import os
 import datetime as DT
 import pickle
 
+from . import stringprocess as SP
+
+
+class ComicDBException(Exception):
+    pass
+
+class TitleConflictError(ComicDBException):
+    pass
+
 
 def extend_sqlite3_datatype():
     sqlite3.register_adapter(DT.datetime, pickle.dumps)
@@ -95,10 +104,23 @@ class ComicDB():
 
             self.conn.commit()
 
+        def connection_setting():
+            sp = SP.StringProcess(hanzi_mode='trad')
+            def is_same_title(title1, title2):
+                if (sp.component_modified(title1)
+                        == sp.component_modified(title2)):
+                    return True
+                else:
+                    return False
+
+            self.conn.row_factory = sqlite3.Row
+            self.conn.execute('PRAGMA foreign_keys = ON;')
+            self.conn.create_function(
+                'is_same_title', 2, is_same_title)
+
         self.conn = sqlite3.connect(dbpath,
                                     detect_types=sqlite3.PARSE_DECLTYPES)
-        self.conn.row_factory = sqlite3.Row
-        self.conn.execute('PRAGMA foreign_keys = ON;')
+        connection_setting()
         migrate()
 
     def get_option(self, option, default=None):
@@ -174,15 +196,22 @@ class ComicDB():
                 ' extra_data = :extra_data'
                 ' WHERE comic_id = :comic_id', comic_info)
             if cursor.rowcount == 0:
-                self.conn.execute(
-                    'INSERT INTO comics'
-                    ' (comic_id, title, desc, extra_data)'
-                    ' VALUES ('
-                    ' :comic_id,'
-                    ' :title,'
-                    ' :desc,'
-                    ' :extra_data'
-                    ' )', comic_info)
+                title_conflict_count = self.conn.execute(
+                    'SELECT COUNT(title) FROM comics'
+                    ' WHERE is_same_title(comics.title, :title)'
+                    , comic_info).fetchone()[0]
+                if title_conflict_count == 0:
+                    self.conn.execute(
+                        'INSERT INTO comics'
+                        ' (comic_id, title, desc, extra_data)'
+                        ' VALUES ('
+                        ' :comic_id,'
+                        ' :title,'
+                        ' :desc,'
+                        ' :extra_data'
+                        ' )', comic_info)
+                else:
+                    raise TitleConflictError
 
         def mark_disappear_volume(comic_info):
             volume_ids_text = ', '.join(

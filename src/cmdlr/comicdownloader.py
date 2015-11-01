@@ -35,6 +35,7 @@ import zipfile
 from . import downloader
 from . import analyzersmanager as AM
 from . import comicpath
+from . import comicdb
 
 
 class ComicDownloader():
@@ -147,7 +148,13 @@ class ComicDownloader():
             return None
         comic_info = azr.get_comic_info(comic_id)
 
-        self.__cdb.upsert_comic(comic_info)
+        try:
+            self.__cdb.upsert_comic(comic_info)
+        except comicdb.TitleConflictError:
+            print('Title "{title}" are already exists. Rejected.'.format(
+                **comic_info))
+            return
+
         try_revive_from_backup(comic_info)
         text = self.get_comic_info_text(comic_info, verbose)
         print('[SUBSCRIBED]  ' + text)

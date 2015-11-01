@@ -123,6 +123,11 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.0.1
+---------
+
+- Enhanced: Truly avoid the title conflict.
+
 2.0.0
 ---------
 
