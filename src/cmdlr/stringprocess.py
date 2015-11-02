@@ -30,7 +30,7 @@ class StringProcess():
     trans_component_table = str.maketrans(
         '\?*<":>+[]/', '＼？＊＜”：＞＋〔〕／')
     trans_path_table = str.maketrans(
-        '?*<":>+[]', '？＊＜”：＞＋〔〕')
+        '?*<">+[]', '？＊＜”＞＋〔〕')
 
     def __init__(self, hanzi_mode=None):
         self.__hanzi_mode = hanzi_mode

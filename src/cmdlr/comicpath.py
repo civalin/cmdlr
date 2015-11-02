@@ -32,21 +32,17 @@ class ComicPath():
     '''Comic Path Calculator'''
 
     def __init__(self, output_dir, backup_dir, hanzi_mode=None):
-        self.__output_dir = output_dir
-        self.__backup_dir = backup_dir
+        self.__output_dir = pathlib.Path(output_dir)
+        self.__backup_dir = pathlib.Path(backup_dir)
         self.sp = stringprocess.StringProcess(hanzi_mode=hanzi_mode)
 
     @property
     def output_dir(self):
-        return pathlib.Path(
-            self.sp.replace_unsafe_characters_for_path(
-                self.__output_dir))
+        return self.__output_dir
 
     @property
     def backup_dir(self):
-        return pathlib.Path(
-            self.sp.replace_unsafe_characters_for_path(
-                self.__backup_dir))
+        return self.__backup_dir
 
     def get_comic_dir(self, comic_info):
         return self.output_dir / self.sp.component_modified(

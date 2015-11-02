@@ -127,6 +127,7 @@ Changelog
 ---------
 
 - Enhanced: Truly avoid the title conflict.
+- Enhanced: Windows platform path assign.
 
 2.0.0
 ---------
