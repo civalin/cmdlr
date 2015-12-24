@@ -31,6 +31,7 @@ import shutil
 import queue
 import collections
 import zipfile
+import traceback
 
 from . import downloader
 from . import analyzersmanager as AM
@@ -329,12 +330,19 @@ class ComicDownloader():
                                     filepath=str(pagepath))
 
             def download_volume(cv_info, azr):
+                try:
+                    volume_pages = azr.get_volume_pages(cv_info['comic_id'],
+                                                        cv_info['volume_id'],
+                                                        cv_info['extra_data'])
+                except:
+                    traceback.print_exc()
+                    print(('Skip: Analyzer exception -> '
+                           '{title} ({comic_id}): {name}').format(**cv_info))
+                    return
+
                 with CF.ThreadPoolExecutor(
                         max_workers=self.__threads) as executor:
-                    for page_info in azr.get_volume_pages(
-                            cv_info['comic_id'],
-                            cv_info['volume_id'],
-                            cv_info['extra_data']):
+                    for page_info in volume_pages:
                         page_process(executor, page_info, skip_exists)
 
                 self.__cdb.set_volume_is_downloaded(

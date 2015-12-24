@@ -123,6 +123,11 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.0.2
+---------
+
+- Enhanced: Better exception processing.
+
 2.0.1
 ---------
 
