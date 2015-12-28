@@ -123,6 +123,13 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.0.3
+---------
+
+- Fixed: better sorting when using ``-l``
+- Added: ``-l`` option can search keyword in title.
+- Enhanced: volume disappeard info when using ``-l``.
+
 2.0.2
 ---------
 

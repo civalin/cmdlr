@@ -80,7 +80,7 @@ class ComicDownloader():
                 else:
                     texts.insert(0, '     ')
                 if data['gone_count'] != 0:
-                    texts.append(' [{gone_count}]')
+                    texts.append(' [gone: {gone_count}]')
             text = ''.join(texts).format(**data)
             if verbose >= 2:
                 text = '\n'.join([
@@ -88,13 +88,13 @@ class ComicDownloader():
                     textwrap.indent(
                         textwrap.fill('{desc}'.format(**data), 35),
                         '    ')])
-                if verbose >=3:
+                if verbose >= 3:
                     texts2 = []
                     for v in data['v_infos']:
                         texts2.append('      - {name} {down} {gone}'.format(
                             name=v['name'],
                             down='' if v['is_downloaded'] else
-                                '[no downloaded]',
+                                 '[no downloaded]',
                             gone='[disappeared]' if v['gone'] else '',
                             ))
                     text2 = '\n'.join(texts2)
@@ -109,7 +109,7 @@ class ComicDownloader():
     def get_comic_info(self, comic_entry):
         azr, comic_id = self.am.get_analyzer_and_comic_id(comic_entry)
         if azr is None:
-            print('"{}" not fits any analyzers.'.format(comic_entry))
+            # print('"{}" not fits any analyzers.'.format(comic_entry))
             comic_id = comic_entry
         comic_info = self.__cdb.get_comic(comic_id)
         return comic_info
@@ -117,10 +117,14 @@ class ComicDownloader():
     def print_comic_info(self, comic_entry, verbose):
         comic_info = self.get_comic_info(comic_entry)
         if comic_info is None:
-            print('"{}" are not exists.'.format(comic_entry))
             return None
         text = self.get_comic_info_text(comic_info, verbose)
         print(text)
+        return True
+
+    def print_comic_info_by_keyword(self, keyword, verbose):
+        for comic_id in self.cdb.search_comic(keyword):
+            self.print_comic_info(comic_id, verbose)
 
     def subscribe(self, comic_entry, verbose):
         def try_revive_from_backup(comic_info):
@@ -233,8 +237,8 @@ class ComicDownloader():
             print('    Used Analyzers:     {}'.format(
                 ', '.join(['{} ({}): {}'.format(
                     azr.name(), azr.codename(), count)
-                           for azr, count in counter.items()
-                           if azr is not None])))
+                    for azr, count in counter.items()
+                    if azr is not None])))
 
         all_comics = self.__cdb.get_all_comics()
         print_all_comics(all_comics, verbose)

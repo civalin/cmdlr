@@ -34,6 +34,7 @@ from . import stringprocess as SP
 class ComicDBException(Exception):
     pass
 
+
 class TitleConflictError(ComicDBException):
     pass
 
@@ -108,9 +109,17 @@ class ComicDB():
 
         def connection_setting():
             sp = SP.StringProcess(hanzi_mode='trad')
-            def is_same_title(title1, title2):
-                if (sp.component_modified(title1)
-                        == sp.component_modified(title2)):
+
+            def is_same_string(str1, str2):
+                if (sp.component_modified(str1) ==
+                        sp.component_modified(str2)):
+                    return True
+                else:
+                    return False
+
+            def is_partof_string(sub_str, whole_str):
+                if (sp.component_modified(sub_str) in
+                        sp.component_modified(whole_str)):
                     return True
                 else:
                     return False
@@ -118,7 +127,9 @@ class ComicDB():
             self.conn.row_factory = sqlite3.Row
             self.conn.execute('PRAGMA foreign_keys = ON;')
             self.conn.create_function(
-                'is_same_title', 2, is_same_title)
+                'is_same_string', 2, is_same_string)
+            self.conn.create_function(
+                'is_partof_string', 2, is_partof_string)
 
         self.conn = sqlite3.connect(dbpath,
                                     detect_types=sqlite3.PARSE_DECLTYPES)
@@ -188,8 +199,8 @@ class ComicDB():
                     'UPDATE volumes SET'
                     ' gone = 0'
                     ' WHERE comic_id = :comic_id AND'
-                    '       volume_id = :volume_id'
-                    , data)
+                    '       volume_id = :volume_id',
+                    data)
 
         def upsert_comic(comic_info):
             cursor = self.conn.execute(
@@ -200,8 +211,8 @@ class ComicDB():
             if cursor.rowcount == 0:
                 title_conflict_count = self.conn.execute(
                     'SELECT COUNT(title) FROM comics'
-                    ' WHERE is_same_title(comics.title, :title)'
-                    , comic_info).fetchone()[0]
+                    ' WHERE is_same_string(comics.title, :title)',
+                    comic_info).fetchone()[0]
                 if title_conflict_count == 0:
                     self.conn.execute(
                         'INSERT INTO comics'
@@ -279,7 +290,7 @@ class ComicDB():
             'SELECT comics.comic_id FROM comics JOIN volumes'
             ' ON comics.comic_id = volumes.comic_id'
             ' GROUP BY comics.comic_id'
-            ' ORDER BY volumes.is_downloaded DESC,'
+            ' ORDER BY min(volumes.is_downloaded) DESC,'
             '          comics.title ASC,'
             '          comics.comic_id ASC').fetchall()
 
@@ -293,6 +304,16 @@ class ComicDB():
             'SELECT * FROM comics'
             ' WHERE comic_id = :comic_id',
             {'comic_id': comic_id}).fetchone()
+
+    def search_comic(self, keyword):
+        results = self.conn.execute(
+            'SELECT comic_id from comics'
+            ' WHERE is_partof_string(:keyword, title)'
+            ' ORDER BY comics.title ASC,'
+            '          comics.comic_id ASC',
+            {'keyword': keyword}).fetchall()
+        comic_ids = [result['comic_id'] for result in results]
+        return comic_ids
 
     def get_comic_volumes_status(self, comic_id):
         '''
