@@ -111,15 +111,15 @@ class ComicDB():
             sp = SP.StringProcess(hanzi_mode='trad')
 
             def is_same_string(str1, str2):
-                if (sp.component_modified(str1) ==
-                        sp.component_modified(str2)):
+                if (sp.component_modified(str1.lower()) ==
+                        sp.component_modified(str2.lower())):
                     return True
                 else:
                     return False
 
             def is_partof_string(sub_str, whole_str):
-                if (sp.component_modified(sub_str) in
-                        sp.component_modified(whole_str)):
+                if (sp.component_modified(sub_str.lower()) in
+                        sp.component_modified(whole_str.lower())):
                     return True
                 else:
                     return False
