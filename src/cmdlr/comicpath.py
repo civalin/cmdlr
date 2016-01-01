@@ -54,8 +54,8 @@ class ComicPath():
             comic_info) / self.sp.component_modified(volume_dir)
 
     def get_volume_cbz(self, comic_info, volume_info):
-        return self.get_volume_dir(comic_info, volume_info).with_suffix(
-            '.cbz')
+        cbz_str = str(self.get_volume_dir(comic_info, volume_info)) + '.cbz'
+        return pathlib.Path(cbz_str)
 
     def get_page_path(self, comic_info, volume_info, page):
         volume_dir = self.get_volume_dir(comic_info, volume_info)

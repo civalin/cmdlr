@@ -126,6 +126,7 @@ Changelog
 2.0.3
 ---------
 
+- Fixed: cbz convert error when volume name contain ``.`` character.
 - Fixed: better sorting when using ``-l``
 - Added: ``-l`` option can search keyword in title.
 - Enhanced: volume disappeard info when using ``-l``.
