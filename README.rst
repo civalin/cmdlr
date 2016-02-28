@@ -123,6 +123,11 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.0.4
+---------
+
+- Analyzer: `8comic` tweak for site changed.
+
 2.0.3
 ---------
 

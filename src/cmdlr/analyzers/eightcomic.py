@@ -46,7 +46,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
 
     @classmethod
     def site(cls):
-        return 'comicvip.com'
+        return 'comicbus.com'
 
     def info(self):
         return """
@@ -54,14 +54,14 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
             #
             #   This analyzer are focus on comicvip.com.
             #   Typical comic url:
-            #       http://www.comicvip.com/html/<number>.html
+            #       http://www.comicbus.com/html/<number>.html
             #
             #   Custom data: Not required
             #
             #   LICENSE:    MIT
             #   Author:     Civa Lin<larinawf@gmail.com>
             #   Bug report: https://bitbucket.org/civalin/cmdlr
-            #   Version:    2015.10.30
+            #   Version:    2016.02.28
             #
             #----------------------------------------------------------
         """
@@ -71,7 +71,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
         # raise comicanalyzer.ComicAnalyzerDisableException  # disable plugin
 
     def url_to_comic_id(self, comic_entry_url):
-        match = re.search('comicvip.com/html/(\d+).html',
+        match = re.search('comicbus.com/html/(\d+).html',
                           comic_entry_url)
         if match is None:
             return None
@@ -82,7 +82,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
     def comic_id_to_url(self, comic_id):
         local_comic_id = self.convert_to_local_comic_id(comic_id)
         if local_comic_id:
-            return 'http://www.comicvip.com/html/{}.html'.format(
+            return 'http://www.comicbus.com/html/{}.html'.format(
                 local_comic_id)
         else:
             return None
@@ -139,8 +139,9 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
                 return volume_code[magic_number:magic_number+3]
 
             hash = get_hash(page_number)
-            image_url = "http://img{sid}.8comic.com/{did}/{local_comic_id}/"\
-                        "{volume_number}/{page_number:03}_{hash}.jpg".format(
+            image_url = ("http://img{sid}.6comic.com:99/{did}/"
+                         "{local_comic_id}/"
+                         "{volume_number}/{page_number:03}_{hash}.jpg").format(
                             page_number=page_number,
                             local_comic_id=local_comic_id,
                             did=did,
@@ -184,15 +185,15 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
         def __get_page_url(page_url_fragment, catid):
             catid = int(catid)
             if catid in (4, 6, 12, 22):
-                baseurl = "http://www.comicvip.com/show/cool-"
+                baseurl = "http://www.comicbus.com/online/Domain-"
             elif catid in (1, 17, 19, 21):
-                baseurl = "http://www.comicvip.com/show/cool-"
+                baseurl = "http://www.comicbus.com/online/finance-"
             elif catid in (2, 5, 7, 9):
-                baseurl = "http://www.comicvip.com/show/cool-"
+                baseurl = "http://www.comicbus.com/online/insurance-"
             elif catid in (10, 11, 13, 14):
-                baseurl = "http://www.comicvip.com/show/best-manga-"
+                baseurl = "http://www.comicbus.com/online/insurance-"
             elif catid in (3, 8, 15, 16, 18, 20):
-                baseurl = "http://www.comicvip.com/show/best-manga-"
+                baseurl = "http://www.comicbus.com/online/finance-"
 
             fragment = page_url_fragment.replace(
                 ".html", "").replace("-", ".html?ch=")
@@ -201,6 +202,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
         page_url_fragment, catid = __get_page_url_fragment_and_catid(
             comic_html)
         page_url = __get_page_url(page_url_fragment, catid)
+        print(page_url)
         return page_url
 
     def __get_comic_code(self, one_page_html):
