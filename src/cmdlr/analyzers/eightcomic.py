@@ -202,7 +202,6 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
         page_url_fragment, catid = __get_page_url_fragment_and_catid(
             comic_html)
         page_url = __get_page_url(page_url_fragment, catid)
-        print(page_url)
         return page_url
 
     def __get_comic_code(self, one_page_html):

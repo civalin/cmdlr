@@ -123,6 +123,11 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.0.5
+---------
+
+- fixed: remove debug code.
+
 2.0.4
 ---------
 
