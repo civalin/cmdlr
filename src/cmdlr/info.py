@@ -24,7 +24,7 @@
 ##########################################################################
 
 
-VERSION = '2.0.5'
+VERSION = '2.0.6'
 DESCRIPTION = ('A extensible command line tool use for subscribe online '
                'comic sites.')
 LICENSE = 'MIT'

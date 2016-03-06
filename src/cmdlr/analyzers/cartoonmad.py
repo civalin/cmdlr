@@ -63,7 +63,7 @@ class CartoonmadAnalyzer(comicanalyzer.ComicAnalyzer):
             #   LICENSE:    MIT
             #   Author:     Civa Lin<larinawf@gmail.com>
             #   Bug report: https://bitbucket.org/civalin/cmdlr
-            #   Version:    2015.10.30
+            #   Version:    2015.03.06
             #
             #----------------------------------------------------------
         """
@@ -130,7 +130,7 @@ class CartoonmadAnalyzer(comicanalyzer.ComicAnalyzer):
 
     def get_volume_pages(self, comic_id, volume_id, extra_data):
         def get_volume_url(volume_id):
-            return 'http://web.cartoonad.com/comic/{}.html'.format(
+            return 'http://www.cartoomad.com/comic/{}.html'.format(
                 volume_id)
 
         def get_pages(volume_html):
@@ -140,9 +140,11 @@ class CartoonmadAnalyzer(comicanalyzer.ComicAnalyzer):
                     volume_html)
                 img_url = match_img_url.group(1)
                 components = img_url.split('/')
+
                 def get_img_url(page_number):
                     components[6] = '{:0>3}.jpg'.format(page_number)
                     return '/'.join(components)
+
                 return get_img_url
 
             def get_page_count(volume_html):

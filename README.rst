@@ -123,6 +123,11 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.0.6
+---------
+
+- Analyzer: `cartoonmad` tweak for site changed.
+
 2.0.5
 ---------
 
