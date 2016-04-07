@@ -196,7 +196,7 @@ class ComicDownloader():
         self.__cdb.delete_comic(comic_info['comic_id'])
         print(text)
 
-    def list_info(self, verbose):
+    def list_info(self, only_new, verbose):
         def print_all_comics(all_comics, verbose):
             for comic_info in all_comics:
                 text = self.get_comic_info_text(comic_info, verbose)
@@ -233,17 +233,21 @@ class ComicDownloader():
         def print_analyzers_used():
             counter = collections.Counter([
                 self.am.get_analyzer_by_comic_id(comic_info['comic_id'])
-                for comic_info in all_comics])
+                for comic_info in comics])
             print('    Used Analyzers:     {}'.format(
                 ', '.join(['{} ({}): {}'.format(
                     azr.name(), azr.codename(), count)
                     for azr, count in counter.items()
                     if azr is not None])))
 
-        all_comics = self.__cdb.get_all_comics()
-        print_all_comics(all_comics, verbose)
+        if only_new:
+            comics = self.__cdb.get_new_comics()
+        else:
+            comics = self.__cdb.get_all_comics()
+
+        print_all_comics(comics, verbose)
         print('  ------------------------------------------')
-        print_total(all_comics)
+        print_total(comics)
         print_no_downloaded()
         print_last_refresh()
         print_download_directory()

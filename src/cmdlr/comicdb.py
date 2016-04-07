@@ -294,6 +294,19 @@ class ComicDB():
             '          comics.title ASC,'
             '          comics.comic_id ASC').fetchall()
 
+    def get_new_comics(self):
+        return [self.get_comic(row['comic_id'])
+                for row in self.get_new_comic_ids()]
+
+    def get_new_comic_ids(self):
+        return self.conn.execute(
+            'SELECT comics.comic_id FROM comics JOIN volumes'
+            ' ON comics.comic_id = volumes.comic_id'
+            ' WHERE volumes.is_downloaded = 0'
+            ' GROUP BY comics.comic_id'
+            ' ORDER BY comics.title ASC,'
+            '          comics.comic_id ASC').fetchall()
+
     def get_volumes_count(self):
         return self.conn.execute(
             'SELECT COUNT(*) FROM volumes'

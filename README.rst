@@ -50,9 +50,17 @@ Check current subscribed status
 
 .. code:: bash
 
+    cmdlr --list-all
+
+It will listing all subscribed comics in your database.
+
+.. code:: bash
+
     cmdlr -l
 
-It will listing all subscribed comics in your database. If want differ detail level, please combine ``-v`` option like...
+It will listing all comics with new volumes.
+
+If you want differ detail level, please combine ``-v`` option like...
 
 .. code:: bash
 
@@ -122,6 +130,11 @@ Copyright (c) 2014~2015 CIVA LIN
 
 Changelog
 =========
+
+2.1.0
+---------
+
+- Tweaked: use `--list-all` to list all comic which user subscribed. and `-l` only show comic with no downloaded volumes.
 
 2.0.6
 ---------

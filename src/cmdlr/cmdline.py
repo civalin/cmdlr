@@ -170,9 +170,14 @@ def get_args(cmdlr):
             subscription_group.add_argument(
                 '-l', '--list', metavar='COMIC',
                 dest='list_info', type=str, nargs='?',
-                const="__ALL__", default=None,
-                help='List all (or some) subscribed books info.\n'
+                const="__NEW__", default=None,
+                help='List no downloaded (or user-specified) subscribed books'
+                     ' info.\n'
                      'Can assign comic_id / url / keyword in title.')
+
+            subscription_group.add_argument(
+                '--list-all', dest='list_all', action='store_true',
+                help='List all subscribed books info.')
 
             subscription_group.add_argument(
                 '-r', '--refresh', dest='refresh', action='store_true',
@@ -324,8 +329,8 @@ def main():
             print('Warning: The "--skip-exists" are useless without'
                   ' "--download".')
         if args.list_info is not None:
-            if args.list_info == '__ALL__':
-                cmdlr.list_info(args.verbose + 1)
+            if args.list_info == '__NEW__':
+                cmdlr.list_info(only_new=True, verbose=args.verbose + 1)
             else:
                 comic_entry_or_keyword = args.list_info
                 success = cmdlr.print_comic_info(
@@ -334,6 +339,8 @@ def main():
                     keyword = comic_entry_or_keyword
                     cmdlr.print_comic_info_by_keyword(
                         keyword, args.verbose + 1)
+        if args.list_all:
+            cmdlr.list_info(only_new=False, verbose=args.verbose + 1)
 
     cdb = comicdb.ComicDB(dbpath=os.path.expanduser(DBPATH))
     cmdlr = comicdownloader.ComicDownloader(cdb)
