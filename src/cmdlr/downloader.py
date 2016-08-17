@@ -56,7 +56,7 @@ class Downloader():
             args:
                 options:
                 {
-                    timeout: <positive int>,  # default: 60
+                    timeout: <positive int>,  # default: 10
                     method: <string>,  # default: None (auto select GET/POST)
                     headers: <dict>,   # default: {},
                         # e.g., {'User-Agent': Mozilla/5.0 Firefox/41.0}
@@ -75,7 +75,7 @@ class Downloader():
         while True:
             try:
                 resp = self.__opener.open(req,
-                                          timeout=options.get('timeout', 60))
+                                          timeout=options.get('timeout', 10))
                 break
             except UE.HTTPError as err:  # Like 404 no find
                 if err.code in (408, 502, 503, 504, 507, 509):
