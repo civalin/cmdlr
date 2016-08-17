@@ -135,6 +135,7 @@ Changelog
 ---------
 
 - Tweaked: use `--list-all` to list all comic which user subscribed. and `-l` only show comic with no downloaded volumes.
+- Analyzer: `8c` tweak for site changed.
 
 2.0.6
 ---------
