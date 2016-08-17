@@ -184,16 +184,17 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
 
         def __get_page_url(page_url_fragment, catid):
             catid = int(catid)
-            if catid in (4, 6, 12, 22):
-                baseurl = "http://www.comicbus.com/online/Domain-"
-            elif catid in (1, 17, 19, 21):
-                baseurl = "http://www.comicbus.com/online/finance-"
-            elif catid in (2, 5, 7, 9):
-                baseurl = "http://www.comicbus.com/online/insurance-"
-            elif catid in (10, 11, 13, 14):
-                baseurl = "http://www.comicbus.com/online/insurance-"
-            elif catid in (3, 8, 15, 16, 18, 20):
-                baseurl = "http://www.comicbus.com/online/finance-"
+            # if catid in (4, 6, 12, 22):
+            #     baseurl = "http://www.comicbus.com/online/Domain-"
+            # elif catid in (1, 17, 19, 21):
+            #     baseurl = "http://www.comicbus.com/online/finance-"
+            # elif catid in (2, 5, 7, 9):
+            #     baseurl = "http://www.comicbus.com/online/insurance-"
+            # elif catid in (10, 11, 13, 14):
+            #     baseurl = "http://www.comicbus.com/online/insurance-"
+            # elif catid in (3, 8, 15, 16, 18, 20):
+            #     baseurl = "http://www.comicbus.com/online/finance-"
+            baseurl = "http://v.comicbus.com/online/comic-"
 
             fragment = page_url_fragment.replace(
                 ".html", "").replace("-", ".html?ch=")
