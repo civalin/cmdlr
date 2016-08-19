@@ -63,7 +63,7 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
             #   LICENSE:    MIT
             #   Author:     Civa Lin<larinawf@gmail.com>
             #   Bug report: https://bitbucket.org/civalin/cmdlr
-            #   Version:    2015.10.30
+            #   Version:    2016.08.20
             #
             #----------------------------------------------------------
         """
@@ -103,16 +103,19 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
             return desc
 
         def get_volumes(comic_html):
+            def build_volume_name(title):
+                return ' '.join(title.split()[:-1]).strip()
+
             match_volumes = re.findall(
                 'id="cpt_(\d+)"\s*href="[^"]+?"'
-                '\s*title="([^"]+?)"\s*target="_blank"\s*>',
+                '\s*title="([^"]+?)"\s*target="_blank"\s*',
                 comic_html,
                 re.M | re.DOTALL)
             volumes = [
                 {
                     'volume_id': v[0].strip(),
                     'name': '{:>04}_{}'.format(
-                        index + 1, v[1].split()[0].strip())}
+                        index + 1, build_volume_name(v[1]))}
                 for index, v in enumerate(match_volumes)]
             return volumes
 
