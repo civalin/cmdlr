@@ -108,7 +108,8 @@ class U17Analyzer(comicanalyzer.ComicAnalyzer):
 
             match_volumes = re.findall(
                 'id="cpt_(\d+)"\s*href="[^"]+?"'
-                '\s*title="([^"]+?)"\s*target="_blank"\s*',
+                '\s*title="([^"]+?)"\s*target="_blank"[\s\n]*?'
+                '(?:>|class="(?:(?!vip_chapter)\w*?)"[\s\n]*?>)',
                 comic_html,
                 re.M | re.DOTALL)
             volumes = [

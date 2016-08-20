@@ -131,6 +131,11 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.1.2
+---------
+
+- Analyzer: set `u17` analyzer reject vip chapter.
+
 2.1.1
 ---------
 
