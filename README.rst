@@ -131,6 +131,11 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.1.3
+---------
+
+- Analyzer: set `u17` analyzer reject pay chapter.
+
 2.1.2
 ---------
 
