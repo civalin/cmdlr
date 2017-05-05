@@ -173,14 +173,15 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
         return pages
 
     def __get_one_page_url(self, comic_html, comic_url):
-        def __get_page_url_fragment_and_catid(html):
-            match = re.search(r"cview\('(.+?)',(\d+?)\)", html)
+        def __get_fragment_and_catid(html):
+            match = re.search(r"cview\('(.+?)',(\d+?)(?=(,\d)?\))", html)
             if match is None:
                 raise EightComicException(
                     "CView decode Error: {}".format(comic_url))
             else:
-                answer = match.groups(1)
-                return answer
+                page_url_fragment = match.group(1)
+                catid = match.group(2)
+                return page_url_fragment, catid
 
         def __get_page_url(page_url_fragment, catid):
             catid = int(catid)
@@ -200,7 +201,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
                 ".html", "").replace("-", ".html?ch=")
             return baseurl + fragment
 
-        page_url_fragment, catid = __get_page_url_fragment_and_catid(
+        page_url_fragment, catid = __get_fragment_and_catid(
             comic_html)
         page_url = __get_page_url(page_url_fragment, catid)
         return page_url

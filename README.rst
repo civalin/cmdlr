@@ -131,6 +131,11 @@ Copyright (c) 2014~2015 CIVA LIN
 Changelog
 =========
 
+2.1.4
+---------
+
+- Analyzer: fix `8c` analyzer malfunction by web site changed.
+
 2.1.3
 ---------
 
