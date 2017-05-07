@@ -61,7 +61,7 @@ class EightAnalyzer(comicanalyzer.ComicAnalyzer):
             #   LICENSE:    MIT
             #   Author:     Civa Lin<larinawf@gmail.com>
             #   Bug report: https://bitbucket.org/civalin/cmdlr
-            #   Version:    2016.08.17
+            #   Version:    2017.05.06
             #
             #----------------------------------------------------------
         """
