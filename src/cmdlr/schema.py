@@ -40,13 +40,14 @@ def _dict_value_unique(v):
 
 parsing_meta = Schema({
     Required('name'): All(Length(min=1), _safepathcomp_str),
-    Required('description'): _st_str,
+    Required('description'): All(str, _st_str),
     Required('authors'): All([_st_str], Unique()),
     Required('finished'): bool,
     Required('volumes'): Schema(All(dict, Length(min=1), _dict_value_unique, {
             All(Length(min=1), _safepathcomp_str): FqdnUrl(),
             })),
     })
+
 
 meta = parsing_meta.extend({
     Required('url'): FqdnUrl(),
