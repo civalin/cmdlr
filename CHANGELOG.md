@@ -1,3 +1,5 @@
+> Deprecated: please see the [releases page](https://github.com/civalin/cmdlr/releases).
+
 # Changelog
 
 ## 3.X
