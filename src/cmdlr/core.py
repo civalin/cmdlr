@@ -2,6 +2,7 @@
 
 import asyncio
 import sys
+import pprint
 
 from . import sessions
 from . import config
@@ -34,9 +35,15 @@ async def _run_comic_coros_by_order(curl, coros):
                 await coro
         except exceptions.NoMatchAnalyzer as e:
             log.logger.error(e)
-        except Exception:
-            log.logger.error('Unexpected Book Error: {}'.format(curl),
-                             exc_info=sys.exc_info())
+        except Exception as e:
+            extra_info = ''
+            if hasattr(e, 'ori_meta'):
+                extra_info = '>> original metadata:\n{}'.format(
+                        pprint.pformat(e.ori_meta))
+
+            log.logger.error(
+                    'Unexpected Book Error: {}\n{}'.format(curl, extra_info),
+                    exc_info=sys.exc_info())
         finally:
             for coro in coros:
                 coro.close()

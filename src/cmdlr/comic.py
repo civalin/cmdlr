@@ -131,9 +131,12 @@ class Comic():
         get_comic_info = amgr.get_prop(url, 'get_comic_info')
 
         async with request(url=url, **comic_req_kwargs) as resp:
-            parsing_meta = schema.parsing_meta(
-                    await get_comic_info(resp, request=request, loop=loop)
-                    )
+            ori_meta = await get_comic_info(resp, request=request, loop=loop)
+            try:
+                parsing_meta = schema.parsing_meta(ori_meta)
+            except Exception as e:
+                e.ori_meta = ori_meta
+                raise
 
         self.__update_meta(parsing_meta)
 

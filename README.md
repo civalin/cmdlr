@@ -568,16 +568,11 @@ entry_patterns = [
 async def get_comic_info(resp, **kwargs):
     """Find comic info from entry."""
     soup = _get_soup(await resp.read())
-    data = {'name': _get_name(soup),
+    return {'name': _get_name(soup),
             'description': _get_description(soup),
             'authors': _get_authors(soup),
             'finished': _get_finished(soup),
             'volumes': _get_volumes(soup, str(resp.url))}
-
-    import pprint           # debug only, remove this line when done
-    pprint.pprint(data)     # debug only, remove this line when done
-
-    return data
 
 
 async def save_volume_images(resp, save_image, **kwargs):
