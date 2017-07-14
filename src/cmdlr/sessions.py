@@ -22,7 +22,7 @@ def _get_session_init_kwargs(analyzer):
                               info.PROJECT_NAME, info.VERSION)
                           },
                       'read_timeout': 60,
-                      'conn_timeout': 10}
+                      'conn_timeout': 20}
     kwargs = {**default_kwargs,
               **analyzer_kwargs}
 
