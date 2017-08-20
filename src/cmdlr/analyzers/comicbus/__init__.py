@@ -77,7 +77,7 @@ async def get_comic_info(resp, **kwargs):
             'volumes': _get_volumes(soup)}
 
 
-async def save_volume_images(resp, save_image, **kwargs):
+async def save_volume_images(resp, save_image, loop, **kwargs):
     """Get images in one volume."""
     def is_copyright_url(url):
         return re.search(r'comic-\d+.html', str(url))
@@ -88,21 +88,19 @@ async def save_volume_images(resp, save_image, **kwargs):
     def get_vol_id(url):
         return re.search(r'ch=(\d+)', str(url), re.IGNORECASE).group(1)
 
-    def get_cs(html):
-        return re.search(r"var cs='(\w*)'", html).group(1)
-
     comic_id = get_comic_id(resp.url)
     vol_id = get_vol_id(resp.url)
 
     binary = await resp.read()
     html = binary.decode('big5', errors='ignore')
 
-    cs = get_cs(html)
-
     if is_copyright_url(resp.url):
-        img_urls = imgurl.CDecoder.get_img_urls(cs, comic_id, vol_id)
+        # slow to get_img_urls due to external js op, asynchronized
+        img_urls = await loop.run_in_executor(
+                None,
+                lambda: imgurl.CDecoder.get_img_urls(html, comic_id, vol_id))
     else:
-        img_urls = imgurl.NCDecoder.get_img_urls(cs, comic_id, vol_id)
+        img_urls = imgurl.NCDecoder.get_img_urls(html, comic_id, vol_id)
 
     for img_url, page_num in img_urls:
         save_image(page_num, url=img_url)

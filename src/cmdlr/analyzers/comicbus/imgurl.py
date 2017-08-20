@@ -1,75 +1,38 @@
 """Image decoder."""
 import re
+import os
+from bs4 import BeautifulSoup
+
+import execjs
 
 
 class CDecoder():
     """Image path decoder for copyright = 1 page."""
 
-    y = 46
+    @staticmethod
+    def get_img_urls(html, comic_id, vol_id):
+        """Get all image urls."""
+        def get_jsctx():
+            """get execjs context."""
+            dirpath = os.path.dirname(os.path.abspath(__file__))
+            jslib_path = os.path.join(dirpath, 'cdecoder-lib.js')
+            with open(jslib_path, encoding='utf8') as f:
+                jslib_code = f.read()
 
-    @classmethod
-    def __lc(cls, l):
-        if len(l) != 2:
-            return l
-        az = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        a = l[0:1]
-        b = l[1:2]
-        if a == "Z":
-            return str(8000 + az.index(b))
-        else:
-            return str(az.index(a) * 52 + az.index(b))
+            return execjs.compile(jslib_code)
 
-    @classmethod
-    def __su(cls, a, b, c):
-        return a[b:b+c]
+        def get_jscode(html):
+            soup = BeautifulSoup(html, 'lxml')
+            return (soup
+                    .find('script', string=re.compile(r'var chs='))
+                    .get_text()
+                    .split('\n')[-1]
+                    .strip())
 
-    @classmethod
-    def __get_page_count(cls, cs, vol_id):  # == susdv == ps
-        """Get page count from cs and vol_num."""
-        return int(cls.__lc(cls.__su(cs,
-                                     (int(vol_id) - 1) * cls.y + 0,
-                                     2)))
-
-    @classmethod
-    def __get_img_url(cls, cs, comic_id, vol_id, page_num):
-        """Get img url."""
-        def get_vol_code(cs, vol_id):  # == ekiyy
-            return cls.__lc(cls.__su(cs,
-                                     (int(vol_id) - 1) * cls.y + 2,
-                                     40))
-
-        def get_magic_code(cs, vol_id):  # == rehqx
-            return cls.__lc(cls.__su(cs,
-                                     (int(vol_id) - 1) * cls.y + 44,
-                                     2))
-
-        def nn(n):
-            return '{:>03}'.format(n)
-
-        def mm(p):
-            return (int((p - 1) / 10) % 10) + (((p - 1) % 10) * 3)
-
-        mc = get_magic_code(cs, vol_id)
-        vc = get_vol_code(cs, vol_id)
-        return ('http://img'
-                + cls.__su(mc, 0, 1)
-                + '.8comic.com/'
-                + cls.__su(mc, 1, 1)
-                + '/'
-                + comic_id
-                + '/'
-                + vol_id
-                + '/'
-                + nn(page_num)
-                + '_'
-                + cls.__su(vc, mm(page_num), 3)
-                + '.jpg')
-
-    @classmethod
-    def get_img_urls(cls, cs, comic_id, vol_id):
-        """Get all img urls."""
-        page_count = cls.__get_page_count(cs, vol_id)
-        return [(cls.__get_img_url(cs, comic_id, vol_id, page_num), page_num)
+        jsctx = get_jsctx()
+        js = get_jscode(html)
+        page_count = jsctx.call('getPageCount', js, int(vol_id))
+        return [(jsctx.call('getUrl', js, int(vol_id), page_num), page_num)
                 for page_num in range(1, page_count + 1)]
 
 
@@ -123,9 +86,14 @@ class NCDecoder():
                         )
 
     @classmethod
-    def get_img_urls(cls, cs, comic_id, vol_id):
+    def get_img_urls(cls, html, comic_id, vol_id):
         """Get all img urls."""
+        def get_cs(html):
+            return re.search(r"var cs='(\w*)'", html).group(1)
+
+        cs = get_cs(html)
         vol_info = cls.__get_this_vol_info(cs, vol_id)
+
         pages = []
         for page_num in range(1, vol_info['page_count'] + 1):
             url = cls.__get_img_url(page_num=page_num,
