@@ -210,7 +210,7 @@ pip3 install cmdlr
 
 # Supported Sites
 
-- www.comicbus.com
+- www.comicbus.com (external dependency: [nodejs](https://nodejs.org))
 - www.cartoonmad.com
 - ikanman.com (external dependency: [nodejs](https://nodejs.org))
 
