@@ -399,7 +399,7 @@ async def get_comic_info(resp, request, **kwargs):
 This function should doing the following things in single volume.
 
 1. find all image's *url* &  *page number*.
-2. run `save_image()` multiple time for each images.
+2. run `save_image()` for each images.
 
 ---
 
