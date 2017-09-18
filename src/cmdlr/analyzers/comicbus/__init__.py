@@ -94,13 +94,10 @@ async def save_volume_images(resp, save_image, loop, **kwargs):
     binary = await resp.read()
     html = binary.decode('big5', errors='ignore')
 
-    if is_copyright_url(resp.url):
-        # slow to get_img_urls due to external js op, asynchronized
-        img_urls = await loop.run_in_executor(
-                None,
-                lambda: imgurl.CDecoder.get_img_urls(html, comic_id, vol_id))
-    else:
-        img_urls = imgurl.NCDecoder.get_img_urls(html, comic_id, vol_id)
+    # slow to get_img_urls due to external js op, asynchronized
+    img_urls = await loop.run_in_executor(
+            None,
+            lambda: imgurl.Decoder.get_img_urls(html, comic_id, vol_id))
 
     for img_url, page_num in img_urls:
         save_image(page_num, url=img_url)
