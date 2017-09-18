@@ -1,33 +1,37 @@
 """The *.ikanman.com analyzer.
 
-# Entry examples
+# Entry examples #
 
 - http://tw.ikanman.com/comic/23292/
 - http://www.ikanman.com/comic/23292/
 
 
 
-# Configurations
+# Configurations #
 
-## `meta_source`
+## `meta_source` ##
 
 (Not required, string or null, allow: 'tw', 'cn')
 
-Choice to using tw.ikanman.com (tw) or www.ikanman.com (cn) as metadata source.
-if null or not exists, will respect the original entry url.
+Choice one of following as metadata source:
+
+- <tw.ikanman.com> (tw) or
+- <www.ikanman.com> (cn)
+
+If null or not exists, respect the original entry url.
 
 
 
-## `disabled_image_servers`
+## `disabled_image_servers` ##
 
 (Not required, list of strings)
 
-Select which images servers should NOT be used. Any non-exists server code
-will be ignored.
+Select which images servers should *NOT* be used. Any non-exists server
+code will be ignored.
 
 Current available servers: ['dx', 'eu', 'i', 'lt', 'us']
 
-Hint: The real servers url are look like: `http://{code}.hamreus.com:8080`
+> Hint: The real servers url are look like: `http://{code}.hamreus.com:8080`
 """
 
 import re

@@ -1,6 +1,6 @@
 """The www.cartoonmad.com analyzer.
 
-# Entry examples
+# Entry examples #
 
 - http://www.cartoonmad.com/comic/5640.html
 """

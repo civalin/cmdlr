@@ -1,6 +1,6 @@
 """The www.comicbus.com analyzer.
 
-# Entry examples
+# Entry examples #
 
 - http://www.comicbus.com/html/10951.html
 """
