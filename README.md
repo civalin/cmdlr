@@ -212,7 +212,7 @@ pip3 install cmdlr
 
 - www.comicbus.com (external dependency: [nodejs](https://nodejs.org))
 - www.cartoonmad.com
-- ikanman.com (external dependency: [nodejs](https://nodejs.org))
+- manhuagui.com (external dependency: [nodejs](https://nodejs.org))
 
 > Feel free to send me PR to fix bug or support more sites :D
 

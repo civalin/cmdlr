@@ -1,9 +1,9 @@
-"""The *.ikanman.com analyzer.
+"""The *.manhuagui.com analyzer.
 
 # Entry examples #
 
-- http://tw.ikanman.com/comic/23292/
-- http://www.ikanman.com/comic/23292/
+- http://tw.manhuagui.com/comic/23292/
+- http://www.manhuagui.com/comic/23292/
 
 
 
@@ -15,8 +15,8 @@
 
 Choice one of following as metadata source:
 
-- <tw.ikanman.com> (tw) or
-- <www.ikanman.com> (cn)
+- <tw.manhuagui.com> (tw) or
+- <www.manhuagui.com> (cn)
 
 If null or not exists, respect the original entry url.
 
@@ -49,7 +49,7 @@ from ... import exceptions
 
 _available_image_servers = ['dx', 'eu', 'i', 'lt', 'us']
 
-_meta_source = config.get_customization('ikanman').get('meta_source')
+_meta_source = config.get_customization('manhuagui').get('meta_source')
 
 
 @functools.lru_cache()
@@ -128,7 +128,7 @@ def _get_volumes(soup, baseurl):
 
 def _get_real_image_servers():
     disabled_image_servers = (config
-                              .get_customization('ikanman')
+                              .get_customization('manhuagui')
                               .get('disabled_image_servers', []))
     return [s for s in _available_image_servers
             if s not in disabled_image_servers]
@@ -151,14 +151,16 @@ def _get_img_url(c_info_path, c_info_filename):
 
 session_init_kwargs = {
         'headers': {
-            'referer': 'http://www.ikanman.com',
+            'referer': 'http://www.manhuagui.com',
             'user-agent': ('Mozilla/5.0 AppleWebKit/537.3 (KHTML, like Gecko)'
                            ' Windows 10 Chrome/58.0.3029.110 Safari/537.36')
             },
         }
 
 
-entry_patterns = [re.compile(r'^http://(www|tw).ikanman.com/comic/(\d+)/$')]
+entry_patterns = [
+        re.compile(r'^http://(www|tw).(?:manhuagui|ikanman).com/comic/(\d+)/$'),
+        ]
 
 
 def entry_normalizer(url):
@@ -174,9 +176,9 @@ def entry_normalizer(url):
         subdomain = 'tw'
     else:
         raise exceptions.AnalyzerRuntimeError(
-                'ikanman.data_source should be one of ["tw", "cn", null]')
+                'manhuagui.data_source should be one of ["tw", "cn", null]')
 
-    return 'http://{}.ikanman.com/comic/{}/'.format(subdomain, id)
+    return 'http://{}.manhuagui.com/comic/{}/'.format(subdomain, id)
 
 
 async def get_comic_info(resp, loop, **kwargs):
