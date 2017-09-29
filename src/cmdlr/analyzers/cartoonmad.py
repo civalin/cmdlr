@@ -42,7 +42,7 @@ def _get_volumes(soup, baseurl):
 
 
 entry_patterns = [
-        re.compile(r'^http://www.cartoonmad.com/comic/(\d+)(?:\.html)?$'),
+        re.compile(r'^http://(?:www.)?cartoonmad.com/comic/(\d+)(?:\.html)?$'),
         ]
 
 
