@@ -14,8 +14,8 @@ from . import imgurl
 
 def _get_name(soup):
     return (soup
-            .find('title').string
-            .split('漫畫,動畫,在線漫畫')[0])
+            .find('meta', attrs={'name': 'keywords'})['content']
+            .split(',')[0])
 
 
 def _get_description(soup):
