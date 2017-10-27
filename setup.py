@@ -13,7 +13,7 @@ if not sys.version_info >= (3, 5, 0):
 
 setup(
     name=src.cmdlr.info.PROJECT_NAME,
-    version=src.cmdlr.info.VERSION,
+    version='.'.join(map(lambda x: str(x), src.cmdlr.info.VERSION)),
     author=src.cmdlr.info.AUTHOR,
     author_email=src.cmdlr.info.AUTHOR_EMAIL,
     license=src.cmdlr.info.LICENSE,

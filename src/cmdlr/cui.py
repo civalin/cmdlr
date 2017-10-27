@@ -16,7 +16,8 @@ def _parser_setting():
             description=textwrap.fill(info.DESCRIPTION, 70))
 
     parser.add_argument(
-            '--version', action='version', version=info.VERSION)
+            '--version', action='version',
+            version='.'.join(map(lambda x: str(x), info.VERSION)))
 
     parser.add_argument(
             'urls', metavar='URL', type=str, nargs='*',
