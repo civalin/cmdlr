@@ -36,7 +36,7 @@ def _get_finished(soup):
 def _get_volumes(soup, baseurl):
     a_nodes = (soup
                .find('legend', string=re.compile('漫畫線上觀看'))
-               .find_next_sibling('table')
+               .parent
                .find_all(href=re.compile(r'^/comic/')))
     return {a.string: UP.urljoin(str(baseurl), a.get('href')) for a in a_nodes}
 
