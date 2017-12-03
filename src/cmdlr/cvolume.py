@@ -52,6 +52,8 @@ def _default_get_image_extension(resp):
         return '.png'
     elif ctype == 'image/gif':
         return '.gif'
+    elif ctype == 'image/bmp':
+        return '.bmp'
     else:
         raise exceptions.InvalidValue('Cannot determine file extension'
                                       ' of "{}" content type.'.format(ctype))
