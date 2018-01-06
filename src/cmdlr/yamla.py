@@ -18,7 +18,7 @@ def from_file(filepath):
                 or {})
 
 
-def to_file(filepath, data):
+def to_file(filepath, data, comment_out=False):
     """Save data to yaml file."""
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
@@ -28,4 +28,8 @@ def to_file(filepath, data):
                             allow_unicode=True,
                             width=78,
                             indent=4)
+
+        if comment_out:
+            content = '\n'.join('# ' + line for line in content.split('\n'))
+
         f.write(content)

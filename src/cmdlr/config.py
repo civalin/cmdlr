@@ -34,7 +34,7 @@ def _normalize_path(path):
 
 def _create_default(filepath):
     """Create default config on `filepath` location."""
-    yamla.to_file(filepath, _default_config)
+    yamla.to_file(filepath, _default_config, comment_out=True)
 
 
 def _init():
