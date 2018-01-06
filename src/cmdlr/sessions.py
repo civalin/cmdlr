@@ -27,7 +27,7 @@ def _get_session_init_kwargs(analyzer):
               **analyzer_kwargs}
 
     if 'connector' not in kwargs:
-        kwargs['connector'] = aiohttp.TCPConnector(limit_per_host=5)
+        kwargs['connector'] = aiohttp.TCPConnector(limit_per_host=2)
 
     return kwargs
 
