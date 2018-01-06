@@ -1,6 +1,7 @@
 """Cmdlr clawler subsystem."""
 
 import asyncio
+import random
 
 import aiohttp
 
@@ -72,6 +73,7 @@ def get_request(curl):
     session = _get_session(curl)
     proxy = config.get_proxy()
     max_try = config.get_max_retry() + 1
+    delay = config.get_delay()
 
     class request:
         """session.request contextmanager."""
@@ -85,6 +87,7 @@ def get_request(curl):
             for try_idx in range(max_try):
                 try:
                     await _semaphore.acquire()
+                    await asyncio.sleep(random.random() * delay)
                     self.resp = await session.request(**{
                         **{'method': 'GET', 'proxy': proxy},
                         **self.req_kwargs,

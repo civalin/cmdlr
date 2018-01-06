@@ -7,6 +7,7 @@ from . import schema
 
 
 _default_config = {
+        'delay': 1.0,
         'dirs': ['~/comics'],
         'disabled_analyzers': [],
         'extra_analyzer_dir': None,
@@ -74,6 +75,11 @@ def get_max_concurrent():
 def get_max_retry():
     """Get max retry number."""
     return _config['max_retry']
+
+
+def get_delay():
+    """Get global download delay."""
+    return _config.get('delay', 0)
 
 
 def get_proxy():

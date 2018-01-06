@@ -56,6 +56,7 @@ meta = parsing_meta.extend({
     })
 
 config = Schema({
+    'delay': All(float, Range(min=0)),
     Required('dirs'): All(Length(min=1), [All(Length(min=1), _safepath_str)]),
     Required('extra_analyzer_dir'): Any(
         None, All(Length(min=1), _safepath_str)),

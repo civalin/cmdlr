@@ -83,6 +83,7 @@ Use `cmdlr -h` to see more options.
 After run `cmdlr` at least one time. The default configuration file will be generated in `~/.config/cmdlr/config.yaml`. It look like this:
 
 ```yaml
+delay: 1.0
 dirs:
 - ~/comics
 disabled_analyzers: []
@@ -111,6 +112,20 @@ Notice:
 
 1. The **first item** in `dirs` is the **INCOMING DIRECTORY** - all new subscribed books will be place in here automatically.
 2. For performance reason, `cmdlr` would **NOT** recursive searching sub-folders. Only books in top level will be found.
+
+
+
+## Option: `delay` (Float)
+
+Add a random delay interval before each download started. (default: `1.0`)
+
+The real delay range are equal to `(0.0 ~ 1.0 random number) * delay` seconds.
+
+example:
+
+```yaml
+delay: 2.0  # set the delay interval from 0.0 to 2.0 seconds.
+```
 
 
 
