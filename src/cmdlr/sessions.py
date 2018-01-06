@@ -81,7 +81,7 @@ def get_request(curl):
             self.req_kwargs = req_kwargs
 
         async def __aenter__(self):
-            """async with enter."""
+            """Async with enter."""
             for try_idx in range(max_try):
                 try:
                     await _semaphore.acquire()
@@ -103,7 +103,7 @@ def get_request(curl):
                         raise e from None
 
         async def __aexit__(self, exc_type, exc, tb):
-            """async with exit."""
+            """Async with exit."""
             await self.resp.release()
             _semaphore.release()
 

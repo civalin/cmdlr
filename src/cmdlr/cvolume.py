@@ -134,6 +134,7 @@ def get_not_downloaded_volnames(path, comic_name, im_volnames):
 
     Returns:
         (list) volumn_name
+
     """
     fname_vname_map = {_get_volume_cbzname(comic_name, vname): vname
                        for vname in im_volnames}
@@ -147,7 +148,7 @@ def get_not_downloaded_volnames(path, comic_name, im_volnames):
 
 def get_should_download_volnames(
         path, comic_name, volumes, want_volnames, force):
-    """Calculating should be downloaded volume's names.
+    """Calculate should be downloaded volume's names.
 
     Args:
         path (str): comic's local dir path
@@ -162,6 +163,7 @@ def get_should_download_volnames(
 
     Returns:
         (list) should be downloaded volume_names
+
     """
     im_volnames = list(volumes.keys())
     nd_volnames = get_not_downloaded_volnames(path, comic_name, im_volnames)
