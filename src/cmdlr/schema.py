@@ -57,12 +57,11 @@ meta = parsing_meta.extend({
 
 config = Schema({
     'delay': All(float, Range(min=0)),
-    Required('dirs'): All(Length(min=1), [All(Length(min=1), _safepath_str)]),
-    Required('extra_analyzer_dir'): Any(
-        None, All(Length(min=1), _safepath_str)),
-    Required('disabled_analyzers'): [_st_str],
-    Required('max_concurrent'): All(int, Range(min=1)),
-    Required('max_retry'): All(int, Range(min=0)),
-    Required('proxy'): Any(None, FqdnUrl()),
+    'dirs': All(Length(min=1), [All(Length(min=1), _safepath_str)]),
+    'extra_analyzer_dir': Any(None, All(Length(min=1), _safepath_str)),
+    'disabled_analyzers': [_st_str],
+    'max_concurrent': All(int, Range(min=1)),
+    'max_retry': All(int, Range(min=0)),
+    'proxy': Any(None, FqdnUrl()),
     'customization': {str: dict},
     })

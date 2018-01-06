@@ -11,8 +11,11 @@ yaml.Dumper.ignore_aliases = lambda *args: True
 def from_file(filepath):
     """Get yaml data from file."""
     with open(filepath, 'r', encoding='utf8') as f:
-        return yaml.load(f.read(),
-                         Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader))
+        return (yaml.load(
+                    f.read(),
+                    Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader),
+                )
+                or {})
 
 
 def to_file(filepath, data):
