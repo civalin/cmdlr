@@ -95,7 +95,6 @@ def get_request(curl):
                     self.resp.raise_for_status()
                     return self.resp
                 except Exception as e:
-                    _semaphore.release()
                     current_try = try_idx + 1
                     log.logger.error(
                             'Request Failed ({}/{}): {} => {}: {}'
@@ -104,6 +103,8 @@ def get_request(curl):
                                     type(e).__name__, e))
                     if current_try == max_try:
                         raise e from None
+                    else:
+                        _semaphore.release()
 
         async def __aexit__(self, exc_type, exc, tb):
             """Async with exit."""
