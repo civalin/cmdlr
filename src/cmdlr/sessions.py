@@ -76,7 +76,7 @@ def _get_delay_sec(dyn_delay_factor, delay):
     return dyn_delay_sec + static_delay_sec
 
 
-def _get_dyn_delay_callback(host):
+def _get_dyn_delay_callbacks(host):
     dyn_delay_factor = host['dyn_delay_factor']
 
     def success():
@@ -127,7 +127,7 @@ def get_request(curl):
             await self.host['semaphore'].acquire()
 
             for try_idx in range(max_try):
-                dd_success, dd_fail = _get_dyn_delay_callback(self.host)
+                dd_success, dd_fail = _get_dyn_delay_callbacks(self.host)
                 dyn_delay_factor = self.host['dyn_delay_factor']
                 delay_sec = _get_delay_sec(dyn_delay_factor, delay)
                 await asyncio.sleep(delay_sec)
