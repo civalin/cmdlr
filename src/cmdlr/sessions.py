@@ -13,11 +13,14 @@ from . import config
 from . import log
 
 
+_semaphore_factory = None
+
+
 def _get_default_host():
-    return {'dyn_delay_factor': 0}
+    return {'dyn_delay_factor': 0,
+            'semaphore': _semaphore_factory()}
 
 
-_semaphore = None
 _session_pool = {}
 _host_pool = collections.defaultdict(_get_default_host)
 _loop = None
@@ -33,9 +36,6 @@ def _get_session_init_kwargs(analyzer):
                       'conn_timeout': 120}
     kwargs = {**default_kwargs,
               **analyzer_kwargs}
-
-    if 'connector' not in kwargs:
-        kwargs['connector'] = aiohttp.TCPConnector(limit_per_host=2)
 
     return kwargs
 
@@ -76,22 +76,30 @@ def _get_delay_sec(dyn_delay_factor, delay):
     return dyn_delay_sec + static_delay_sec
 
 
-def _enlarge_dyn_delay_factor(old_dyn_delay_factor):
-    return min(6, old_dyn_delay_factor + 1)
+def _get_dyn_delay_callback(host):
+    dyn_delay_factor = host['dyn_delay_factor']
 
+    def success():
+        if dyn_delay_factor == host['dyn_delay_factor']:
+            host['dyn_delay_factor'] = max(0, dyn_delay_factor - 1)
 
-def _decrease_dyn_delay_factor(old_dyn_delay_factor):
-    return max(0, old_dyn_delay_factor - 1)
+    def fail():
+        if dyn_delay_factor == host['dyn_delay_factor']:
+            host['dyn_delay_factor'] = min(6, dyn_delay_factor + 1)
+
+    return success, fail
 
 
 def init(loop):
     """Init the crawler module."""
+    def semaphore_factory():
+        return asyncio.Semaphore(value=config.get_per_host_concurrent(),
+                                 loop=loop)
     global _loop
     _loop = loop
 
-    global _semaphore
-    _semaphore = asyncio.Semaphore(value=config.get_max_concurrent(),
-                                   loop=loop)
+    global _semaphore_factory
+    _semaphore_factory = semaphore_factory
 
 
 def close():
@@ -116,19 +124,21 @@ def get_request(curl):
 
         async def __aenter__(self):
             """Async with enter."""
+            await self.host['semaphore'].acquire()
+
             for try_idx in range(max_try):
+                dd_success, dd_fail = _get_dyn_delay_callback(self.host)
+                dyn_delay_factor = self.host['dyn_delay_factor']
+                delay_sec = _get_delay_sec(dyn_delay_factor, delay)
+                await asyncio.sleep(delay_sec)
+
                 try:
-                    await _semaphore.acquire()
-                    dyn_delay_factor = self.host['dyn_delay_factor']
-                    delay_sec = _get_delay_sec(dyn_delay_factor, delay)
-                    await asyncio.sleep(delay_sec)
                     self.resp = await session.request(**{
                         **{'method': 'GET', 'proxy': proxy},
                         **self.req_kwargs,
                         })
                     self.resp.raise_for_status()
-                    self.host['dyn_delay_factor'] = _decrease_dyn_delay_factor(
-                            dyn_delay_factor)
+                    dd_success()
                     return self.resp
                 except Exception as e:
                     current_try = try_idx + 1
@@ -137,16 +147,13 @@ def get_request(curl):
                             .format(current_try, max_try,
                                     self.req_kwargs['url'],
                                     type(e).__name__, e))
-                    self.host['dyn_delay_factor'] = _enlarge_dyn_delay_factor(
-                            dyn_delay_factor)
+                    dd_fail()
                     if current_try == max_try:
                         raise e from None
-                    else:
-                        _semaphore.release()
 
         async def __aexit__(self, exc_type, exc, tb):
             """Async with exit."""
             await self.resp.release()
-            _semaphore.release()
+            self.host['semaphore'].release()
 
     return request

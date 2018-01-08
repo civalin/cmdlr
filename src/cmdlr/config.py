@@ -7,12 +7,13 @@ from . import schema
 
 
 _default_config = {
+        'book_concurrent': 10,
         'delay': 1.0,
         'dirs': ['~/comics'],
         'disabled_analyzers': [],
         'extra_analyzer_dir': None,
-        'max_concurrent': 10,
         'max_retry': 4,
+        'per_host_concurrent': 2,
         'proxy': None,
         }
 
@@ -74,9 +75,16 @@ def get_disabled_analyzers():
                        _default_config.get('disabled_analyzers'))
 
 
-def get_max_concurrent():
-    """Get max concurrent number."""
-    return _config.get('max_concurrent', _default_config.get('max_concurrent'))
+def get_per_host_concurrent():
+    """Get per-host concurrent number."""
+    return _config.get('per_host_concurrent',
+                       _default_config.get('per_host_concurrent'))
+
+
+def get_book_concurrent():
+    """Get per-host concurrent number."""
+    return _config.get('book_concurrent',
+                       _default_config.get('book_concurrent'))
 
 
 def get_max_retry():

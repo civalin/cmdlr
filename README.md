@@ -83,14 +83,27 @@ Use `cmdlr -h` to see more options.
 After run `cmdlr` at least one time. The default configuration file will be generated in `~/.config/cmdlr/config.yaml`. It look like this:
 
 ```yaml
+book_concurrent: 10
 delay: 1.0
 dirs:
 - ~/comics
 disabled_analyzers: []
 extra_analyzer_dir: null
-max_concurrent: 10
 max_retry: 4
+per_host_concurrent: 2
 proxy: null
+```
+
+
+
+## Option: `book_concurrent` (Integer)
+
+Define how many books can processing parallel. (default: `10`)
+
+example:
+
+```yaml
+book_concurrent: 10
 ```
 
 
@@ -157,16 +170,18 @@ extra_analyzer_dir: '~/my_analyzers'  # `null` for disable
 
 
 
-## Option: `max_concurrent` (Integer)
+## Option: `per_host_concurrent` (Integer)
 
-Define the maximum global downloading concurrent number. And also be used to define how many books can processing parallel. (default: `10`)
+Define the maximum downloading concurrent number per host. (default: `2`)
 
 This value should be setup based on user's network capacity. If too high may cause a lot of timeout error because multiple connections sharing a little traffic for each other, so no one can finish its task in a reasonable period.
+
+In the other hands, target website may also block user's IP when user try to make a lot of connection at the same time. So don't enlarge this option if you don't know what are you doing.
 
 example:
 
 ```yaml
-max_concurrent: 10
+per_host_concurrent: 2
 ```
 
 
