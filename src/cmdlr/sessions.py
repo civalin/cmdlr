@@ -58,7 +58,7 @@ def _get_session_init_kwargs(analyzer):
                           'user-agent': '{}/{}'.format(
                               info.PROJECT_NAME, info.VERSION)
                           },
-                      'read_timeout': 60 * 5,
+                      'read_timeout': 120,
                       'conn_timeout': 120}
     kwargs = {**default_kwargs,
               **analyzer_kwargs}
