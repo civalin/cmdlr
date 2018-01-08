@@ -143,12 +143,16 @@ def get_request(curl):
             self.req_kwargs = req_kwargs
             self.host = _get_host(req_kwargs['url'])
 
+            self.dd_success = lambda: None
+            self.dd_fail = lambda: None
+
         async def __aenter__(self):
             """Async with enter."""
             await self.host['semaphore'].acquire()
 
             for try_idx in range(max_try):
-                dd_success, dd_fail = _get_dyn_delay_callbacks(self.host)
+                self.dd_success, self.dd_fail = _get_dyn_delay_callbacks(
+                        self.host)
                 dyn_delay_factor = self.host['dyn_delay_factor']
                 delay_sec = _get_delay_sec(dyn_delay_factor, delay)
                 await asyncio.sleep(delay_sec)
@@ -159,7 +163,6 @@ def get_request(curl):
                         **self.req_kwargs,
                         })
                     self.resp.raise_for_status()
-                    dd_success()
                     return self.resp
                 except Exception as e:
                     current_try = try_idx + 1
@@ -168,12 +171,18 @@ def get_request(curl):
                             .format(current_try, max_try,
                                     self.req_kwargs['url'],
                                     type(e).__name__, e))
-                    dd_fail()
                     if current_try == max_try:
                         raise e from None
+                    else:
+                        self.dd_fail()
 
         async def __aexit__(self, exc_type, exc, tb):
             """Async with exit."""
+            if exc_type:
+                self.dd_fail()
+            else:
+                self.dd_success()
+
             await self.resp.release()
             self.host['semaphore'].release()
 
