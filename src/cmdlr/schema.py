@@ -61,7 +61,7 @@ config = Schema({
     'extra_analyzer_dir': Any(None, All(Length(min=1), _safepath_str)),
     'disabled_analyzers': [_st_str],
     'per_host_concurrent': All(int, Range(min=1)),
-    'book_concurrent': All(int, Range(min=1)),
+    'max_concurrent': All(int, Range(min=1)),
     'max_retry': All(int, Range(min=0)),
     'proxy': Any(None, FqdnUrl()),
     'customization': {str: dict},

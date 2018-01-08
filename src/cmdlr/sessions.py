@@ -38,17 +38,18 @@ _DYN_DELAY_TABLE = {  # dyn_delay_factor -> second
         }
 
 
-_semaphore_factory = None
+_per_host_semaphore_factory = None
 
 
 def _get_default_host():
     return {'dyn_delay_factor': 0,
-            'semaphore': _semaphore_factory()}
+            'semaphore': _per_host_semaphore_factory()}
 
 
 _session_pool = {}
 _host_pool = collections.defaultdict(_get_default_host)
 _loop = None
+_semaphore = None
 
 
 def _get_session_init_kwargs(analyzer):
@@ -113,14 +114,18 @@ def _get_dyn_delay_callbacks(host):
 
 def init(loop):
     """Init the crawler module."""
-    def semaphore_factory():
+    def per_host_semaphore_factory():
         return asyncio.Semaphore(value=config.get_per_host_concurrent(),
                                  loop=loop)
     global _loop
     _loop = loop
 
-    global _semaphore_factory
-    _semaphore_factory = semaphore_factory
+    global _per_host_semaphore_factory
+    _per_host_semaphore_factory = per_host_semaphore_factory
+
+    global _semaphore
+    _semaphore = asyncio.Semaphore(value=config.get_max_concurrent(),
+                                   loop=loop)
 
 
 def close():
@@ -149,6 +154,7 @@ def get_request(curl):
         async def __aenter__(self):
             """Async with enter."""
             await self.host['semaphore'].acquire()
+            await _semaphore.acquire()
 
             for try_idx in range(max_try):
                 self.dd_success, self.dd_fail = _get_dyn_delay_callbacks(
@@ -184,6 +190,7 @@ def get_request(curl):
                 self.dd_success()
 
             await self.resp.release()
+            _semaphore.release()
             self.host['semaphore'].release()
 
     return request

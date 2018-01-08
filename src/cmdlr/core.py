@@ -18,7 +18,7 @@ def _init():
     loop = asyncio.get_event_loop()
     global _semaphore
     _semaphore = asyncio.Semaphore(
-            value=config.get_book_concurrent(), loop=loop)
+            value=config.get_max_concurrent(), loop=loop)
 
     return loop
 
