@@ -173,8 +173,8 @@ def get_request(curl):
                 except Exception as e:
                     current_try = try_idx + 1
                     log.logger.error(
-                            'Request Failed ({}/{}): {} => {}: {}'
-                            .format(current_try, max_try,
+                            'Request Failed ({}/{}, d{}): {} => {}: {}'
+                            .format(current_try, max_try, dyn_delay_factor,
                                     self.req_kwargs['url'],
                                     type(e).__name__, e))
                     if current_try == max_try:
