@@ -13,6 +13,31 @@ from . import config
 from . import log
 
 
+_DYN_DELAY_TABLE = {  # dyn_delay_factor -> second
+        0: 0,
+        1: 5,
+        2: 10,
+        3: 20,
+        4: 30,
+        5: 40,
+        6: 50,
+        7: 60,
+        8: 90,
+        9: 120,
+        10: 180,
+        11: 240,
+        12: 300,
+        13: 600,
+        14: 900,
+        15: 1200,
+        16: 1500,
+        17: 1800,
+        18: 2100,
+        19: 2400,
+        20: 3600,
+        }
+
+
 _semaphore_factory = None
 
 
@@ -66,11 +91,7 @@ def _get_host(url):
 
 
 def _get_delay_sec(dyn_delay_factor, delay):
-    if dyn_delay_factor == 0:
-        dyn_delay_sec = 0
-    else:
-        dyn_delay_sec = min(3600, 5 ** dyn_delay_factor)
-
+    dyn_delay_sec = _DYN_DELAY_TABLE[dyn_delay_factor]
     static_delay_sec = random.random() * delay
 
     return dyn_delay_sec + static_delay_sec
@@ -85,7 +106,7 @@ def _get_dyn_delay_callbacks(host):
 
     def fail():
         if dyn_delay_factor == host['dyn_delay_factor']:
-            host['dyn_delay_factor'] = min(6, dyn_delay_factor + 1)
+            host['dyn_delay_factor'] = min(20, dyn_delay_factor + 1)
 
     return success, fail
 
