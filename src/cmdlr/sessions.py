@@ -4,6 +4,7 @@ import asyncio
 import random
 import collections
 import urllib.parse as UP
+import sys
 
 import aiohttp
 
@@ -147,23 +148,37 @@ def get_request(curl):
             """init."""
             self.req_kwargs = req_kwargs
             self.host = _get_host(req_kwargs['url'])
+            self.resp = None
+            self.local_locked = False
+            self.global_locked = False
 
             self.dd_success = lambda: None
             self.dd_fail = lambda: None
 
-        async def __aenter__(self):
-            """Async with enter."""
+        async def acquire(self):
+            self.local_locked = True
             await self.host['semaphore'].acquire()
+            self.global_locked = True
             await _semaphore.acquire()
 
-            for try_idx in range(max_try):
-                self.dd_success, self.dd_fail = _get_dyn_delay_callbacks(
-                        self.host)
-                dyn_delay_factor = self.host['dyn_delay_factor']
-                delay_sec = _get_delay_sec(dyn_delay_factor, delay)
-                await asyncio.sleep(delay_sec)
+        def release(self):
+            if self.global_locked:
+                self.global_locked = False
+                _semaphore.release()
+            if self.local_locked:
+                self.local_locked = False
+                self.host['semaphore'].release()
 
+        async def __aenter__(self):
+            """Async with enter."""
+            for try_idx in range(max_try):
                 try:
+                    await self.acquire()
+                    self.dd_success, self.dd_fail = _get_dyn_delay_callbacks(
+                            self.host)
+                    delay_sec = _get_delay_sec(
+                            self.host['dyn_delay_factor'], delay)
+                    await asyncio.sleep(delay_sec)
                     self.resp = await session.request(**{
                         **{'method': 'GET', 'proxy': proxy},
                         **self.req_kwargs,
@@ -174,23 +189,26 @@ def get_request(curl):
                     current_try = try_idx + 1
                     log.logger.error(
                             'Request Failed ({}/{}, d{}): {} => {}: {}'
-                            .format(current_try, max_try, dyn_delay_factor,
+                            .format(current_try, max_try,
+                                    self.host['dyn_delay_factor'],
                                     self.req_kwargs['url'],
                                     type(e).__name__, e))
+                    await self.__aexit__(*sys.exc_info())
+
                     if current_try == max_try:
                         raise e from None
-                    else:
-                        self.dd_fail()
 
         async def __aexit__(self, exc_type, exc, tb):
             """Async with exit."""
             if exc_type:
-                self.dd_fail()
+                if exc_type is not asyncio.CancelledError:
+                    self.dd_fail()
             else:
                 self.dd_success()
 
-            await self.resp.release()
-            _semaphore.release()
-            self.host['semaphore'].release()
+            if self.resp:
+                await self.resp.release()
+
+            self.release()
 
     return request
