@@ -83,12 +83,12 @@ Use `cmdlr -h` to see more options.
 After run `cmdlr` at least one time. The default configuration file will be generated in `~/.config/cmdlr/config.yaml`. It look like this:
 
 ```yaml
-book_concurrent: 10
 delay: 1.0
 dirs:
 - ~/comics
 disabled_analyzers: []
 extra_analyzer_dir: null
+max_concurrent: 10
 max_retry: 4
 per_host_concurrent: 2
 proxy: null
