@@ -137,7 +137,7 @@ def _get_real_image_servers():
 _real_image_servers = _get_real_image_servers()
 
 
-def _get_img_url(c_info_path, c_info_filename):
+def _get_img_url(c_info_path, c_info_filename, cid, md5):
     if c_info_filename.endswith('.webp'):
         filename = c_info_filename[:-5]
     else:
@@ -145,8 +145,13 @@ def _get_img_url(c_info_path, c_info_filename):
 
     server = random.choice(_real_image_servers)
 
-    return 'http://{server}.hamreus.com:8080{c_info_path}{filename}'.format(
-            server=server, c_info_path=c_info_path, filename=filename)
+    return (
+        'http://{server}.hamreus.com:8080{c_info_path}{filename}?{qs}'
+        .format(server=server,
+                c_info_path=c_info_path,
+                filename=filename,
+                qs=UP.urlencode({'cid': cid, 'md5': md5}))
+    )
 
 
 session_init_kwargs = {
@@ -205,5 +210,8 @@ async def save_volume_images(resp, save_image, **kwargs):
     c_info = execjs.compile(c_info_js_string).eval('cInfo')
 
     for idx, c_info_filename in enumerate(c_info['files']):
-        img_url = _get_img_url(c_info['path'], c_info_filename)
+        img_url = _get_img_url(c_info['path'],
+                               c_info_filename,
+                               c_info['cid'],
+                               c_info['sl']['md5'])
         save_image(page_num=idx + 1, url=img_url)
