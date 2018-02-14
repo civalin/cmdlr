@@ -146,7 +146,7 @@ def _get_img_url(c_info_path, c_info_filename, cid, md5):
     server = random.choice(_real_image_servers)
 
     return (
-        'http://{server}.hamreus.com:8080{c_info_path}{filename}?{qs}'
+        'http://{server}.hamreus.com{c_info_path}{filename}?{qs}'
         .format(server=server,
                 c_info_path=c_info_path,
                 filename=filename,
