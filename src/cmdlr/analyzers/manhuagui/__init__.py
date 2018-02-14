@@ -155,17 +155,17 @@ def _get_img_url(c_info_path, c_info_filename, cid, md5):
 
 
 session_init_kwargs = {
-        'headers': {
-            'referer': 'http://www.manhuagui.com',
-            'user-agent': ('Mozilla/5.0 AppleWebKit/537.3 (KHTML, like Gecko)'
-                           ' Windows 10 Chrome/58.0.3029.110 Safari/537.36')
-            },
-        }
+    'headers': {
+        'referer': 'http://www.manhuagui.com',
+        'user-agent': ('Mozilla/5.0 AppleWebKit/537.3 (KHTML, like Gecko)'
+                       ' Windows 10 Chrome/58.0.3029.110 Safari/537.36')
+    },
+}
 
 
 entry_patterns = [
-        re.compile(r'^http://(www|tw).(?:manhuagui|ikanman).com/comic/(\d+)/$'),
-        ]
+    re.compile(r'^http://(www|tw).(?:manhuagui|ikanman).com/comic/(\d+)/$'),
+]
 
 
 def entry_normalizer(url):
