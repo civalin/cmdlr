@@ -206,7 +206,9 @@ async def save_volume_images(resp, save_image, **kwargs):
     encrypted_js_string = re.sub(r'^window\[.+?\]', '', js_string)
 
     shared_jsctx = _get_shared_jsctx()
-    c_info_js_string = shared_jsctx.eval(encrypted_js_string)
+    SMH_js_string = shared_jsctx.eval(encrypted_js_string)
+    c_info_js_string = 'cInfo = {};'.format(
+        re.search(r'{.*}', SMH_js_string).group(0))
     c_info = execjs.compile(c_info_js_string).eval('cInfo')
 
     for idx, c_info_filename in enumerate(c_info['files']):
