@@ -125,7 +125,7 @@ The real delay range are equal to `(0.0 ~ 1.0 random number) * delay` seconds.
 example:
 
 ```yaml
-delay: 2.0  # set the delay interval from 0.0 to 2.0 seconds.
+delay: 2.0  # set the delay interval to 0.0 ~ 2.0 seconds.
 ```
 
 
