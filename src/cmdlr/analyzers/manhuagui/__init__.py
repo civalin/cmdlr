@@ -156,9 +156,9 @@ def _get_img_url(c_info_path, c_info_filename, cid, md5):
 
 session_init_kwargs = {
     'headers': {
-        'referer': 'http://www.manhuagui.com',
+        'referer': 'http://www.manhuagui.com/comic/',
         'user-agent': ('Mozilla/5.0 AppleWebKit/537.3 (KHTML, like Gecko)'
-                       ' Windows 10 Chrome/58.0.3029.110 Safari/537.36')
+                       ' Windows 10 Chrome/64.0.3938.120 Safari/537.36')
     },
 }
 
