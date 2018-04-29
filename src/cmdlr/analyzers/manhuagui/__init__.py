@@ -164,7 +164,7 @@ session_init_kwargs = {
 
 
 entry_patterns = [
-    re.compile(r'^http://(www|tw).(?:manhuagui|ikanman).com/comic/(\d+)/$'),
+    re.compile(r'^https?://(www|tw).(?:manhuagui|ikanman).com/comic/(\d+)/?$'),
 ]
 
 
