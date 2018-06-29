@@ -3,7 +3,7 @@
 VERSION = (3, 1, 1)
 DESCRIPTION = ('An extensible comic subscriber.')
 LICENSE = 'MIT'
-AUTHOR = 'Civalin'
-AUTHOR_EMAIL = 'larinawf@gmail.com'
+AUTHOR = 'visig'
+AUTHOR_EMAIL = 'visig@protonmail.ch'
 PROJECT_URL = 'https://github.com/civalin/cmdlr'
 PROJECT_NAME = 'cmdlr'
