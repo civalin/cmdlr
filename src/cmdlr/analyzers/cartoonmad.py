@@ -42,15 +42,15 @@ def _get_volumes(soup, baseurl):
 
 
 entry_patterns = [
-        re.compile(r'^http://(?:www.)?cartoonmad.com/comic/(\d+)(?:\.html)?$'),
-        ]
+    re.compile(r'^https?://(?:www.)?cartoonmad.com/comic/(\d+)(?:\.html)?$'),
+]
 
 
 def entry_normalizer(url):
     """Normalize all possible entry url to single one form."""
     match = entry_patterns[0].search(url)
     id = match.group(1)
-    return 'http://www.cartoonmad.com/comic/{}.html'.format(id)
+    return 'https://www.cartoonmad.com/comic/{}.html'.format(id)
 
 
 async def get_comic_info(resp, **kwargs):
