@@ -221,5 +221,6 @@ async def download_one_volume(
                 imgdl_tasks, loop=loop, return_when=asyncio.FIRST_EXCEPTION)
         _cleanup_img_download_tasks(done, pending)  # cleanup & raise
 
-        _save_volume_meta(tmpdirpath, curl, vurl, comic_name, volume_name)
-        _convert_to_cbz(tmpdirpath, path, comic_name, volume_name)
+        if len(pending) == 0:
+            _save_volume_meta(tmpdirpath, curl, vurl, comic_name, volume_name)
+            _convert_to_cbz(tmpdirpath, path, comic_name, volume_name)
