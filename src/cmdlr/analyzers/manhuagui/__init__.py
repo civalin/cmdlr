@@ -183,7 +183,7 @@ def entry_normalizer(url):
         raise exceptions.AnalyzerRuntimeError(
                 'manhuagui.data_source should be one of ["tw", "cn", null]')
 
-    return 'http://{}.manhuagui.com/comic/{}/'.format(subdomain, id)
+    return 'https://{}.manhuagui.com/comic/{}/'.format(subdomain, id)
 
 
 async def get_comic_info(resp, loop, **kwargs):
