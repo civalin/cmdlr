@@ -7,24 +7,24 @@ from . import schema
 
 
 _default_config = {
-        'delay': 1.0,
-        'dirs': ['~/comics'],
-        'disabled_analyzers': [],
-        'extra_analyzer_dir': None,
-        'max_concurrent': 10,
-        'max_retry': 4,
-        'per_host_concurrent': 2,
-        'proxy': None,
-        }
+    'delay': 1.0,
+    'dirs': ['~/comics'],
+    'disabled_analyzers': [],
+    'extra_analyzer_dir': None,
+    'max_concurrent': 10,
+    'max_retry': 4,
+    'per_host_concurrent': 2,
+    'proxy': None,
+}
 
 _config_filepath = os.path.join(
-        os.getenv(
-            'XDG_CONFIG_HOME',
-            os.path.join(os.path.expanduser('~'), '.config'),
-            ),
-        'cmdlr',
-        'config.yaml',
-        )
+    os.getenv(
+        'XDG_CONFIG_HOME',
+        os.path.join(os.path.expanduser('~'), '.config'),
+    ),
+    'cmdlr',
+    'config.yaml',
+)
 
 _config = None
 
@@ -49,8 +49,8 @@ def _init():
 def get_incoming_dir():
     """Get incoming dir."""
     return _normalize_path(
-            _config.get('dirs', _default_config.get('dirs'))[0]
-            )
+        _config.get('dirs', _default_config.get('dirs'))[0]
+    )
 
 
 def get_all_dirs():
@@ -58,13 +58,14 @@ def get_all_dirs():
     return list(map(
         _normalize_path,
         _config.get('dirs', _default_config.get('dirs')),
-        ))
+    ))
 
 
 def get_extra_analyzer_dir():
     """Get extra analyzer dir."""
     extra_analyzer_dir = _config.get('extra_analyzer_dir',
                                      _default_config.get('extra_analyzer_dir'))
+
     if extra_analyzer_dir:
         return _normalize_path(extra_analyzer_dir)
 

@@ -56,6 +56,7 @@ _meta_source = config.get_customization('manhuagui').get('meta_source')
 def _get_shared_jsctx():
     dirpath = os.path.dirname(os.path.abspath(__file__))
     lzs_path = os.path.join(dirpath, 'lz-string.min.js')
+
     with open(lzs_path, encoding='utf8') as f:
         lzs_code = f.read()
 
@@ -66,6 +67,7 @@ def _get_shared_jsctx():
     """
 
     final_code = lzs_code + extend_code
+
     return execjs.compile(final_code)
 
 
@@ -102,9 +104,10 @@ def _get_volumes(soup, baseurl):
         lzstring = vs_node['value']
         shared_jsctx = _get_shared_jsctx()
         volumes_html = shared_jsctx.eval(
-                'LZString.decompressFromBase64("{lzstring}")'
-                .format(lzstring=lzstring))
+            'LZString.decompressFromBase64("{lzstring}")'
+            .format(lzstring=lzstring))
         volumes_node = BeautifulSoup(volumes_html, 'lxml')
+
     else:
         volumes_node = soup.find('div', class_=['chapter', 'cf'])
 
@@ -114,14 +117,14 @@ def _get_volumes(soup, baseurl):
 
     for sect_title_node in sect_title_nodes:
         sect_title = sect_title_node.get_text()
+
         result.update({
             '{}_{}'.format(sect_title, a['title']):
-            UP.urljoin(baseurl, a['href'])
-            for a
-            in (sect_title_node
-                .find_next_sibling(class_='chapter-list')
-                .find_all('a', href=re.compile(r'^/comic/.*\.html$')))
-                })
+                UP.urljoin(baseurl, a['href'])
+            for a in (sect_title_node
+                      .find_next_sibling(class_='chapter-list')
+                      .find_all('a', href=re.compile(r'^/comic/.*\.html$')))
+        })
 
     return result
 
@@ -130,6 +133,7 @@ def _get_real_image_servers():
     disabled_image_servers = (config
                               .get_customization('manhuagui')
                               .get('disabled_image_servers', []))
+
     return [s for s in _available_image_servers
             if s not in disabled_image_servers]
 
@@ -140,6 +144,7 @@ _real_image_servers = _get_real_image_servers()
 def _get_img_url(c_info_path, c_info_filename, cid, md5):
     if c_info_filename.endswith('.webp'):
         filename = c_info_filename[:-5]
+
     else:
         filename = c_info_filename
 
@@ -175,10 +180,13 @@ def entry_normalizer(url):
 
     if _meta_source is None:
         subdomain = match.group(1)
+
     elif _meta_source == 'cn':
         subdomain = 'www'
+
     elif _meta_source == 'tw':
         subdomain = 'tw'
+
     else:
         raise exceptions.AnalyzerRuntimeError(
                 'manhuagui.data_source should be one of ["tw", "cn", null]')
@@ -190,6 +198,7 @@ async def get_comic_info(resp, loop, **kwargs):
     """Find comic info from entry."""
     html = await resp.text()
     soup = BeautifulSoup(html, 'lxml')
+
     return {'name': _get_name(soup),
             'description': _get_description(soup),
             'authors': _get_authors(soup),
@@ -216,4 +225,5 @@ async def save_volume_images(resp, save_image, **kwargs):
                                c_info_filename,
                                c_info['cid'],
                                c_info['sl']['md5'])
+
         save_image(page_num=idx + 1, url=img_url)

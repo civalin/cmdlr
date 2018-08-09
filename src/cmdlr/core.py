@@ -16,9 +16,10 @@ _semaphore = None
 
 def _init():
     loop = asyncio.get_event_loop()
+
     global _semaphore
     _semaphore = asyncio.Semaphore(
-            value=config.get_max_concurrent(), loop=loop)
+        value=config.get_max_concurrent(), loop=loop)
 
     return loop
 
@@ -33,17 +34,20 @@ async def _run_comic_coros_by_order(curl, coros):
         try:
             for coro in coros:
                 await coro
+
         except exceptions.NoMatchAnalyzer as e:
             log.logger.error(e)
+
         except Exception as e:
             extra_info = ''
             if hasattr(e, 'ori_meta'):
                 extra_info = '>> original metadata:\n{}'.format(
-                        pprint.pformat(e.ori_meta))
+                    pprint.pformat(e.ori_meta))
 
             log.logger.error(
-                    'Unexpected Book Error: {}\n{}'.format(curl, extra_info),
-                    exc_info=sys.exc_info())
+                'Unexpected Book Error: {}\n{}'.format(curl, extra_info),
+                exc_info=sys.exc_info())
+
         finally:
             for coro in coros:
                 coro.close()
@@ -60,7 +64,11 @@ def _one_comic_coro(loop, c,
 
     if download:
         c_coros.append(c.download(
-            loop, volume_names, force_download, skip_download_errors))
+            loop,
+            volume_names,
+            force_download,
+            skip_download_errors,
+        ))
 
     if len(c_coros) == 0:
         return _get_empty_coro()
@@ -90,9 +98,11 @@ def start(**gmt_kwargs):
 
     try:
         loop.run_until_complete(_get_main_task(loop=loop, **gmt_kwargs))
+
     except Exception as e:
         log.logger.critical('Critical Error: {}'.format(e),
                             exc_info=sys.exc_info())
         sys.exit(1)
+
     finally:
         sessions.close()

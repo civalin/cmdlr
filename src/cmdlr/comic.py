@@ -21,13 +21,16 @@ def _get_path_mode(path, new_meta_url):
 
     Returns:
         (path_mode, fs_comic)
+
     """
     try:
         fs_comic = Comic(path=path)
+
         if fs_comic.meta.get('url') == new_meta_url:
             return 'SAME_COMIC', fs_comic
         else:
             return 'DIFFERENT_COMIC', fs_comic
+
     except exceptions.NotAComicDir:
         if os.path.exists(path):
             return 'EXTERNAL_RESOURCE', None
@@ -37,9 +40,10 @@ def _get_path_mode(path, new_meta_url):
 
 def _get_comic_init_exception(path, url, incoming_dir):
     return exceptions.InvalidValue(
-            'Must give only one argments: path, (url, incoming_dir).'
-            ' path: "{}", url: "{}", incoming_dir: "{}"'.format(
-                path, url, incoming_dir))
+        'Must give only one argments: path, (url, incoming_dir).'
+        ' path: "{}", url: "{}", incoming_dir: "{}"'
+        .format(path, url, incoming_dir)
+    )
 
 
 class Comic():
@@ -54,10 +58,13 @@ class Comic():
 
         if path and (url or incoming_dir):
             raise _get_comic_init_exception(path, url, incoming_dir)
+
         elif path:
             self.__load_by_path(path)
+
         elif url and incoming_dir:
             self.__load_by_url(url, incoming_dir)
+
         else:
             raise _get_comic_init_exception(path, url, incoming_dir)
 
@@ -66,7 +73,7 @@ class Comic():
         self.incoming_dir = incoming_dir
 
     def __load_by_path(self, path):
-        """load comic info from file system metadata.
+        """Load comic info from file system metadata.
 
         Args:
             path (str): comic dir path
@@ -82,10 +89,10 @@ class Comic():
 
         if self.ready:
             self.meta = cmeta.get_updated_meta(
-                    self.meta,
-                    parsing_meta['volumes'],
-                    parsing_meta['finished'],
-                    )
+                self.meta,
+                parsing_meta['volumes'],
+                parsing_meta['finished'],
+            )
 
         else:  # the `url` not SYNC with local dir currently (`self.path`)
             path = os.path.join(self.incoming_dir,
@@ -95,10 +102,10 @@ class Comic():
 
             if path_mode == 'SAME_COMIC':
                 self.meta = cmeta.get_updated_meta(
-                        fs_comic.meta,
-                        parsing_meta['volumes'],
-                        parsing_meta['finished'],
-                        )
+                    fs_comic.meta,
+                    parsing_meta['volumes'],
+                    parsing_meta['finished'],
+                )
                 self.path = path
 
             elif path_mode == 'NOT_USED':
@@ -107,11 +114,11 @@ class Comic():
 
             elif path_mode == 'DIFFERENT_COMIC':
                 raise exceptions.ComicDirOccupied(
-                        'Url Not The Same: "{}"'.format(path))
+                    'Url Not The Same: "{}"'.format(path))
 
             elif path_mode == 'EXTERNAL_RESOURCE':
                 raise exceptions.ComicDirOccupied(
-                        'External Occupied: "{}"'.format(path))
+                    'External Occupied: "{}"'.format(path))
 
             else:
                 raise RuntimeError('Unknown Program Error')
@@ -132,16 +139,18 @@ class Comic():
 
         async with request(url=url, **comic_req_kwargs) as resp:
             ori_meta = await get_comic_info(resp, request=request, loop=loop)
+
             try:
                 parsing_meta = schema.parsing_meta(ori_meta)
+
             except Exception as e:
                 e.ori_meta = ori_meta
                 raise
 
         self.__update_meta(parsing_meta)
 
-        log.logger.info('Meta Updated: {name} ({url})'.format(
-            **parsing_meta, url=url))
+        log.logger.info('Meta Updated: {name} ({url})'
+                        .format(**parsing_meta, url=url))
 
     async def download(self, loop,
                        volume_names=None, force=False, skip_errors=False):
@@ -154,25 +163,28 @@ class Comic():
             skip_errors (bool): allow part of images not be fetched correctly
         """
         sd_volnames = cvolume.get_should_download_volnames(
-                self.path, self.meta['name'], self.meta['volumes'],
-                volume_names, force)
+            self.path, self.meta['name'], self.meta['volumes'],
+            volume_names, force)
 
         for volname in sorted(sd_volnames):
             vurl = self.meta['volumes'][volname]
+
             try:
                 await cvolume.download_one_volume(
-                        path=self.path,
-                        curl=self.meta['url'],
-                        comic_name=self.meta['name'],
-                        vurl=vurl,
-                        volume_name=volname,
-                        skip_errors=skip_errors,
-                        loop=loop)
+                    path=self.path,
+                    curl=self.meta['url'],
+                    comic_name=self.meta['name'],
+                    vurl=vurl,
+                    volume_name=volname,
+                    skip_errors=skip_errors,
+                    loop=loop
+                )
+
             except Exception:
                 log.logger.error(
-                        'Volume Download Failed: {cname}_{vname}'
-                        ' ({vurl})'.format(
-                            cname=self.meta['name'],
-                            vname=volname,
-                            vurl=vurl),
-                        exc_info=sys.exc_info())
+                    ('Volume Download Failed: {cname}_{vname} ({vurl})'
+                     .format(cname=self.meta['name'],
+                             vname=volname,
+                             vurl=vurl)),
+                    exc_info=sys.exc_info(),
+                )

@@ -4,7 +4,7 @@ import datetime as DT
 import html
 
 from voluptuous import (
-        Schema, FqdnUrl, Required, Length, Range, Unique, All, Any, Invalid)
+    Schema, FqdnUrl, Required, Length, Range, Unique, All, Any, Invalid)
 
 _trans_comp_table = str.maketrans('\?*<":>+[]/', '＼？＊＜”：＞＋〔〕／')
 _trans_path_table = str.maketrans('?*<">+[]', '？＊＜”＞＋〔〕')
@@ -43,26 +43,35 @@ parsing_meta = Schema({
     Required('description'): All(str, _st_str),
     Required('authors'): All([_st_str], Unique()),
     Required('finished'): bool,
-    Required('volumes'): Schema(All(dict, Length(min=1), _dict_value_unique, {
-            All(Length(min=1), _safepathcomp_str): FqdnUrl(),
-            })),
-    })
+    Required('volumes'): Schema(All(
+        dict,
+        Length(min=1),
+        _dict_value_unique,
+        {All(Length(min=1), _safepathcomp_str): FqdnUrl()}
+    )),
+})
 
 
 meta = parsing_meta.extend({
     Required('url'): FqdnUrl(),
     Required('volumes_checked_time'): DT.datetime,
     Required('volumes_modified_time'): DT.datetime,
-    })
+})
 
 config = Schema({
     'delay': All(float, Range(min=0)),
-    'dirs': All(Length(min=1), [All(Length(min=1), _safepath_str)]),
-    'extra_analyzer_dir': Any(None, All(Length(min=1), _safepath_str)),
+    'dirs': All(
+        Length(min=1),
+        [All(Length(min=1), _safepath_str)],
+    ),
+    'extra_analyzer_dir': Any(
+        None,
+        All(Length(min=1), _safepath_str),
+    ),
     'disabled_analyzers': [_st_str],
     'per_host_concurrent': All(int, Range(min=1)),
     'max_concurrent': All(int, Range(min=1)),
     'max_retry': All(int, Range(min=0)),
     'proxy': Any(None, FqdnUrl()),
     'customization': {str: dict},
-    })
+})

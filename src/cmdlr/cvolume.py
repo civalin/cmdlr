@@ -16,19 +16,21 @@ from . import amgr
 def _get_volume_cbzpath(comic_path, comic_name, volume_name):
     """Get colume cbzpath."""
     volume_cbzname = _get_volume_cbzname(comic_name, volume_name)
+
     return os.path.join(comic_path, volume_cbzname)
 
 
 def _convert_to_cbz(source_dirpath, comic_path, comic_name, volume_name):
     """Convert dir to cbz format."""
     volume_cbzpath = _get_volume_cbzpath(
-            comic_path, comic_name, volume_name)
+        comic_path, comic_name, volume_name)
     volume_cbztmppath = volume_cbzpath + '.tmp'
 
     with zipfile.ZipFile(volume_cbztmppath, 'w') as zfile:
         for filename in os.listdir(source_dirpath):
             real_path = os.path.join(source_dirpath, filename)
             in_zip_path = filename
+
             zfile.write(real_path, in_zip_path)
 
     os.rename(volume_cbztmppath, volume_cbzpath)
@@ -46,6 +48,7 @@ def _save_image_binary(binary, page_num, ext, volume_dirpath):
 def _default_get_image_extension(resp):
     """Get image extension."""
     ctype = resp.content_type
+
     if ctype in ['image/jpeg', 'image/jpg']:
         return '.jpg'
     elif ctype == 'image/png':
@@ -54,6 +57,7 @@ def _default_get_image_extension(resp):
         return '.gif'
     elif ctype == 'image/bmp':
         return '.bmp'
+
     else:
         raise exceptions.InvalidValue('Cannot determine file extension'
                                       ' of "{}" content type.'.format(ctype))
@@ -62,26 +66,28 @@ def _default_get_image_extension(resp):
 def _get_img_download(curl, tmpdirpath, cname, vname, skip_errors):
     request = sessions.get_request(curl)
     get_image_extension = amgr.get_prop(
-            curl,
-            'get_image_extension',
-            _default_get_image_extension)
+        curl,
+        'get_image_extension',
+        _default_get_image_extension)
 
     async def img_download(page_num, url, **request_kwargs):
         try:
             async with request(url=url, **request_kwargs) as resp:
                 ext = get_image_extension(resp)
                 binary = await resp.read()
-
                 _save_image_binary(binary, page_num, ext, tmpdirpath)
+
                 log.logger.info('Image Fetched: {}_{}_{:03}'.format(
                     cname, vname, page_num))
 
         except asyncio.CancelledError as e:
             pass
+
         except Exception as e:
             log.logger.error(
-                    'Image Fetch Failed : {}_{}_{:03} ({} => {}: {})'
-                    .format(cname, vname, page_num, url, type(e).__name__, e))
+                'Image Fetch Failed : {}_{}_{:03} ({} => {}: {})'
+                .format(cname, vname, page_num, url, type(e).__name__, e))
+
             if not skip_errors:
                 raise e from None
 
@@ -93,7 +99,8 @@ def _get_save_image(loop, img_download):
 
     def save_image(page_num, *, url, **request_kwargs):
         task = loop.create_task(
-                img_download(int(page_num), url, **request_kwargs))
+            img_download(int(page_num), url, **request_kwargs))
+
         imgdl_tasks.append(task)
 
     return save_image, imgdl_tasks
@@ -103,6 +110,7 @@ def _cleanup_img_download_tasks(done, pending):
     """Cancel pending tasks & raise exception in img_download if exists."""
     for task in pending:
         task.cancel()
+
     for e in [task.exception() for task in done]:
         if e:
             raise e from None
@@ -110,13 +118,14 @@ def _cleanup_img_download_tasks(done, pending):
 
 def _save_volume_meta(dirpath, curl, vurl, comic_name, volume_name):
     filepath = os.path.join(dirpath, '.volume-meta.yaml')
+
     yamla.to_file(filepath, {
         'comic_url': curl,
         'volume_url': vurl,
         'comic_name': comic_name,
         'volume_name': volume_name,
         'archived_time': DT.datetime.now(DT.timezone.utc),
-        })
+    })
 
 
 def _get_volume_cbzname(comic_name, volume_name):
@@ -155,7 +164,7 @@ def get_should_download_volnames(
         comic_name (str): comic's title
         volumes (dict):
             comic's volume_name -> volume_url mapping
-            (equal to comic.meta['volumes'])
+        (equal to comic.meta['volumes'])
         want_volnames (list or None):
             the volume names want to download.
             if None, fetch everythings.
@@ -175,13 +184,12 @@ def get_should_download_volnames(
             should_volnames = nd_volnames
     else:
         if force:
-            should_volnames = [vname
-                               for vname in want_volnames
+            should_volnames = [vname for vname in want_volnames
                                if vname in volumes]
         else:
-            should_volnames = [vname
-                               for vname in want_volnames
+            should_volnames = [vname for vname in want_volnames
                                if vname in nd_volnames]
+
     return should_volnames
 
 
@@ -201,9 +209,11 @@ async def download_one_volume(
     """
     with tempfile.TemporaryDirectory(prefix='cmdlr_') as tmpdirpath:
         img_download = _get_img_download(
-                curl, tmpdirpath, comic_name, volume_name, skip_errors)
+            curl, tmpdirpath, comic_name, volume_name, skip_errors)
         save_image, imgdl_tasks = _get_save_image(loop, img_download)
+
         request = sessions.get_request(curl)
+
         volume_req_kwargs = amgr.get_prop(curl, 'volume_req_kwargs', {})
         save_volume_images = amgr.get_prop(curl, 'save_volume_images')
 
@@ -214,11 +224,12 @@ async def download_one_volume(
 
         if len(imgdl_tasks) == 0:
             raise exceptions.NoImagesFound(
-                    'Not found any images in volume: [{}] => [{}] {}'
-                    .format(comic_name, volume_name, vurl))
+                'Not found any images in volume: [{}] => [{}] {}'
+                .format(comic_name, volume_name, vurl))
 
         done, pending = await asyncio.wait(  # wait until first exception
-                imgdl_tasks, loop=loop, return_when=asyncio.FIRST_EXCEPTION)
+            imgdl_tasks, loop=loop,
+            return_when=asyncio.FIRST_EXCEPTION)
         _cleanup_img_download_tasks(done, pending)  # cleanup & raise
 
         if len(pending) == 0:

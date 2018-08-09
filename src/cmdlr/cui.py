@@ -12,63 +12,63 @@ from . import cuiprint
 
 def _parser_setting():
     parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawTextHelpFormatter,
-            description=textwrap.fill(info.DESCRIPTION, 70))
+        formatter_class=argparse.RawTextHelpFormatter,
+        description=textwrap.fill(info.DESCRIPTION, 70))
 
     parser.add_argument(
-            '--version', action='version',
-            version='.'.join(map(lambda x: str(x), info.VERSION)))
+        '--version', action='version',
+        version='.'.join(map(lambda x: str(x), info.VERSION)))
 
     parser.add_argument(
-            'urls', metavar='URL', type=str, nargs='*',
-            help='select some books which want to process.\n'
-                 'if no urls are given, select all subscribed books.\n'
-                 'if some urls haven\'t been subscribed,'
-                 ' subscrube these now.\n'
-                 'more process depend on which flags be given.')
+        'urls', metavar='URL', type=str, nargs='*',
+        help=('select some books which want to process.\n'
+              'if no urls are given, select all subscribed books.\n'
+              'if some urls haven\'t been subscribed,'
+              ' subscrube these now.\n'
+              'more process depend on which flags be given.'))
 
     parser.add_argument(
-            '-m', '--update-meta', dest='update_meta', action='store_true',
-            help='request update meta, not only when subscribe.')
+        '-m', '--update-meta', dest='update_meta', action='store_true',
+        help='request update meta, not only when subscribe.')
 
     parser.add_argument(
-            '-d', '--download', dest='download', action='store_true',
-            help='download the volumes files.')
+        '-d', '--download', dest='download', action='store_true',
+        help='download the volumes files.')
 
     parser.add_argument(
-            '-v', '--volume-name', dest='volnames', type=str, nargs='+',
-            help='select which volumes should be download.\n'
-                 'must using with --download flag.')
+        '-v', '--volume-name', dest='volnames', type=str, nargs='+',
+        help=('select which volumes should be download.\n'
+              'must using with --download flag.'))
 
     parser.add_argument(
-            '-s', '--skip-download-errors',
-            dest='skip_download_errors', action='store_true',
-            help='generate volume files even if some images fetch failed.\n'
-                 'may cause incomplete volume files, so use carefully.\n'
-                 'must using with --download flag.')
+        '-s', '--skip-download-errors',
+        dest='skip_download_errors', action='store_true',
+        help=('generate volume files even if some images fetch failed.\n'
+              'may cause incomplete volume files, so use carefully.\n'
+              'must using with --download flag.'))
 
     parser.add_argument(
-            '-f', '--force-download',
-            dest='force_download', action='store_true',
-            help='refetch volume files even if it\'s already exists.\n'
-                 'must using with --download flag.')
+        '-f', '--force-download',
+        dest='force_download', action='store_true',
+        help=('refetch volume files even if it\'s already exists.\n'
+              'must using with --download flag.'))
 
     parser.add_argument(
-            '-o', '--output',
-            dest='output_dirpath', metavar='DIR', type=str,
-            help='temporary reassign the "dirs" in config file.')
+        '-o', '--output',
+        dest='output_dirpath', metavar='DIR', type=str,
+        help='temporary reassign the "dirs" in config file.')
 
     parser.add_argument(
-            '-l', '--list', dest='list', action='store_true',
-            help='list exists comics info.\n'
-                 'also display extra data if URLs are given.\n'
-                 'this flag will prevent any current status change.')
+        '-l', '--list', dest='list', action='store_true',
+        help=('list exists comics info.\n'
+              'also display extra data if URLs are given.\n'
+              'this flag will prevent any current status change.'))
 
     parser.add_argument(
-            '-a', dest='analyzer', nargs='?', type=str,
-            default=argparse.SUPPRESS,
-            help='list all enabled analyzers.\n'
-                 'or print the detail if give a name.\n')
+        '-a', dest='analyzer', nargs='?', type=str,
+        default=argparse.SUPPRESS,
+        help=('list all enabled analyzers.\n'
+              'or print the detail if give a name.\n'))
 
     return parser
 
@@ -120,6 +120,7 @@ def main():
         cuiprint.print_analyzer_info(args.analyzer)
     else:
         from . import core
+
         core.start(coll_dirpaths=coll_dirpaths,
                    urls=args.urls,
                    update_meta=args.update_meta,

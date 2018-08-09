@@ -15,19 +15,22 @@ def _get_exist_url_comics_in_dir(urlcomics, coll_dirpath):
 
         try:
             c = comic.Comic(path=comic_path)
-
             url = c.meta['url']
+
             if url in urlcomics:
                 raise exceptions.DuplicateComic(
-                        'Comic "{url}" in both "{path1}" and "{path2}",'
-                        ' please remove at least one.'
-                        .format(url=url,
-                                path1=c.path,
-                                path2=urlcomics[url].path)
-                        )
+                    'Comic "{url}" in both "{path1}" and "{path2}",'
+                    ' please remove at least one.'
+                    .format(url=url,
+                            path1=c.path,
+                            path2=urlcomics[url].path)
+                )
+
             urlcomics[c.meta['url']] = c
+
         except exceptions.NotAComicDir as e:
             pass
+
         except exceptions.NoMatchAnalyzer as e:
             log.logger.debug('{} ({})'.format(e, comic_path))
 
@@ -59,11 +62,14 @@ def get_normalized_urls(urls):
         return None
 
     result = set()
+
     for url in set(urls):
         try:
             result.add(amgr.get_normalized_entry(url))
+
         except exceptions.NoMatchAnalyzer:
             log.logger.error('No Matched Analyzer: {}'.format(url))
+
     return result
 
 
@@ -79,16 +85,22 @@ def get_selected_url_comics(coll_dirpaths, urls=None):
 
     if urls:
         normalized_urls = get_normalized_urls(urls)
-        already_exists_urlcomics = get_filtered_url_comics(urlcomics,
-                                                           normalized_urls)
+
+        already_exists_urlcomics = get_filtered_url_comics(
+            urlcomics, normalized_urls)
         not_exists_urlcomics = {
-                url: comic.Comic(url=url, incoming_dir=coll_dirpaths[0])
-                for url in normalized_urls if url not in urlcomics
-                }
+            url: comic.Comic(
+                url=url,
+                incoming_dir=coll_dirpaths[0],
+            )
+            for url in normalized_urls if url not in urlcomics
+        }
 
         final_urlcomics = {}
         final_urlcomics.update(already_exists_urlcomics)
         final_urlcomics.update(not_exists_urlcomics)
+
         return final_urlcomics
+
     else:
         return urlcomics

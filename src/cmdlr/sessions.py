@@ -15,28 +15,28 @@ from . import log
 
 
 _DYN_DELAY_TABLE = {  # dyn_delay_factor -> second
-        0: 0,
-        1: 5,
-        2: 10,
-        3: 20,
-        4: 30,
-        5: 40,
-        6: 50,
-        7: 60,
-        8: 90,
-        9: 120,
-        10: 180,
-        11: 240,
-        12: 300,
-        13: 600,
-        14: 900,
-        15: 1200,
-        16: 1500,
-        17: 1800,
-        18: 2100,
-        19: 2400,
-        20: 3600,
-        }
+    0: 0,
+    1: 5,
+    2: 10,
+    3: 20,
+    4: 30,
+    5: 40,
+    6: 50,
+    7: 60,
+    8: 90,
+    9: 120,
+    10: 180,
+    11: 240,
+    12: 300,
+    13: 600,
+    14: 900,
+    15: 1200,
+    16: 1500,
+    17: 1800,
+    18: 2100,
+    19: 2400,
+    20: 3600,
+}
 
 
 _per_host_semaphore_factory = None
@@ -55,12 +55,14 @@ _semaphore = None
 
 def _get_session_init_kwargs(analyzer):
     analyzer_kwargs = getattr(analyzer, 'session_init_kwargs', {})
-    default_kwargs = {'headers': {
-                          'user-agent': '{}/{}'.format(
-                              info.PROJECT_NAME, info.VERSION)
-                          },
-                      'read_timeout': 120,
-                      'conn_timeout': 120}
+    default_kwargs = {
+        'headers': {
+            'user-agent': '{}/{}'.format(info.PROJECT_NAME, info.VERSION)
+        },
+        'read_timeout': 120,
+        'conn_timeout': 120,
+    }
+
     kwargs = {**default_kwargs,
               **analyzer_kwargs}
 
@@ -79,16 +81,19 @@ def _get_session(curl):
     """Get session from session pool by comic url."""
     analyzer = amgr.get_match_analyzer(curl)
     aname = amgr.get_analyzer_name(analyzer)
+
     if aname not in _session_pool:
         session_init_kwargs = _get_session_init_kwargs(analyzer)
-        _session_pool[aname] = aiohttp.ClientSession(loop=_loop,
-                                                     **session_init_kwargs)
+
+        _session_pool[aname] = aiohttp.ClientSession(
+            loop=_loop, **session_init_kwargs)
 
     return _session_pool[aname]
 
 
 def _get_host(url):
     netloc = UP.urlparse(url).netloc
+
     return _host_pool[netloc]
 
 
@@ -118,6 +123,7 @@ def init(loop):
     def per_host_semaphore_factory():
         return asyncio.Semaphore(value=config.get_per_host_concurrent(),
                                  loop=loop)
+
     global _loop
     _loop = loop
 
@@ -157,14 +163,18 @@ def get_request(curl):
 
         async def acquire(self):
             self.local_locked = True
+
             await self.host['semaphore'].acquire()
+
             self.global_locked = True
+
             await _semaphore.acquire()
 
         def release(self):
             if self.global_locked:
                 self.global_locked = False
                 _semaphore.release()
+
             if self.local_locked:
                 self.local_locked = False
                 self.host['semaphore'].release()
@@ -174,25 +184,32 @@ def get_request(curl):
             for try_idx in range(max_try):
                 try:
                     await self.acquire()
+
                     self.dd_success, self.dd_fail = _get_dyn_delay_callbacks(
-                            self.host)
+                        self.host)
                     delay_sec = _get_delay_sec(
-                            self.host['dyn_delay_factor'], delay)
+                        self.host['dyn_delay_factor'], delay)
+
                     await asyncio.sleep(delay_sec)
+
                     self.resp = await session.request(**{
                         **{'method': 'GET', 'proxy': proxy},
                         **self.req_kwargs,
                         })
                     self.resp.raise_for_status()
+
                     return self.resp
+
                 except aiohttp.ClientError as e:
                     current_try = try_idx + 1
+
                     log.logger.error(
-                            'Request Failed ({}/{}, d{}): {} => {}: {}'
-                            .format(current_try, max_try,
-                                    self.host['dyn_delay_factor'],
-                                    self.req_kwargs['url'],
-                                    type(e).__name__, e))
+                        'Request Failed ({}/{}, d{}): {} => {}: {}'
+                        .format(current_try, max_try,
+                                self.host['dyn_delay_factor'],
+                                self.req_kwargs['url'],
+                                type(e).__name__, e))
+
                     await self.__aexit__(*sys.exc_info())
 
                     if current_try == max_try:

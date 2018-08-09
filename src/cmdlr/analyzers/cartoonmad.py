@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 
 def _get_soup(binary):
     html = binary.decode('big5', errors='ignore')
+
     return BeautifulSoup(html, 'lxml')
 
 
@@ -38,7 +39,14 @@ def _get_volumes(soup, baseurl):
                .find('legend', string=re.compile('漫畫線上觀看'))
                .parent
                .find_all(href=re.compile(r'^/comic/')))
-    return {a.string: UP.urljoin(str(baseurl), a.get('href')) for a in a_nodes}
+
+    return {
+        a.string: UP.urljoin(
+            str(baseurl),
+            a.get('href'),
+        )
+        for a in a_nodes
+    }
 
 
 entry_patterns = [
@@ -50,12 +58,14 @@ def entry_normalizer(url):
     """Normalize all possible entry url to single one form."""
     match = entry_patterns[0].search(url)
     id = match.group(1)
+
     return 'https://www.cartoonmad.com/comic/{}.html'.format(id)
 
 
 async def get_comic_info(resp, **kwargs):
     """Find comic info from entry."""
     soup = _get_soup(await resp.read())
+
     return {'name': _get_name(soup),
             'description': _get_description(soup),
             'authors': _get_authors(soup),

@@ -12,10 +12,9 @@ def from_file(filepath):
     """Get yaml data from file."""
     with open(filepath, 'r', encoding='utf8') as f:
         return (yaml.load(
-                    f.read(),
-                    Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader),
-                )
-                or {})
+            f.read(),
+            Loader=getattr(yaml, 'CSafeLoader', yaml.SafeLoader),
+        ) or {})
 
 
 def to_file(filepath, data, comment_out=False):

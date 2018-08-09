@@ -28,6 +28,7 @@ def _get_authors(soup):
 
 def _get_finished(soup):
     msg = soup.find('a', href='#Comic').font.next_sibling
+
     return True if '完' in msg else False
 
 
@@ -41,6 +42,7 @@ def _get_volumes(soup):
 
         if copyright == '1':
             url_prefix = 'http://v.comicbus.com/online/comic-'
+
         else:
             url_prefix = 'http://v.nowcomic.com/online/manga_'
 
@@ -55,10 +57,10 @@ def _get_volumes(soup):
 
 
 session_init_kwargs = {
-        'headers': {
-            'referer': 'http://www.comicbus.com',
-            },
-        }
+    'headers': {
+        'referer': 'http://www.comicbus.com',
+    },
+}
 
 
 entry_patterns = [re.compile(r'^http://www.comicbus.com/html/\d+\.html$')]
@@ -96,8 +98,8 @@ async def save_volume_images(resp, save_image, loop, **kwargs):
 
     # slow to get_img_urls due to external js op, asynchronized
     img_urls = await loop.run_in_executor(
-            None,
-            lambda: imgurl.Decoder.get_img_urls(html, comic_id, vol_id))
+        None,
+        lambda: imgurl.Decoder.get_img_urls(html, comic_id, vol_id))
 
     for img_url, page_num in img_urls:
         save_image(page_num, url=img_url)

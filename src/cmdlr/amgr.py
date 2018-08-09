@@ -23,8 +23,9 @@ def _init(extra_analyzer_dir, disabled_analyzers=None):
 
     if extra_analyzer_dir and not os.path.isdir(extra_analyzer_dir):
         raise exceptions.ExtraAnalyzersDirNotExists(
-                'extra_analyzer_dir already be set but not exists, path: "{}"'
-                .format(extra_analyzer_dir))
+            'extra_analyzer_dir already be set but not exists, path: "{}"'
+            .format(extra_analyzer_dir))
+
     elif extra_analyzer_dir:
         analyzer_dirs[:0] = [extra_analyzer_dir]
 
@@ -57,8 +58,9 @@ def get_analyzer_name(analyzer):
 
 
 def get_prop(entry_url, prop_name, default=None):
-    """get match analyzer's single prop by url and prop_name."""
+    """Get match analyzer's single prop by url and prop_name."""
     analyzer = get_match_analyzer(entry_url)
+
     return getattr(analyzer, prop_name, default)
 
 
@@ -69,8 +71,11 @@ def get_normalized_entry(curl):
 
     if entry_normalizer:
         return entry_normalizer(curl)
+
     return curl
 
 
-_init(extra_analyzer_dir=config.get_extra_analyzer_dir(),
-      disabled_analyzers=config.get_disabled_analyzers())
+_init(
+    extra_analyzer_dir=config.get_extra_analyzer_dir(),
+    disabled_analyzers=config.get_disabled_analyzers(),
+)

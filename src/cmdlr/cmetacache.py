@@ -29,7 +29,9 @@ def _init():
     if os.path.isfile(_cache_filepath):
         with open(_cache_filepath, 'rb') as f:
             _cache = pickle.load(f)
+
         _changed = False
+
     else:
         _changed = True
 
@@ -46,6 +48,7 @@ def load(metapath, mtime):
     """Load meta from cache."""
     _init()
     apath = os.path.abspath(metapath)
+
     if apath in _cache and mtime == _cache[apath]['mtime']:
         return _cache[apath]['meta']
 
@@ -61,6 +64,6 @@ def save(metapath, mtime, meta):
     _changed = True
 
     _cache[apath] = {
-            'mtime': mtime,
-            'meta': meta,
-            }
+        'mtime': mtime,
+        'meta': meta,
+    }

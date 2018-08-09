@@ -37,6 +37,7 @@ def _get_meta_filepath(path):
 
 def _has_meta_file(path):
     meta_path = _get_meta_filepath(path)
+
     if os.path.isfile(meta_path):
         return True
 
@@ -59,6 +60,7 @@ def load_meta(path):
 
     if meta_from_cache:
         meta = meta_from_cache
+
     else:
         meta = yamla.from_file(meta_filepath)
         cmetacache.save(meta_filepath, meta_mtime, meta)

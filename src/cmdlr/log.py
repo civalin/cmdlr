@@ -6,6 +6,7 @@ import logging
 def _get_stream_handler():
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
+
     return ch
 
 
