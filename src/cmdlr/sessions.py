@@ -185,7 +185,7 @@ def get_request(curl):
                         })
                     self.resp.raise_for_status()
                     return self.resp
-                except Exception as e:
+                except aiohttp.ClientError as e:
                     current_try = try_idx + 1
                     log.logger.error(
                             'Request Failed ({}/{}, d{}): {} => {}: {}'
