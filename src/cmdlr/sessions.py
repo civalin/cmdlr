@@ -99,7 +99,7 @@ def _get_host(url):
 
 def _get_delay_sec(dyn_delay_factor, delay):
     dyn_delay_sec = _DYN_DELAY_TABLE[dyn_delay_factor]
-    static_delay_sec = random.random() * delay
+    static_delay_sec = random.random() * delay * 2
 
     return dyn_delay_sec + static_delay_sec
 

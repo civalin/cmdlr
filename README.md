@@ -118,14 +118,14 @@ Notice:
 
 ## Option: `delay` (Float)
 
-Add a random delay interval before each download started. (default: `1.0`)
+Add a random delay interval before each download started. (default: `5.0`)
 
-The real delay range are equal to `(0.0 ~ 1.0 random number) * delay` seconds.
+The real delay for each download connections are `0.0 ~ (2 * delay)` seconds.
 
 example:
 
 ```yaml
-delay: 2.0  # set the delay interval to 0.0 ~ 2.0 seconds.
+delay: 2.0  # set the delay interval to 0.0 ~ 4.0 seconds.
 ```
 
 

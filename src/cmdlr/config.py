@@ -7,7 +7,7 @@ from . import schema
 
 
 _default_config = {
-    'delay': 1.0,
+    'delay': 5.0,
     'dirs': ['~/comics'],
     'disabled_analyzers': [],
     'extra_analyzer_dir': None,
