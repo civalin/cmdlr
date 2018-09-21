@@ -36,11 +36,6 @@ def _parser_setting():
         help='download the volumes files.')
 
     parser.add_argument(
-        '-v', '--volume-name', dest='volnames', type=str, nargs='+',
-        help=('select which volumes should be download.\n'
-              'must using with --download flag.'))
-
-    parser.add_argument(
         '-s', '--skip-download-errors',
         dest='skip_download_errors', action='store_true',
         help=('generate volume files even if some images fetch failed.\n'
@@ -76,14 +71,6 @@ def _parser_setting():
 def _get_args():
     parser = _parser_setting()
     args = parser.parse_args()
-
-    if args.volnames and len(args.urls) != 1:
-        log.logger.critical('Please use -v options with ONLY ONE comic.')
-        sys.exit(1)
-
-    if args.volnames and not args.download:
-        log.logger.critical('Please use -v options with -d options.')
-        sys.exit(1)
 
     if args.force_download and not args.download:
         log.logger.critical('Please use -f options with -d options.')
@@ -125,6 +112,5 @@ def main():
                    urls=args.urls,
                    update_meta=args.update_meta,
                    download=args.download,
-                   volume_names=args.volnames,
                    force_download=args.force_download,
                    skip_download_errors=args.skip_download_errors)

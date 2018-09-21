@@ -152,19 +152,15 @@ class Comic():
         log.logger.info('Meta Updated: {name} ({url})'
                         .format(**parsing_meta, url=url))
 
-    async def download(self, loop,
-                       volume_names=None, force=False, skip_errors=False):
+    async def download(self, loop, force=False, skip_errors=False):
         """Download comic volume in database.
 
         Args:
-            volume_names (iterable): volumes should be fetch
-                                     if None, fetch everythings.
             force (bool): override exists files if exists
             skip_errors (bool): allow part of images not be fetched correctly
         """
         sd_volnames = cvolume.get_should_download_volnames(
-            self.path, self.meta['name'], self.meta['volumes'],
-            volume_names, force)
+            self.path, self.meta['name'], self.meta['volumes'], force)
 
         for volname in sorted(sd_volnames):
             vurl = self.meta['volumes'][volname]

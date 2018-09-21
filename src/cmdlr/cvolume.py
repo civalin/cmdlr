@@ -156,7 +156,7 @@ def get_not_downloaded_volnames(path, comic_name, im_volnames):
 
 
 def get_should_download_volnames(
-        path, comic_name, volumes, want_volnames, force):
+        path, comic_name, volumes, force):
     """Calculate should be downloaded volume's names.
 
     Args:
@@ -164,10 +164,7 @@ def get_should_download_volnames(
         comic_name (str): comic's title
         volumes (dict):
             comic's volume_name -> volume_url mapping
-        (equal to comic.meta['volumes'])
-        want_volnames (list or None):
-            the volume names want to download.
-            if None, fetch everythings.
+            (equal to comic.meta['volumes'])
         force (bool): override (re-fetch) volume files even already exist.
 
     Returns:
@@ -177,18 +174,10 @@ def get_should_download_volnames(
     im_volnames = list(volumes.keys())
     nd_volnames = get_not_downloaded_volnames(path, comic_name, im_volnames)
 
-    if want_volnames is None:
-        if force:
-            should_volnames = im_volnames
-        else:
-            should_volnames = nd_volnames
+    if force:
+        should_volnames = im_volnames
     else:
-        if force:
-            should_volnames = [vname for vname in want_volnames
-                               if vname in volumes]
-        else:
-            should_volnames = [vname for vname in want_volnames
-                               if vname in nd_volnames]
+        should_volnames = nd_volnames
 
     return should_volnames
 

@@ -53,9 +53,8 @@ async def _run_comic_coros_by_order(curl, coros):
                 coro.close()
 
 
-def _one_comic_coro(loop, c,
-                    update_meta, download,
-                    volume_names, force_download, skip_download_errors):
+def _one_comic_coro(
+        loop, c, update_meta, download, force_download, skip_download_errors):
     """Get one combined task."""
     c_coros = []
 
@@ -65,7 +64,6 @@ def _one_comic_coro(loop, c,
     if download:
         c_coros.append(c.download(
             loop,
-            volume_names,
             force_download,
             skip_download_errors,
         ))
@@ -74,6 +72,7 @@ def _one_comic_coro(loop, c,
         return _get_empty_coro()
 
     curl = c.meta['url']
+
     return _run_comic_coros_by_order(curl, c_coros)
 
 
