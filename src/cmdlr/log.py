@@ -5,6 +5,13 @@ import logging
 
 def _get_stream_handler():
     ch = logging.StreamHandler()
+
+    formatter = logging.Formatter(
+        fmt='%(asctime)s %(levelname)s - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+    ch.setFormatter(formatter)
+
     ch.setLevel(logging.DEBUG)
 
     return ch
