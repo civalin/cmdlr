@@ -43,12 +43,6 @@ def _parser_setting():
               'must using with --download flag.'))
 
     parser.add_argument(
-        '-f', '--force-download',
-        dest='force_download', action='store_true',
-        help=('refetch volume files even if it\'s already exists.\n'
-              'must using with --download flag.'))
-
-    parser.add_argument(
         '-o', '--output',
         dest='output_dirpath', metavar='DIR', type=str,
         help='temporary reassign the "dirs" in config file.')
@@ -71,10 +65,6 @@ def _parser_setting():
 def _get_args():
     parser = _parser_setting()
     args = parser.parse_args()
-
-    if args.force_download and not args.download:
-        log.logger.critical('Please use -f options with -d options.')
-        sys.exit(1)
 
     if args.skip_download_errors and not args.download:
         log.logger.critical('Please use -s options with -d options.')
@@ -112,5 +102,4 @@ def main():
                    urls=args.urls,
                    update_meta=args.update_meta,
                    download=args.download,
-                   force_download=args.force_download,
                    skip_download_errors=args.skip_download_errors)

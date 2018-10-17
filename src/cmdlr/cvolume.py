@@ -155,33 +155,6 @@ def get_not_downloaded_volnames(path, comic_name, im_volnames):
             if sefname not in already_exists_fnames]
 
 
-def get_should_download_volnames(
-        path, comic_name, volumes, force):
-    """Calculate should be downloaded volume's names.
-
-    Args:
-        path (str): comic's local dir path
-        comic_name (str): comic's title
-        volumes (dict):
-            comic's volume_name -> volume_url mapping
-            (equal to comic.meta['volumes'])
-        force (bool): override (re-fetch) volume files even already exist.
-
-    Returns:
-        (list) should be downloaded volume_names
-
-    """
-    im_volnames = list(volumes.keys())
-    nd_volnames = get_not_downloaded_volnames(path, comic_name, im_volnames)
-
-    if force:
-        should_volnames = im_volnames
-    else:
-        should_volnames = nd_volnames
-
-    return should_volnames
-
-
 async def download_one_volume(
         path, curl, comic_name, vurl, volume_name, skip_errors, loop):
     """Download single one volume.
