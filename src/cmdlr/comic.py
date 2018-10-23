@@ -4,7 +4,6 @@ import os
 import sys
 
 from . import log
-from . import amgr
 from . import schema
 from . import exceptions
 from . import sessions
@@ -12,7 +11,7 @@ from . import cmeta
 from . import cvolume
 
 
-def _get_path_mode(path, new_meta_url):
+def _get_path_mode(amgr, path, new_meta_url):
     """Get path is which mode.
 
     Args:
@@ -24,7 +23,7 @@ def _get_path_mode(path, new_meta_url):
 
     """
     try:
-        fs_comic = Comic(path=path)
+        fs_comic = Comic(amgr, path=path)
 
         if fs_comic.meta.get('url') == new_meta_url:
             return 'SAME_COMIC', fs_comic
@@ -49,8 +48,10 @@ def _get_comic_init_exception(path, url, incoming_dir):
 class Comic():
     """Comic data container."""
 
-    def __init__(self, *, path=None, url=None, incoming_dir=None):
+    def __init__(self, amgr, *, path=None, url=None, incoming_dir=None):
         """Init."""
+        self.amgr = amgr
+
         self.path = None
         self.meta = {}
         self.incoming_dir = None
@@ -69,7 +70,7 @@ class Comic():
             raise _get_comic_init_exception(path, url, incoming_dir)
 
     def __load_by_url(self, url, incoming_dir):
-        self.meta['url'] = amgr.get_normalized_entry(url)
+        self.meta['url'] = self.amgr.get_normalized_entry(url)
         self.incoming_dir = incoming_dir
 
     def __load_by_path(self, path):
@@ -79,7 +80,7 @@ class Comic():
             path (str): comic dir path
         """
         self.meta = cmeta.load_meta(path)
-        self.meta['url'] = amgr.get_normalized_entry(self.meta['url'])
+        self.meta['url'] = self.amgr.get_normalized_entry(self.meta['url'])
         self.path = path
         self.ready = True
 
@@ -98,7 +99,7 @@ class Comic():
             path = os.path.join(self.incoming_dir,
                                 parsing_meta['name'])
 
-            path_mode, fs_comic = _get_path_mode(path, url)
+            path_mode, fs_comic = _get_path_mode(self.amgr, path, url)
 
             if path_mode == 'SAME_COMIC':
                 self.meta = cmeta.get_updated_meta(
@@ -134,8 +135,8 @@ class Comic():
         url = self.meta['url']
 
         request = sessions.get_request(url)
-        comic_req_kwargs = amgr.get_prop(url, 'comic_req_kwargs', {})
-        get_comic_info = amgr.get_prop(url, 'get_comic_info')
+        comic_req_kwargs = self.amgr.get_prop(url, 'comic_req_kwargs', {})
+        get_comic_info = self.amgr.get_prop(url, 'get_comic_info')
 
         async with request(url=url, **comic_req_kwargs) as resp:
             ori_meta = await get_comic_info(resp, request=request, loop=loop)
@@ -169,13 +170,14 @@ class Comic():
 
             try:
                 await cvolume.download_one_volume(
+                    amgr=self.amgr,
                     path=self.path,
                     curl=self.meta['url'],
                     comic_name=self.meta['name'],
                     vurl=vurl,
                     volume_name=volname,
                     skip_errors=skip_errors,
-                    loop=loop
+                    loop=loop,
                 )
 
             except Exception:

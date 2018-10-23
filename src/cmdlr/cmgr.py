@@ -5,16 +5,15 @@ import functools
 
 from . import comic
 from . import exceptions
-from . import amgr
 from . import log
 
 
-def _get_exist_url_comics_in_dir(urlcomics, dir):
+def _get_exist_url_comics_in_dir(amgr, urlcomics, dir):
     for basename in os.listdir(dir):
         comic_path = os.path.join(dir, basename)
 
         try:
-            c = comic.Comic(path=comic_path)
+            c = comic.Comic(amgr, path=comic_path)
             url = c.meta['url']
 
             if url in urlcomics:
@@ -36,7 +35,7 @@ def _get_exist_url_comics_in_dir(urlcomics, dir):
 
 
 @functools.lru_cache(maxsize=None, typed=True)
-def get_exist_url_comics(*dirs):
+def get_exist_url_comics(amgr, *dirs):
     """Get all comic in dirpaths."""
     urlcomics = {}
 
@@ -44,12 +43,12 @@ def get_exist_url_comics(*dirs):
         if not os.path.exists(dir):
             continue
 
-        _get_exist_url_comics_in_dir(urlcomics, dir)
+        _get_exist_url_comics_in_dir(amgr, urlcomics, dir)
 
     return urlcomics
 
 
-def get_normalized_urls(urls):
+def get_normalized_urls(amgr, urls):
     """Convert a lot of urls to normalized urls.
 
     This function will also strip out:
@@ -79,17 +78,18 @@ def get_filtered_url_comics(urlcomics, normalized_urls):
             for url in normalized_urls if url in urlcomics}
 
 
-def get_selected_url_comics(dirs, urls=None):
+def get_selected_url_comics(amgr, dirs, urls=None):
     """Get selected url comics by urls and data in comic dir."""
-    urlcomics = get_exist_url_comics(*dirs)
+    urlcomics = get_exist_url_comics(amgr, *dirs)
 
     if urls:
-        normalized_urls = get_normalized_urls(urls)
+        normalized_urls = get_normalized_urls(amgr, urls)
 
         already_exists_urlcomics = get_filtered_url_comics(
             urlcomics, normalized_urls)
         not_exists_urlcomics = {
             url: comic.Comic(
+                amgr=amgr,
                 url=url,
                 incoming_dir=dirs[0],
             )

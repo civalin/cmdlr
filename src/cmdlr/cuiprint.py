@@ -7,7 +7,6 @@ import wcwidth
 
 from . import cvolume
 from . import cmgr
-from . import amgr
 
 
 def _get_max_dw(strings):
@@ -58,12 +57,12 @@ def _print_detail(c, nd_volnames):
     print()
 
 
-def print_comic_info(coll_dirpaths, urls):
+def print_comic_info(amgr, dirs, urls):
     """Print comics in comic's pool with selected urls."""
-    urlcomics = cmgr.get_exist_url_comics(*coll_dirpaths)
+    urlcomics = cmgr.get_exist_url_comics(amgr, *dirs)
 
     if urls:  # filter the urlcomics
-        normalized_urls = cmgr.get_normalized_urls(urls)
+        normalized_urls = cmgr.get_normalized_urls(amgr, urls)
         urlcomics = cmgr.get_filtered_url_comics(urlcomics, normalized_urls)
 
     names = [c.meta['name'] for c in urlcomics.values()]
@@ -76,21 +75,25 @@ def print_comic_info(coll_dirpaths, urls):
             _print_detail(c, nd_volnames)
 
 
-def print_analyzer_info(aname):
+def print_analyzer_info(analyzer_infos, aname):
     """Print analyzer info by analyzer name."""
     if aname is None:
         print('Enabled analyzers:')
 
-        for local_aname in sorted(amgr.analyzers.keys()):
-            print(textwrap.indent('- {}'.format(local_aname), ' ' * 4))
+        for local_aname, _ in analyzer_infos:
+            print(textwrap.indent(
+                '- {}'.format(local_aname),
+                ' ' * 4,
+            ))
 
         print()
 
-    elif aname in amgr.analyzers:
-        desc = amgr.analyzers[aname].__doc__
-
-        print('[{}]'.format(aname))
-        print(textwrap.indent(desc, ' ' * 4))
-
     else:
+        for local_aname, desc in analyzer_infos:
+            if aname == local_aname:
+                print('[{}]'.format(aname))
+                print(textwrap.indent(desc, ' ' * 4))
+
+                return
+
         print('Analyzer: "{}" are not exists or enabled.'.format(aname))

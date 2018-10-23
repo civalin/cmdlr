@@ -8,7 +8,6 @@ import sys
 
 import aiohttp
 
-from . import amgr
 from . import info
 from . import log
 
@@ -55,6 +54,8 @@ _proxy = None
 _max_try = None
 _delay = None
 
+_amgr = None
+
 
 def _get_session_init_kwargs(analyzer):
     analyzer_kwargs = getattr(analyzer, 'session_init_kwargs', {})
@@ -82,8 +83,8 @@ def _clear_session_pool():
 
 def _get_session(curl):
     """Get session from session pool by comic url."""
-    analyzer = amgr.get_match_analyzer(curl)
-    aname = amgr.get_analyzer_name(analyzer)
+    analyzer = _amgr.get_match_analyzer(curl)
+    aname = _amgr.get_analyzer_name(analyzer)
 
     if aname not in _session_pool:
         session_init_kwargs = _get_session_init_kwargs(analyzer)
@@ -122,6 +123,7 @@ def _get_dyn_delay_callbacks(host):
 
 
 def init(loop,
+         amgr,
          per_host_concurrent,
          max_concurrent,
          proxy,
@@ -131,6 +133,9 @@ def init(loop,
     def per_host_semaphore_factory():
         return asyncio.Semaphore(value=per_host_concurrent,
                                  loop=loop)
+
+    global _amgr
+    _amgr = amgr
 
     global _loop
     _loop = loop

@@ -8,7 +8,7 @@ from . import info
 from .conf import Config
 from . import log
 from . import cuiprint
-from . import amgr
+from .amgr import AnalyzerManager
 
 
 def _parser_setting():
@@ -84,19 +84,20 @@ def main():
     config_filepaths = [Config.default_config_filepath]
     config.load_or_build(*config_filepaths)
 
-    amgr.init(
+    amgr = AnalyzerManager(
         extra_analyzer_dir=config.extra_analyzer_dir,
         disabled_analyzers=config.disabled_analyzers,
     )
 
     if args.list:
-        cuiprint.print_comic_info(config.dirs, args.urls)
+        cuiprint.print_comic_info(amgr, config.dirs, args.urls)
     elif 'analyzer' in args:
-        cuiprint.print_analyzer_info(args.analyzer)
+        cuiprint.print_analyzer_info(amgr.get_analyzer_infos(), args.analyzer)
     else:
         from . import core
 
         core.start(config=config,
+                   amgr=amgr,
                    urls=args.urls,
                    update_meta=args.update_meta,
                    download=args.download,

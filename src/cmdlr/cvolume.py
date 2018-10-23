@@ -10,7 +10,6 @@ from . import log
 from . import yamla
 from . import sessions
 from . import exceptions
-from . import amgr
 
 
 def _get_volume_cbzpath(comic_path, comic_name, volume_name):
@@ -63,7 +62,7 @@ def _default_get_image_extension(resp):
                                       ' of "{}" content type.'.format(ctype))
 
 
-def _get_img_download(curl, tmpdirpath, cname, vname, skip_errors):
+def _get_img_download(amgr, curl, tmpdirpath, cname, vname, skip_errors):
     request = sessions.get_request(curl)
     get_image_extension = amgr.get_prop(
         curl,
@@ -156,10 +155,11 @@ def get_not_downloaded_volnames(path, comic_name, im_volnames):
 
 
 async def download_one_volume(
-        path, curl, comic_name, vurl, volume_name, skip_errors, loop):
+        amgr, path, curl, comic_name, vurl, volume_name, skip_errors, loop):
     """Download single one volume.
 
     Args:
+        amgr (AnalyzerManager): analyzer manager
         path (str): comic's local dir path
         curl (str): comic's entry url
         comic_name (str): comic's title
@@ -171,7 +171,7 @@ async def download_one_volume(
     """
     with tempfile.TemporaryDirectory(prefix='cmdlr_') as tmpdirpath:
         img_download = _get_img_download(
-            curl, tmpdirpath, comic_name, volume_name, skip_errors)
+            amgr, curl, tmpdirpath, comic_name, volume_name, skip_errors)
         save_image, imgdl_tasks = _get_save_image(loop, img_download)
 
         request = sessions.get_request(curl)

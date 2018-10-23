@@ -73,9 +73,9 @@ def _one_comic_coro(
     return _run_comic_coros_by_order(curl, c_coros)
 
 
-def _get_main_task(loop, dirs, urls, **oct_kwargs):
+def _get_main_task(loop, amgr, dirs, urls, **oct_kwargs):
     """Get main task for loop."""
-    urlcomics = cmgr.get_selected_url_comics(dirs, urls)
+    urlcomics = cmgr.get_selected_url_comics(amgr, dirs, urls)
 
     coros = [_one_comic_coro(loop, c, **oct_kwargs)
              for c in urlcomics.values()]
@@ -87,10 +87,11 @@ def _get_main_task(loop, dirs, urls, **oct_kwargs):
     return asyncio.wait(filtered_coros)
 
 
-def start(config, **gmt_kwargs):
+def start(config, amgr, **gmt_kwargs):
     """Start core system."""
     loop = _init(config.max_concurrent)
     sessions.init(loop,
+                  amgr=amgr,
                   per_host_concurrent=config.per_host_concurrent,
                   max_concurrent=config.max_concurrent,
                   proxy=config.proxy,
@@ -101,6 +102,7 @@ def start(config, **gmt_kwargs):
         loop.run_until_complete(_get_main_task(
             loop=loop,
             dirs=config.dirs,
+            amgr=amgr,
             **gmt_kwargs,
         ))
 
