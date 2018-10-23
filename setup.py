@@ -41,8 +41,8 @@ setup(
     packages=find_packages('src'),
     include_package_data=True,
     entry_points={
-        'console_scripts': ['cmdlr = cmdlr.cui:main'],
-        'setuptools.installation': ['eggsecutable = cmdlr.cui:main']
+        'console_scripts': ['cmdlr = cmdlr.cmdline:main'],
+        'setuptools.installation': ['eggsecutable = cmdlr.cmdline:main']
         },
     keywords='comic download archive',
     )

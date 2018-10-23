@@ -8,7 +8,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
 
-import cmdlr.cui as cui  # NOQA
+import cmdlr.cmdline as cmdline  # NOQA
 
 
-cui.main()
+cmdline.main()
