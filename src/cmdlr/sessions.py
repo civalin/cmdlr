@@ -10,7 +10,6 @@ import aiohttp
 
 from . import amgr
 from . import info
-from . import config
 from . import log
 
 
@@ -51,6 +50,10 @@ _session_pool = {}
 _host_pool = collections.defaultdict(_get_default_host)
 _loop = None
 _semaphore = None
+
+_proxy = None
+_max_try = None
+_delay = None
 
 
 def _get_session_init_kwargs(analyzer):
@@ -118,10 +121,15 @@ def _get_dyn_delay_callbacks(host):
     return success, fail
 
 
-def init(loop):
+def init(loop,
+         per_host_concurrent,
+         max_concurrent,
+         proxy,
+         max_retry,
+         delay):
     """Init the crawler module."""
     def per_host_semaphore_factory():
-        return asyncio.Semaphore(value=config.get_per_host_concurrent(),
+        return asyncio.Semaphore(value=per_host_concurrent,
                                  loop=loop)
 
     global _loop
@@ -131,8 +139,17 @@ def init(loop):
     _per_host_semaphore_factory = per_host_semaphore_factory
 
     global _semaphore
-    _semaphore = asyncio.Semaphore(value=config.get_max_concurrent(),
+    _semaphore = asyncio.Semaphore(value=max_concurrent,
                                    loop=loop)
+
+    global _proxy
+    _proxy = proxy
+
+    global _max_try
+    _max_try = max_retry + 1
+
+    global _delay
+    _delay = delay
 
 
 def close():
@@ -143,9 +160,9 @@ def close():
 def get_request(curl):
     """Get the request class."""
     session = _get_session(curl)
-    proxy = config.get_proxy()
-    max_try = config.get_max_retry() + 1
-    delay = config.get_delay()
+    proxy = _proxy
+    max_try = _max_try
+    delay = _delay
 
     class request:
         """session.request contextmanager."""

@@ -43,13 +43,12 @@ import urllib.parse as UP
 from bs4 import BeautifulSoup
 import execjs
 
-from ... import config
 from ... import exceptions
 
 
 _available_image_servers = ['dx', 'eu', 'i', 'lt', 'us']
 
-_meta_source = config.get_customization('manhuagui').get('meta_source')
+_meta_source = None  # config.get_customization('manhuagui').get('meta_source')
 
 
 @functools.lru_cache()
@@ -130,12 +129,13 @@ def _get_volumes(soup, baseurl):
 
 
 def _get_real_image_servers():
-    disabled_image_servers = (config
-                              .get_customization('manhuagui')
-                              .get('disabled_image_servers', []))
+    # disabled_image_servers = (config
+    #                           .get_customization('manhuagui')
+    #                           .get('disabled_image_servers', []))
 
-    return [s for s in _available_image_servers
-            if s not in disabled_image_servers]
+    # return [s for s in _available_image_servers
+    #         if s not in disabled_image_servers]
+    return _available_image_servers
 
 
 _real_image_servers = _get_real_image_servers()

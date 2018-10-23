@@ -5,9 +5,10 @@ import textwrap
 import sys
 
 from . import info
-from . import config
+from .conf import Config
 from . import log
 from . import cuiprint
+from . import amgr
 
 
 def _parser_setting():
@@ -43,11 +44,6 @@ def _parser_setting():
               'must using with --download flag.'))
 
     parser.add_argument(
-        '-o', '--output',
-        dest='output_dirpath', metavar='DIR', type=str,
-        help='temporary reassign the "dirs" in config file.')
-
-    parser.add_argument(
         '-l', '--list', dest='list', action='store_true',
         help=('list exists comics info.\n'
               'also display extra data if URLs are given.\n'
@@ -72,7 +68,7 @@ def _get_args():
 
     if not args.urls and not sys.stdin.isatty():  # Get URLs from stdin
         args.urls = [url for url in sys.stdin.read().split() if url]
-    elif len(sys.argv) == 1 or (len(sys.argv) == 3 and args.output_dirpath):
+    elif len(sys.argv) == 1:
         log.logger.critical('Please give at least one arguments or flags.'
                             ' Use "-h" for more info.')
         sys.exit(1)
@@ -80,25 +76,27 @@ def _get_args():
     return args
 
 
-def _get_coll_dirpaths(output_dirpath):
-    if output_dirpath:
-        return [output_dirpath]
-    return config.get_all_dirs()
-
-
 def main():
     """Command ui entry point."""
     args = _get_args()
-    coll_dirpaths = _get_coll_dirpaths(args.output_dirpath)
+
+    config = Config()
+    config_filepaths = [Config.default_config_filepath]
+    config.load_or_build(*config_filepaths)
+
+    amgr.init(
+        extra_analyzer_dir=config.extra_analyzer_dir,
+        disabled_analyzers=config.disabled_analyzers,
+    )
 
     if args.list:
-        cuiprint.print_comic_info(coll_dirpaths, args.urls)
+        cuiprint.print_comic_info(config.dirs, args.urls)
     elif 'analyzer' in args:
         cuiprint.print_analyzer_info(args.analyzer)
     else:
         from . import core
 
-        core.start(coll_dirpaths=coll_dirpaths,
+        core.start(config=config,
                    urls=args.urls,
                    update_meta=args.update_meta,
                    download=args.download,

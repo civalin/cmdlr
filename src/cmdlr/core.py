@@ -5,7 +5,6 @@ import sys
 import pprint
 
 from . import sessions
-from . import config
 from . import cmgr
 from . import log
 from . import exceptions
@@ -14,12 +13,11 @@ from . import exceptions
 _semaphore = None
 
 
-def _init():
+def _init(max_concurrent):
     loop = asyncio.get_event_loop()
 
     global _semaphore
-    _semaphore = asyncio.Semaphore(
-        value=config.get_max_concurrent(), loop=loop)
+    _semaphore = asyncio.Semaphore(value=max_concurrent, loop=loop)
 
     return loop
 
@@ -75,9 +73,9 @@ def _one_comic_coro(
     return _run_comic_coros_by_order(curl, c_coros)
 
 
-def _get_main_task(loop, coll_dirpaths, urls, **oct_kwargs):
+def _get_main_task(loop, dirs, urls, **oct_kwargs):
     """Get main task for loop."""
-    urlcomics = cmgr.get_selected_url_comics(coll_dirpaths, urls)
+    urlcomics = cmgr.get_selected_url_comics(dirs, urls)
 
     coros = [_one_comic_coro(loop, c, **oct_kwargs)
              for c in urlcomics.values()]
@@ -89,13 +87,22 @@ def _get_main_task(loop, coll_dirpaths, urls, **oct_kwargs):
     return asyncio.wait(filtered_coros)
 
 
-def start(**gmt_kwargs):
+def start(config, **gmt_kwargs):
     """Start core system."""
-    loop = _init()
-    sessions.init(loop)
+    loop = _init(config.max_concurrent)
+    sessions.init(loop,
+                  per_host_concurrent=config.per_host_concurrent,
+                  max_concurrent=config.max_concurrent,
+                  proxy=config.proxy,
+                  max_retry=config.max_retry,
+                  delay=config.delay)
 
     try:
-        loop.run_until_complete(_get_main_task(loop=loop, **gmt_kwargs))
+        loop.run_until_complete(_get_main_task(
+            loop=loop,
+            dirs=config.dirs,
+            **gmt_kwargs,
+        ))
 
     except Exception as e:
         log.logger.critical('Critical Error: {}'.format(e),

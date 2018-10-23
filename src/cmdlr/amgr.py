@@ -7,7 +7,6 @@ import sys
 import functools
 
 from . import exceptions
-from . import config
 from . import analyzers as _analyzers  # NOQA
 
 _analyzers_pkgpath = 'cmdlr.analyzers'
@@ -15,7 +14,7 @@ _analyzers_pkgpath = 'cmdlr.analyzers'
 analyzers = {}
 
 
-def _init(extra_analyzer_dir, disabled_analyzers=None):
+def init(extra_analyzer_dir, disabled_analyzers=None):
     """Init all analyzers."""
     analyzers.clear()
 
@@ -73,9 +72,3 @@ def get_normalized_entry(curl):
         return entry_normalizer(curl)
 
     return curl
-
-
-_init(
-    extra_analyzer_dir=config.get_extra_analyzer_dir(),
-    disabled_analyzers=config.get_disabled_analyzers(),
-)
