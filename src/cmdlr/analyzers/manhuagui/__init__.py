@@ -1,38 +1,4 @@
-"""The *.manhuagui.com analyzer.
-
-# Entry examples #
-
-- http://tw.manhuagui.com/comic/23292/
-- http://www.manhuagui.com/comic/23292/
-
-
-
-# Configurations #
-
-## `meta_source` ##
-
-(Not required, string or null, allow: 'tw', 'cn')
-
-Choice one of following as metadata source:
-
-- <tw.manhuagui.com> (tw) or
-- <www.manhuagui.com> (cn)
-
-If null or not exists, respect the original entry url.
-
-
-
-## `disabled_image_servers` ##
-
-(Not required, list of strings)
-
-Select which images servers should *NOT* be used. Any non-exists server
-code will be ignored.
-
-Current available servers: ['dx', 'eu', 'i', 'lt', 'us']
-
-> Hint: The real servers url are look like: `http://{code}.hamreus.com:8080`
-"""
+"""The *.manhuagui.com analyzer."""
 
 import re
 import os
@@ -43,12 +9,8 @@ import urllib.parse as UP
 from bs4 import BeautifulSoup
 import execjs
 
-from ... import exceptions
-
-
-_available_image_servers = ['dx', 'eu', 'i', 'lt', 'us']
-
-_meta_source = None  # config.get_customization('manhuagui').get('meta_source')
+from cmdlr import exceptions
+from cmdlr.analyzers import BaseAnalyzer
 
 
 @functools.lru_cache()
@@ -128,102 +90,142 @@ def _get_volumes(soup, baseurl):
     return result
 
 
-def _get_real_image_servers():
-    # disabled_image_servers = (config
-    #                           .get_customization('manhuagui')
-    #                           .get('disabled_image_servers', []))
+class Analyzer(BaseAnalyzer):
+    """The *.manhuagui.com analyzer.
 
-    # return [s for s in _available_image_servers
-    #         if s not in disabled_image_servers]
-    return _available_image_servers
+    # Entry examples #
 
-
-_real_image_servers = _get_real_image_servers()
+    - http://tw.manhuagui.com/comic/23292/
+    - http://www.manhuagui.com/comic/23292/
 
 
-def _get_img_url(c_info_path, c_info_filename, cid, md5):
-    if c_info_filename.endswith('.webp'):
-        filename = c_info_filename[:-5]
 
-    else:
-        filename = c_info_filename
+    # Configurations #
 
-    server = random.choice(_real_image_servers)
+    ## `meta_source` ##
 
-    return (
-        'http://{server}.hamreus.com{c_info_path}{filename}?{qs}'
-        .format(server=server,
-                c_info_path=c_info_path,
-                filename=filename,
-                qs=UP.urlencode({'cid': cid, 'md5': md5}))
-    )
+    (Not required, string or null, allow: 'tw', 'cn')
+
+    Choice one of following as metadata source:
+
+    - <tw.manhuagui.com> (tw) or
+    - <www.manhuagui.com> (cn)
+
+    If null or not exists, respect the original entry url.
 
 
-session_init_kwargs = {
-    'headers': {
-        'referer': 'http://www.manhuagui.com/comic/',
-        'user-agent': ('Mozilla/5.0 AppleWebKit/537.3 (KHTML, like Gecko)'
-                       ' Windows 10 Chrome/64.0.3938.120 Safari/537.36')
-    },
-}
 
+    ## `disabled_image_servers` ##
 
-entry_patterns = [
-    re.compile(r'^https?://(www|tw).(?:manhuagui|ikanman).com/comic/(\d+)/?$'),
-]
+    (Not required, list of strings)
 
+    Select which images servers should *NOT* be used. Any non-exists server
+    code will be ignored.
 
-def entry_normalizer(url):
-    """Normalize all possible entry url to single one form."""
-    match = entry_patterns[0].search(url)
-    id = match.group(2)
+    Current available servers: ['dx', 'eu', 'i', 'lt', 'us']
 
-    if _meta_source is None:
-        subdomain = match.group(1)
+    > Hint: The real servers url are look like:
+            `http://{code}.hamreus.com:8080`
+    """
+    entry_patterns = [
+        re.compile(
+            r'^https?://(www|tw).(?:manhuagui|ikanman).com/comic/(\d+)/?$',
+        ),
+    ]
 
-    elif _meta_source == 'cn':
-        subdomain = 'www'
+    session_init_kwargs = {
+        'headers': {
+            'referer': 'http://www.manhuagui.com/comic/',
+            'user-agent': ('Mozilla/5.0 AppleWebKit/537.3'
+                           ' (KHTML, like Gecko)'
+                           ' Windows 10 Chrome/64.0.3938.120 Safari/537.36')
+        },
+    }
 
-    elif _meta_source == 'tw':
-        subdomain = 'tw'
+    available_image_servers = ['dx', 'eu', 'i', 'lt', 'us']
 
-    else:
-        raise exceptions.AnalyzerRuntimeError(
+    def __get_real_image_servers(self):
+        disabled_image_servers = (self.customization
+                                  .get('disabled_image_servers', []))
+
+        return [s for s in self.available_image_servers
+                if s not in disabled_image_servers]
+
+    def __get_img_url(self,
+                      img_servers, c_info_path, c_info_filename, cid, md5):
+        if c_info_filename.endswith('.webp'):
+            filename = c_info_filename[:-5]
+
+        else:
+            filename = c_info_filename
+
+        server = random.choice(img_servers)
+
+        return (
+            'http://{server}.hamreus.com{c_info_path}{filename}?{qs}'
+            .format(server=server,
+                    c_info_path=c_info_path,
+                    filename=filename,
+                    qs=UP.urlencode({'cid': cid, 'md5': md5}))
+        )
+
+    def entry_normalizer(self, url):
+        """Normalize all possible entry url to single one form."""
+        match = self.entry_patterns[0].search(url)
+        id = match.group(2)
+
+        meta_source = self.customization.get('meta_source')
+
+        if meta_source is None:
+            subdomain = match.group(1)
+
+        elif meta_source == 'cn':
+            subdomain = 'www'
+
+        elif meta_source == 'tw':
+            subdomain = 'tw'
+
+        else:
+            raise exceptions.AnalyzerRuntimeError(
                 'manhuagui.data_source should be one of ["tw", "cn", null]')
 
-    return 'https://{}.manhuagui.com/comic/{}/'.format(subdomain, id)
+        return 'https://{}.manhuagui.com/comic/{}/'.format(subdomain, id)
 
 
-async def get_comic_info(resp, loop, **kwargs):
-    """Find comic info from entry."""
-    html = await resp.text()
-    soup = BeautifulSoup(html, 'lxml')
+    async def get_comic_info(self, resp, loop, **kwargs):
+        """Find comic info from entry."""
+        html = await resp.text()
+        soup = BeautifulSoup(html, 'lxml')
 
-    return {'name': _get_name(soup),
-            'description': _get_description(soup),
-            'authors': _get_authors(soup),
-            'finished': _get_finished(soup),
-            'volumes': _get_volumes(soup, str(resp.url))}
+        return {'name': _get_name(soup),
+                'description': _get_description(soup),
+                'authors': _get_authors(soup),
+                'finished': _get_finished(soup),
+                'volumes': _get_volumes(soup, str(resp.url))}
 
+    async def save_volume_images(self, resp, save_image, **kwargs):
+        """Get all images in one volume."""
+        html = await resp.text()
+        soup = BeautifulSoup(html, 'lxml')
 
-async def save_volume_images(resp, save_image, **kwargs):
-    """Get all images in one volume."""
-    html = await resp.text()
-    soup = BeautifulSoup(html, 'lxml')
+        js_string = soup.find('script', string=re.compile(r'window\["')).string
+        encrypted_js_string = re.sub(r'^window\[.+?\]', '', js_string)
 
-    js_string = soup.find('script', string=re.compile(r'window\["')).string
-    encrypted_js_string = re.sub(r'^window\[.+?\]', '', js_string)
+        shared_jsctx = _get_shared_jsctx()
+        SMH_js_string = shared_jsctx.eval(encrypted_js_string)
+        c_info_js_string = 'cInfo = {};'.format(
+            re.search(r'{.*}', SMH_js_string).group(0))
+        c_info = execjs.compile(c_info_js_string).eval('cInfo')
 
-    shared_jsctx = _get_shared_jsctx()
-    SMH_js_string = shared_jsctx.eval(encrypted_js_string)
-    c_info_js_string = 'cInfo = {};'.format(
-        re.search(r'{.*}', SMH_js_string).group(0))
-    c_info = execjs.compile(c_info_js_string).eval('cInfo')
+        img_servers = self.__get_real_image_servers()
 
-    for idx, c_info_filename in enumerate(c_info['files']):
-        img_url = _get_img_url(c_info['path'],
-                               c_info_filename,
-                               c_info['cid'],
-                               c_info['sl']['md5'])
+        for idx, c_info_filename in enumerate(c_info['files']):
+            img_url = self.__get_img_url(
+                img_servers,
+                c_info['path'],
+                c_info_filename,
+                c_info['cid'],
+                c_info['sl']['md5'],
+            )
 
-        save_image(page_num=idx + 1, url=img_url)
+            save_image(page_num=idx + 1, url=img_url)

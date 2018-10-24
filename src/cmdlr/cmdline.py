@@ -84,10 +84,7 @@ def main():
     config_filepaths = [Config.default_config_filepath]
     config.load_or_build(*config_filepaths)
 
-    amgr = AnalyzerManager(
-        extra_analyzer_dir=config.extra_analyzer_dir,
-        disabled_analyzers=config.disabled_analyzers,
-    )
+    amgr = AnalyzerManager(config)
 
     if args.list:
         cuiprint.print_comic_info(amgr, config.dirs, args.urls)

@@ -1,14 +1,11 @@
-"""The www.cartoonmad.com analyzer.
-
-# Entry examples #
-
-- http://www.cartoonmad.com/comic/5640.html
-"""
+"""The www.cartoonmad.com analyzer."""
 
 import re
 import urllib.parse as UP
 
 from bs4 import BeautifulSoup
+
+from cmdlr.analyzers import BaseAnalyzer
 
 
 def _get_soup(binary):
@@ -49,46 +46,58 @@ def _get_volumes(soup, baseurl):
     }
 
 
-entry_patterns = [
-    re.compile(r'^https?://(?:www.)?cartoonmad.com/comic/(\d+)(?:\.html)?$'),
-]
+class Analyzer(BaseAnalyzer):
+    """The www.cartoonmad.com analyzer.
 
+    # Entry examples #
 
-def entry_normalizer(url):
-    """Normalize all possible entry url to single one form."""
-    match = entry_patterns[0].search(url)
-    id = match.group(1)
+    - http://www.cartoonmad.com/comic/5640.html
+    """
+    entry_patterns = [
+        re.compile(
+            r'^https?://(?:www.)?cartoonmad.com/comic/(\d+)(?:\.html)?$'
+        ),
+    ]
 
-    return 'https://www.cartoonmad.com/comic/{}.html'.format(id)
+    def entry_normalizer(self, url):
+        """Normalize all possible entry url to single one form."""
+        match = self.entry_patterns[0].search(url)
+        id = match.group(1)
 
+        return 'https://www.cartoonmad.com/comic/{}.html'.format(id)
 
-async def get_comic_info(resp, **kwargs):
-    """Find comic info from entry."""
-    soup = _get_soup(await resp.read())
+    async def get_comic_info(self, resp, **kwargs):
+        """Find comic info from entry."""
+        soup = _get_soup(await resp.read())
 
-    return {'name': _get_name(soup),
-            'description': _get_description(soup),
-            'authors': _get_authors(soup),
-            'finished': _get_finished(soup),
-            'volumes': _get_volumes(soup, str(resp.url))}
+        return {'name': _get_name(soup),
+                'description': _get_description(soup),
+                'authors': _get_authors(soup),
+                'finished': _get_finished(soup),
+                'volumes': _get_volumes(soup, str(resp.url))}
 
+    async def save_volume_images(self, resp, save_image, **kwargs):
+        """Get all images in one volume."""
+        def get_page_count(soup):
+            return len(soup.find_all('option', value=True))
 
-async def save_volume_images(resp, save_image, **kwargs):
-    """Get all images in one volume."""
-    def get_page_count(soup):
-        return len(soup.find_all('option', value=True))
+        def get_img_url_generator(soup):
+            baseimgurl = soup.find(
+                'img',
+                src=re.compile(r'http://web'),
+            )['src']
 
-    def get_img_url_generator(soup):
-        baseimgurl = soup.find('img', src=re.compile(r'http://web'))['src']
+            def get_img_url(page_number):
+                return UP.urljoin(
+                    baseimgurl,
+                    '{:0>3}.jpg'.format(page_number),
+                )
 
-        def get_img_url(page_number):
-            return UP.urljoin(baseimgurl, '{:0>3}.jpg'.format(page_number))
+            return get_img_url
 
-        return get_img_url
+        soup = _get_soup(await resp.read())
+        get_img_url = get_img_url_generator(soup)
+        page_count = get_page_count(soup)
 
-    soup = _get_soup(await resp.read())
-    get_img_url = get_img_url_generator(soup)
-    page_count = get_page_count(soup)
-
-    for page_num in range(1, page_count + 1):
-        save_image(page_num, url=get_img_url(page_num))
+        for page_num in range(1, page_count + 1):
+            save_image(page_num, url=get_img_url(page_num))

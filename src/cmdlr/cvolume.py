@@ -44,35 +44,21 @@ def _save_image_binary(binary, page_num, ext, volume_dirpath):
         f.write(binary)
 
 
-def _default_get_image_extension(resp):
-    """Get image extension."""
-    ctype = resp.content_type
-
-    if ctype in ['image/jpeg', 'image/jpg']:
-        return '.jpg'
-    elif ctype == 'image/png':
-        return '.png'
-    elif ctype == 'image/gif':
-        return '.gif'
-    elif ctype == 'image/bmp':
-        return '.bmp'
-
-    else:
-        raise exceptions.InvalidValue('Cannot determine file extension'
-                                      ' of "{}" content type.'.format(ctype))
-
-
 def _get_img_download(amgr, curl, tmpdirpath, cname, vname, skip_errors):
     request = sessions.get_request(curl)
-    get_image_extension = amgr.get_prop(
-        curl,
-        'get_image_extension',
-        _default_get_image_extension)
+    get_image_extension = amgr.get_match_analyzer(curl).get_image_extension
 
     async def img_download(page_num, url, **request_kwargs):
         try:
             async with request(url=url, **request_kwargs) as resp:
                 ext = get_image_extension(resp)
+
+                if not ext:
+                    raise exceptions.InvalidValue(
+                        'Cannot determine file extension'
+                        ' of "{}" content type.'.format(resp.content_type)
+                    )
+
                 binary = await resp.read()
                 _save_image_binary(binary, page_num, ext, tmpdirpath)
 
@@ -176,8 +162,8 @@ async def download_one_volume(
 
         request = sessions.get_request(curl)
 
-        volume_req_kwargs = amgr.get_prop(curl, 'volume_req_kwargs', {})
-        save_volume_images = amgr.get_prop(curl, 'save_volume_images')
+        volume_req_kwargs = amgr.get_match_analyzer(curl).volume_req_kwargs
+        save_volume_images = amgr.get_match_analyzer(curl).save_volume_images
 
         async with request(url=vurl, **volume_req_kwargs) as resp:
             await save_volume_images(resp, save_image,

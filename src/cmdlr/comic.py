@@ -135,8 +135,8 @@ class Comic():
         url = self.meta['url']
 
         request = sessions.get_request(url)
-        comic_req_kwargs = self.amgr.get_prop(url, 'comic_req_kwargs', {})
-        get_comic_info = self.amgr.get_prop(url, 'get_comic_info')
+        comic_req_kwargs = self.amgr.get_match_analyzer(url).comic_req_kwargs
+        get_comic_info = self.amgr.get_match_analyzer(url).get_comic_info
 
         async with request(url=url, **comic_req_kwargs) as resp:
             ori_meta = await get_comic_info(resp, request=request, loop=loop)

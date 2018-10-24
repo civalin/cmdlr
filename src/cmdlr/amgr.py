@@ -5,6 +5,7 @@ import pkgutil
 import os
 import sys
 import functools
+import re
 
 from . import exceptions
 from . import analyzers as _analyzers  # NOQA
@@ -15,13 +16,19 @@ class AnalyzerManager:
 
     analyzers_pkgpath = 'cmdlr.analyzers'
 
-    def __init__(self, extra_analyzer_dir, disabled_analyzers=None):
+    def __init__(self, config):
         """Import all analyzers."""
         self.__analyzers = {}
+        self.__analyzer_picker = None
+        self.config = config
 
-        self.__import_all_analyzer(extra_analyzer_dir, disabled_analyzers)
+        self.__import_all_analyzer()
+        self.__build_analyzer_picker()
 
-    def __import_all_analyzer(self, extra_analyzer_dir, disabled_analyzers):
+    def __import_all_analyzer(self):
+        extra_analyzer_dir = self.config.extra_analyzer_dir
+        disabled_analyzers = self.config.disabled_analyzers
+
         analyzer_dirs = [os.path.join(os.path.dirname(__file__), 'analyzers')]
 
         if extra_analyzer_dir and not os.path.isdir(extra_analyzer_dir):
@@ -42,35 +49,52 @@ class AnalyzerManager:
                 module = importlib.util.module_from_spec(spec)
                 sys.modules[full_module_name] = module
                 spec.loader.exec_module(module)
-                self.__analyzers[module_name] = module
+
+                aname = module_name
+                self.__analyzers[aname] = module.Analyzer(
+                    customization=self.config.get_customization(aname),
+                )
+                self.__analyzers[aname].aname = aname
+
+    def __build_analyzer_picker(self):
+        retype = type(re.compile(''))
+        mappers = []
+
+        for aname, analyzer in self.__analyzers.items():
+            for pattern in analyzer.entry_patterns:
+                if isinstance(pattern, retype):
+                    mappers.append((pattern, analyzer))
+
+                elif isinstance(pattern, str):
+                    mappers.append((re.compile(pattern), analyzer))
+
+                else:
+                    raise exceptions.AnalyzerRuntimeError(
+                        'some entry pattern in analyzer "{}"'
+                        ' neither str nor re.compile type'
+                        .format(aname)
+                    )
+
+        def analyzer_picker(curl):
+            for pattern, analyzer in mappers:
+                if pattern.search(curl):
+                    return analyzer
+
+            raise exceptions.NoMatchAnalyzer(
+                'No Matched Analyzer: {}'.format(curl),
+            )
+
+        self.__analyzer_picker = analyzer_picker
 
     @functools.lru_cache(maxsize=None, typed=True)
     def get_match_analyzer(self, curl):
         """Get a url matched analyzer."""
-        for a in self.__analyzers.values():
-            for pattern in a.entry_patterns:
-                if pattern.search(curl):
-                    return a
-
-        raise exceptions.NoMatchAnalyzer(
-            'No Matched Analyzer: {}'.format(curl),
-        )
-
-    def get_prop(self, entry_url, prop_name, default=None):
-        """Get match analyzer's single prop by url and prop_name."""
-        analyzer = self.get_match_analyzer(entry_url)
-
-        return getattr(analyzer, prop_name, default)
+        return self.__analyzer_picker(curl)
 
     @functools.lru_cache(maxsize=None, typed=True)
     def get_normalized_entry(self, curl):
         """Return the normalized entry url."""
-        entry_normalizer = self.get_prop(curl, 'entry_normalizer')
-
-        if entry_normalizer:
-            return entry_normalizer(curl)
-
-        return curl
+        return self.get_match_analyzer(curl).entry_normalizer(curl)
 
     def get_analyzer_infos(self):
         """Return all analyzer info."""
@@ -83,8 +107,3 @@ class AnalyzerManager:
         ]
 
         return sorted(unsorted_infos, key=lambda item: item[0])
-
-    @functools.lru_cache(maxsize=None, typed=True)
-    def get_analyzer_name(self, analyzer):
-        """Get analyzer local name."""
-        return analyzer.__name__.split('.')[-1]

@@ -84,7 +84,7 @@ def _clear_session_pool():
 def _get_session(curl):
     """Get session from session pool by comic url."""
     analyzer = _amgr.get_match_analyzer(curl)
-    aname = _amgr.get_analyzer_name(analyzer)
+    aname = analyzer.aname
 
     if aname not in _session_pool:
         session_init_kwargs = _get_session_init_kwargs(analyzer)
