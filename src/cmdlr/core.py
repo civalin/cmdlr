@@ -94,13 +94,7 @@ def _get_main_task(loop, cmgr, urls, ctrl):
 def start(config, amgr, cmgr, urls, ctrl):
     """Start core system."""
     loop = _init(config.max_concurrent)
-    sessions.init(loop,
-                  amgr=amgr,
-                  per_host_concurrent=config.per_host_concurrent,
-                  max_concurrent=config.max_concurrent,
-                  proxy=config.proxy,
-                  max_retry=config.max_retry,
-                  delay=config.delay)
+    sessions.init(loop, config=config, amgr=amgr)
 
     try:
         loop.run_until_complete(_get_main_task(

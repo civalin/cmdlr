@@ -122,16 +122,10 @@ def _get_dyn_delay_callbacks(host):
     return success, fail
 
 
-def init(loop,
-         amgr,
-         per_host_concurrent,
-         max_concurrent,
-         proxy,
-         max_retry,
-         delay):
+def init(loop, config, amgr):
     """Init the crawler module."""
     def per_host_semaphore_factory():
-        return asyncio.Semaphore(value=per_host_concurrent,
+        return asyncio.Semaphore(value=config.per_host_concurrent,
                                  loop=loop)
 
     global _amgr
@@ -144,17 +138,17 @@ def init(loop,
     _per_host_semaphore_factory = per_host_semaphore_factory
 
     global _semaphore
-    _semaphore = asyncio.Semaphore(value=max_concurrent,
+    _semaphore = asyncio.Semaphore(value=config.max_concurrent,
                                    loop=loop)
 
     global _proxy
-    _proxy = proxy
+    _proxy = config.proxy
 
     global _max_try
-    _max_try = max_retry + 1
+    _max_try = config.max_retry + 1
 
     global _delay
-    _delay = delay
+    _delay = config.delay
 
 
 def close():
