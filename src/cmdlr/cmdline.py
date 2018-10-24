@@ -9,6 +9,7 @@ from .conf import Config
 from . import log
 from . import cuiprint
 from .amgr import AnalyzerManager
+from .cmgr import ComicManager
 
 
 def _parser_setting():
@@ -86,16 +87,27 @@ def main():
 
     amgr = AnalyzerManager(config)
 
-    if args.list:
-        cuiprint.print_comic_info(amgr, config.dirs, args.urls)
-    elif 'analyzer' in args:
+    if 'analyzer' in args:
         cuiprint.print_analyzer_info(amgr.get_analyzer_infos(), args.analyzer)
+        return
+
+    cmgr = ComicManager(config, amgr)
+    url_to_comics = cmgr.get_url_to_comics(args.urls)
+
+    if args.list:
+        cuiprint.print_comic_info(url_to_comics, detail_mode=args.urls)
+
     else:
         from . import core
 
+        ctrl = {
+            'update_meta': args.update_meta,
+            'download': args.download,
+            'skip_download_errors': args.skip_download_errors
+        }
+
         core.start(config=config,
                    amgr=amgr,
+                   cmgr=cmgr,
                    urls=args.urls,
-                   update_meta=args.update_meta,
-                   download=args.download,
-                   skip_download_errors=args.skip_download_errors)
+                   ctrl=ctrl)

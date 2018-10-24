@@ -5,7 +5,6 @@ import sys
 import pprint
 
 from . import sessions
-from . import cmgr
 from . import log
 from . import exceptions
 
@@ -51,43 +50,48 @@ async def _run_comic_coros_by_order(curl, coros):
                 coro.close()
 
 
-def _one_comic_coro(
-        loop, c, update_meta, download, skip_download_errors):
+def _one_comic_coro(loop, comic, ctrl):
     """Get one combined task."""
-    c_coros = []
+    comic_coros = []
 
-    if not c.ready or update_meta:
-        c_coros.append(c.get_info(loop))
+    if ctrl.get('update_meta'):
+        comic_coros.append(comic.update_meta(loop))
 
-    if download:
-        c_coros.append(c.download(
+    if ctrl.get('download'):
+        comic_coros.append(comic.download(
             loop,
-            skip_download_errors,
+            ctrl.get('skip_download_errors'),
         ))
 
-    if len(c_coros) == 0:
+    if len(comic_coros) == 0:
         return _get_empty_coro()
 
-    curl = c.meta['url']
-
-    return _run_comic_coros_by_order(curl, c_coros)
+    return _run_comic_coros_by_order(comic.url, comic_coros)
 
 
-def _get_main_task(loop, amgr, dirs, urls, **oct_kwargs):
+def _get_main_task(loop, cmgr, urls, ctrl):
     """Get main task for loop."""
-    urlcomics = cmgr.get_selected_url_comics(amgr, dirs, urls)
+    url_to_comics = cmgr.get_url_to_comics(urls)
+    exist_comic_coros = [
+        _one_comic_coro(loop, comic, ctrl)
+        for comic in url_to_comics.values()
+    ]
 
-    coros = [_one_comic_coro(loop, c, **oct_kwargs)
-             for c in urlcomics.values()]
-    filtered_coros = [coro for coro in coros if coro is not None]
+    non_exist_urls = cmgr.get_non_exist_urls(urls)
+    non_exist_url_coros = [
+        _run_comic_coros_by_order(url, [cmgr.build_comic(loop, url, ctrl)])
+        for url in non_exist_urls
+    ]
 
-    if len(filtered_coros) == 0:
+    coros = non_exist_url_coros + exist_comic_coros
+
+    if len(coros) == 0:
         return _get_empty_coro()
 
-    return asyncio.wait(filtered_coros)
+    return asyncio.wait(coros)
 
 
-def start(config, amgr, **gmt_kwargs):
+def start(config, amgr, cmgr, urls, ctrl):
     """Start core system."""
     loop = _init(config.max_concurrent)
     sessions.init(loop,
@@ -101,9 +105,9 @@ def start(config, amgr, **gmt_kwargs):
     try:
         loop.run_until_complete(_get_main_task(
             loop=loop,
-            dirs=config.dirs,
-            amgr=amgr,
-            **gmt_kwargs,
+            cmgr=cmgr,
+            urls=urls,
+            ctrl=ctrl,
         ))
 
     except Exception as e:

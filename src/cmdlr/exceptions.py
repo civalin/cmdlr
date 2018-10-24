@@ -13,10 +13,6 @@ class InvalidValue(BaseCmdlrException):
     """Got a invalid input value."""
 
 
-class NotAComicDir(BaseCmdlrException):
-    """This path not a comic dir."""
-
-
 class ComicDirOccupied(BaseCmdlrException):
     """This path has already occupied by different comic or non comic data."""
 

@@ -5,153 +5,119 @@ import sys
 
 from . import log
 from . import schema
-from . import exceptions
 from . import sessions
-from . import cmeta
 from . import cvolume
+from . import exceptions
 
 
-def _get_path_mode(amgr, path, new_meta_url):
-    """Get path is which mode.
+async def get_parsed_meta(loop, amgr, meta_toolkit, curl):
+    """Get infomation about specific curl."""
+    analyzer = amgr.get_match_analyzer(curl)
+    request = sessions.get_request(curl)
 
-    Args:
-        path (str): local dir path
-        new_meta_url (str): new incoming meta's url
+    comic_req_kwargs = analyzer.comic_req_kwargs
+    get_comic_info = analyzer.get_comic_info
 
-    Returns:
-        (path_mode, fs_comic)
+    async with request(url=curl, **comic_req_kwargs) as resp:
+        ori_meta = await get_comic_info(resp, request=request, loop=loop)
 
-    """
-    try:
-        fs_comic = Comic(amgr, path=path)
+        try:
+            parsed_meta = schema.parsed_meta(ori_meta)
 
-        if fs_comic.meta.get('url') == new_meta_url:
-            return 'SAME_COMIC', fs_comic
-        else:
-            return 'DIFFERENT_COMIC', fs_comic
+        except Exception as e:
+            e.ori_meta = ori_meta
+            raise
 
-    except exceptions.NotAComicDir:
-        if os.path.exists(path):
-            return 'EXTERNAL_RESOURCE', None
-        else:
-            return 'NOT_USED', None
-
-
-def _get_comic_init_exception(path, url, incoming_dir):
-    return exceptions.InvalidValue(
-        'Must give only one argments: path, (url, incoming_dir).'
-        ' path: "{}", url: "{}", incoming_dir: "{}"'
-        .format(path, url, incoming_dir)
-    )
+    return parsed_meta
 
 
 class Comic():
     """Comic data container."""
 
-    def __init__(self, amgr, *, path=None, url=None, incoming_dir=None):
-        """Init."""
-        self.amgr = amgr
+    comic_meta_filename = '.comic-meta.yaml'
 
-        self.path = None
-        self.meta = {}
-        self.incoming_dir = None
-        self.ready = False
+    @classmethod
+    def build_from_parsed_meta(
+            cls, config, amgr, meta_toolkit, parsed_meta, curl):
+        """Create Local comic dir and return coresponse Comic object."""
+        meta = meta_toolkit.create(parsed_meta, curl)
 
-        if path and (url or incoming_dir):
-            raise _get_comic_init_exception(path, url, incoming_dir)
+        name = meta['name']
+        dir = os.path.join(config.incoming_dir, name)
 
-        elif path:
-            self.__load_by_path(path)
-
-        elif url and incoming_dir:
-            self.__load_by_url(url, incoming_dir)
-
-        else:
-            raise _get_comic_init_exception(path, url, incoming_dir)
-
-    def __load_by_url(self, url, incoming_dir):
-        self.meta['url'] = self.amgr.get_normalized_entry(url)
-        self.incoming_dir = incoming_dir
-
-    def __load_by_path(self, path):
-        """Load comic info from file system metadata.
-
-        Args:
-            path (str): comic dir path
-        """
-        self.meta = cmeta.load_meta(path)
-        self.meta['url'] = self.amgr.get_normalized_entry(self.meta['url'])
-        self.path = path
-        self.ready = True
-
-    def __update_meta(self, parsing_meta):
-        """Update comic meta to both meta file and self."""
-        url = self.meta['url']
-
-        if self.ready:
-            self.meta = cmeta.get_updated_meta(
-                self.meta,
-                parsing_meta['volumes'],
-                parsing_meta['finished'],
+        if os.path.exists(dir):
+            raise exceptions.ComicDirOccupied(
+                '"{}" already be occupied, comic "{}" cannot be created.'
+                .format(dir, curl),
             )
 
-        else:  # the `url` not SYNC with local dir currently (`self.path`)
-            path = os.path.join(self.incoming_dir,
-                                parsing_meta['name'])
+        meta_filepath = os.path.join(dir, cls.comic_meta_filename)
+        meta_toolkit.save(meta_filepath, meta)
 
-            path_mode, fs_comic = _get_path_mode(self.amgr, path, url)
+        return cls(amgr, meta_toolkit, dir)
 
-            if path_mode == 'SAME_COMIC':
-                self.meta = cmeta.get_updated_meta(
-                    fs_comic.meta,
-                    parsing_meta['volumes'],
-                    parsing_meta['finished'],
-                )
-                self.path = path
+    @classmethod
+    def __get_meta_filepath(cls, dir):
+        return os.path.join(dir, cls.comic_meta_filename)
 
-            elif path_mode == 'NOT_USED':
-                self.meta = cmeta.get_new_meta(parsing_meta, url)
-                self.path = path
+    @classmethod
+    def is_comic_dir(cls, dir):
+        """check_localdir can be load as a Comic or not."""
+        meta_filepath = cls.__get_meta_filepath(dir)
 
-            elif path_mode == 'DIFFERENT_COMIC':
-                raise exceptions.ComicDirOccupied(
-                    'Url Not The Same: "{}"'.format(path))
+        if os.path.isfile(meta_filepath):
+            return True
 
-            elif path_mode == 'EXTERNAL_RESOURCE':
-                raise exceptions.ComicDirOccupied(
-                    'External Occupied: "{}"'.format(path))
+        return False
 
-            else:
-                raise RuntimeError('Unknown Program Error')
+    def __load_meta(self):
+        return self.meta_toolkit.load(self.meta_filepath)
 
-        cmeta.save_meta(self.path, self.meta)
-        self.ready = True
+    def __init__(self, amgr, meta_toolkit, dir):
+        """Init."""
+        self.amgr = amgr
+        self.dir = dir
+        self.meta_toolkit = meta_toolkit
 
-    async def get_info(self, loop):
+        self.meta_filepath = self.__get_meta_filepath(dir)
+        self.meta = self.__load_meta()
+
+        self.analyzer = amgr.get_match_analyzer(self.meta['url'])
+
+        # normalize url
+        self.meta['url'] = self.analyzer.entry_normalizer(self.meta['url'])
+
+    def __merge_and_save_meta(self, parsed_meta):
+        """Merge comic meta to both meta file and self."""
+        self.meta = self.meta_toolkit.update(
+            self.meta,
+            parsed_meta['volumes'],
+            parsed_meta['finished'],
+        )
+
+        self.meta_toolkit.save(self.meta_filepath, self.meta)
+
+    @property
+    def url(self):
+        """Get comic url."""
+        return self.meta['url']
+
+    async def update_meta(self, loop):
         """Load comic info from url.
 
         It will cause a lot of network and parsing operation.
         """
-        url = self.meta['url']
+        parsed_meta = await get_parsed_meta(
+            loop,
+            self.amgr,
+            self.meta_toolkit,
+            self.url,
+        )
 
-        request = sessions.get_request(url)
-        comic_req_kwargs = self.amgr.get_match_analyzer(url).comic_req_kwargs
-        get_comic_info = self.amgr.get_match_analyzer(url).get_comic_info
+        self.__merge_and_save_meta(parsed_meta)
 
-        async with request(url=url, **comic_req_kwargs) as resp:
-            ori_meta = await get_comic_info(resp, request=request, loop=loop)
-
-            try:
-                parsing_meta = schema.parsing_meta(ori_meta)
-
-            except Exception as e:
-                e.ori_meta = ori_meta
-                raise
-
-        self.__update_meta(parsing_meta)
-
-        log.logger.info('Meta Updated: {name} ({url})'
-                        .format(**parsing_meta, url=url))
+        log.logger.info('Meta Updated: {name} ({curl})'
+                        .format(**parsed_meta, curl=self.url))
 
     async def download(self, loop, skip_errors=False):
         """Download comic volume in database.
@@ -160,7 +126,7 @@ class Comic():
             skip_errors (bool): allow part of images not be fetched correctly
         """
         sd_volnames = cvolume.get_not_downloaded_volnames(
-            self.path,
+            self.dir,
             self.meta['name'],
             list(self.meta['volumes'].keys())
         )
@@ -171,7 +137,7 @@ class Comic():
             try:
                 await cvolume.download_one_volume(
                     amgr=self.amgr,
-                    path=self.path,
+                    path=self.dir,
                     curl=self.meta['url'],
                     comic_name=self.meta['name'],
                     vurl=vurl,

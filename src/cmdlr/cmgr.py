@@ -1,106 +1,113 @@
 """Cmdlr multiple comics manager."""
 
 import os
-import functools
 
-from . import comic
 from . import exceptions
 from . import log
+from .comic import Comic
+from .comic import get_parsed_meta
+from .metatool import MetaToolkit
 
 
-def _get_exist_url_comics_in_dir(amgr, urlcomics, dir):
-    for basename in os.listdir(dir):
-        comic_path = os.path.join(dir, basename)
+class ComicManager:
+    """Manage all comics in whole system."""
 
-        try:
-            c = comic.Comic(amgr, path=comic_path)
-            url = c.meta['url']
+    def __init__(self, config, amgr):
+        """Init comic manager."""
+        self.config = config
+        self.amgr = amgr
+        self.meta_toolkit = MetaToolkit(config)
+        self.url_to_comics = {}
 
-            if url in urlcomics:
-                raise exceptions.DuplicateComic(
-                    'Comic "{url}" in both "{path1}" and "{path2}",'
-                    ' please remove at least one.'
-                    .format(url=url,
-                            path1=c.path,
-                            path2=urlcomics[url].path)
-                )
+        self.__load_comic_in_dirs()
 
-            urlcomics[c.meta['url']] = c
+    def __load_comic_in_dir(self, dir):
+        for basename in os.listdir(dir):
+            comicdir = os.path.join(dir, basename)
 
-        except exceptions.NotAComicDir as e:
-            pass
+            if Comic.is_comic_dir(comicdir):
+                try:
+                    comic = Comic(self.amgr, self.meta_toolkit, comicdir)
 
-        except exceptions.NoMatchAnalyzer as e:
-            log.logger.debug('{} ({})'.format(e, comic_path))
+                    if comic.url in self.url_to_comics:
+                        another_comic_dir = self.url_to_comics[comic.url].dir
 
+                        raise exceptions.DuplicateComic(
+                            'Comic "{url}" in both "{dir1}" and "{dir2}",'
+                            ' please remove at least one.'
+                            .format(url=comic.url,
+                                    dir1=comic.dir,
+                                    dir2=another_comic_dir)
+                        )
 
-@functools.lru_cache(maxsize=None, typed=True)
-def get_exist_url_comics(amgr, *dirs):
-    """Get all comic in dirpaths."""
-    urlcomics = {}
+                    else:
+                        self.url_to_comics[comic.url] = comic
 
-    for dir in dirs:
-        if not os.path.exists(dir):
-            continue
+                except exceptions.NoMatchAnalyzer as e:
+                    log.logger.debug('{} ({})'.format(e, dir))
 
-        _get_exist_url_comics_in_dir(amgr, urlcomics, dir)
+    def __load_comic_in_dirs(self):
+        for dir in self.config.dirs:
+            if os.path.isdir(dir):
+                self.__load_comic_in_dir(dir)
 
-    return urlcomics
+    def __get_normalized_urls(self, urls):
+        """Convert a lot of urls to normalized urls.
 
+        This function will also strip out:
+            1. duplicated urls after normalization. and
+            2. the urls no match any analyzers.
 
-def get_normalized_urls(amgr, urls):
-    """Convert a lot of urls to normalized urls.
+        return None if urls is None
+        """
+        if urls is None:
+            return None
 
-    This function will also strip out:
-        1. duplicated urls after normalization. and
-        2. the urls no match any analyzers.
+        result = set()
 
-    return None if urls is None
-    """
-    if urls is None:
-        return None
+        for url in set(urls):
+            try:
+                result.add(self.amgr.get_normalized_entry(url))
 
-    result = set()
+            except exceptions.NoMatchAnalyzer:
+                log.logger.error('No Matched Analyzer: {}'.format(url))
 
-    for url in set(urls):
-        try:
-            result.add(amgr.get_normalized_entry(url))
+        return result
 
-        except exceptions.NoMatchAnalyzer:
-            log.logger.error('No Matched Analyzer: {}'.format(url))
+    def get_url_to_comics(self, urls):
+        """Pick some comics be selected by input url."""
+        if not urls:
+            return self.url_to_comics
 
-    return result
+        normalized_urls = self.__get_normalized_urls(urls)
 
-
-def get_filtered_url_comics(urlcomics, normalized_urls):
-    """Only extract subset of urlcomics if comic url in urls."""
-    return {url: urlcomics[url]
-            for url in normalized_urls if url in urlcomics}
-
-
-def get_selected_url_comics(amgr, dirs, urls=None):
-    """Get selected url comics by urls and data in comic dir."""
-    urlcomics = get_exist_url_comics(amgr, *dirs)
-
-    if urls:
-        normalized_urls = get_normalized_urls(amgr, urls)
-
-        already_exists_urlcomics = get_filtered_url_comics(
-            urlcomics, normalized_urls)
-        not_exists_urlcomics = {
-            url: comic.Comic(
-                amgr=amgr,
-                url=url,
-                incoming_dir=dirs[0],
-            )
-            for url in normalized_urls if url not in urlcomics
+        return {
+            url: self.url_to_comics[url]
+            for url in normalized_urls if url in self.url_to_comics
         }
 
-        final_urlcomics = {}
-        final_urlcomics.update(already_exists_urlcomics)
-        final_urlcomics.update(not_exists_urlcomics)
+    def get_non_exist_urls(self, urls):
+        """Pick non-local existed urls."""
+        normalized_urls = self.__get_normalized_urls(urls)
 
-        return final_urlcomics
+        return [url for url in normalized_urls
+                if url not in self.url_to_comics]
 
-    else:
-        return urlcomics
+    async def build_comic(self, loop, curl, ctrl):
+        """Build comic from url."""
+        parsed_meta = await get_parsed_meta(
+            loop, self.amgr, self.meta_toolkit, curl)
+
+        if curl in self.url_to_comics:
+            raise exceptions.DuplicateComic('Duplicate comic found. Cancel.')
+
+        comic = Comic.build_from_parsed_meta(
+            self.config, self.amgr, self.meta_toolkit, parsed_meta, curl)
+
+        self.url_to_comics[curl] = comic
+
+        log.logger.info('Meta Created: {name} ({curl})'
+                        .format(**parsed_meta, curl=curl))
+
+        if ctrl.get('download'):
+            await comic.download(loop, ctrl.get('skip_download_errors'))

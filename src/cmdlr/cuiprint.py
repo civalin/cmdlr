@@ -6,7 +6,6 @@ import textwrap
 import wcwidth
 
 from . import cvolume
-from . import cmgr
 
 
 def _get_max_dw(strings):
@@ -29,7 +28,7 @@ def _print_standard(c, max_ndw):
     fin = '[F]' if c.meta['finished'] else '   '
     name_cw = _get_column_width(cname, max_ndw)
     nd_volnames = cvolume.get_not_downloaded_volnames(
-        c.path, cname, c.meta['volumes'].keys())
+        c.dir, cname, c.meta['volumes'].keys())
     ndlen = len(nd_volnames)
     ndlenstr = '{:<+4}'.format(ndlen) if ndlen else '    '
 
@@ -41,7 +40,7 @@ def _print_standard(c, max_ndw):
 
 
 def _print_detail(c, nd_volnames):
-    print('  => {path}'.format(path=c.path))
+    print('  => {dir}'.format(dir=c.dir))
 
     nd_volnames_set = set(nd_volnames)
     max_vndw = _get_max_dw(c.meta['volumes'].keys())
@@ -57,21 +56,15 @@ def _print_detail(c, nd_volnames):
     print()
 
 
-def print_comic_info(amgr, dirs, urls):
+def print_comic_info(url_to_comics, detail_mode):
     """Print comics in comic's pool with selected urls."""
-    urlcomics = cmgr.get_exist_url_comics(amgr, *dirs)
-
-    if urls:  # filter the urlcomics
-        normalized_urls = cmgr.get_normalized_urls(amgr, urls)
-        urlcomics = cmgr.get_filtered_url_comics(urlcomics, normalized_urls)
-
-    names = [c.meta['name'] for c in urlcomics.values()]
+    names = [c.meta['name'] for c in url_to_comics.values()]
     max_ndw = _get_max_dw(names)
 
-    for _, c in sorted([(c.meta['name'], c) for c in urlcomics.values()]):
+    for _, c in sorted([(c.meta['name'], c) for c in url_to_comics.values()]):
         nd_volnames = _print_standard(c, max_ndw)
 
-        if urls:  # detail mode
+        if detail_mode:
             _print_detail(c, nd_volnames)
 
 
