@@ -10,31 +10,31 @@ from . import cvolume
 from . import exceptions
 
 
-async def get_parsed_meta(loop, amgr, meta_toolkit, curl):
-    """Get infomation about specific curl."""
-    analyzer = amgr.get_match_analyzer(curl)
-    request = sessions.get_request(curl)
-
-    comic_req_kwargs = analyzer.comic_req_kwargs
-    get_comic_info = analyzer.get_comic_info
-
-    async with request(url=curl, **comic_req_kwargs) as resp:
-        ori_meta = await get_comic_info(resp, request=request, loop=loop)
-
-        try:
-            parsed_meta = schema.parsed_meta(ori_meta)
-
-        except Exception as e:
-            e.ori_meta = ori_meta
-            raise
-
-    return parsed_meta
-
-
 class Comic():
     """Comic data container."""
 
     comic_meta_filename = '.comic-meta.yaml'
+
+    @staticmethod
+    async def get_parsed_meta(loop, amgr, meta_toolkit, curl):
+        """Get infomation about specific curl."""
+        analyzer = amgr.get_match_analyzer(curl)
+        request = sessions.get_request(curl)
+
+        comic_req_kwargs = analyzer.comic_req_kwargs
+        get_comic_info = analyzer.get_comic_info
+
+        async with request(url=curl, **comic_req_kwargs) as resp:
+            ori_meta = await get_comic_info(resp, request=request, loop=loop)
+
+            try:
+                parsed_meta = schema.parsed_meta(ori_meta)
+
+            except Exception as e:
+                e.ori_meta = ori_meta
+                raise
+
+        return parsed_meta
 
     @classmethod
     def build_from_parsed_meta(
@@ -70,22 +70,27 @@ class Comic():
 
         return False
 
-    def __load_meta(self):
-        return self.meta_toolkit.load(self.meta_filepath)
+    @classmethod
+    def __get_meta_info(cls, amgr, meta_toolkit, dir):
+        meta_filepath = cls.__get_meta_filepath(dir)
+        meta = meta_toolkit.load(meta_filepath)
+
+        analyzer = amgr.get_match_analyzer(meta['url'])
+
+        # normalize url
+        meta['url'] = analyzer.entry_normalizer(meta['url'])
+
+        return analyzer, meta_filepath, meta
 
     def __init__(self, amgr, meta_toolkit, dir):
         """Init."""
         self.amgr = amgr
-        self.dir = dir
         self.meta_toolkit = meta_toolkit
+        self.dir = dir
 
-        self.meta_filepath = self.__get_meta_filepath(dir)
-        self.meta = self.__load_meta()
-
-        self.analyzer = amgr.get_match_analyzer(self.meta['url'])
-
-        # normalize url
-        self.meta['url'] = self.analyzer.entry_normalizer(self.meta['url'])
+        (self.analyzer,
+         self.meta_filepath,
+         self.meta) = self.__get_meta_info(amgr, meta_toolkit, dir)
 
     def __merge_and_save_meta(self, parsed_meta):
         """Merge comic meta to both meta file and self."""
@@ -107,7 +112,7 @@ class Comic():
 
         It will cause a lot of network and parsing operation.
         """
-        parsed_meta = await get_parsed_meta(
+        parsed_meta = await self.get_parsed_meta(
             loop,
             self.amgr,
             self.meta_toolkit,
@@ -138,7 +143,7 @@ class Comic():
                 await cvolume.download_one_volume(
                     amgr=self.amgr,
                     path=self.dir,
-                    curl=self.meta['url'],
+                    curl=self.url,
                     comic_name=self.meta['name'],
                     vurl=vurl,
                     volume_name=volname,

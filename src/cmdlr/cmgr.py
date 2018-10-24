@@ -5,7 +5,6 @@ import os
 from . import exceptions
 from . import log
 from .comic import Comic
-from .comic import get_parsed_meta
 from .metatool import MetaToolkit
 
 
@@ -95,7 +94,7 @@ class ComicManager:
 
     async def build_comic(self, loop, curl, ctrl):
         """Build comic from url."""
-        parsed_meta = await get_parsed_meta(
+        parsed_meta = await Comic.get_parsed_meta(
             loop, self.amgr, self.meta_toolkit, curl)
 
         if curl in self.url_to_comics:
