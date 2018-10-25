@@ -102,7 +102,7 @@ def main():
         cuiprint.print_comic_info(url_to_comics, detail_mode=args.urls)
 
     else:
-        from .core import LoopManager
+        from .loopmgr import LoopManager
 
         lmgr = LoopManager(config.max_concurrent)
 
