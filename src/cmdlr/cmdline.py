@@ -64,14 +64,16 @@ def _get_args():
     args = parser.parse_args()
 
     if args.skip_download_errors and not args.download:
-        log.logger.critical('Please use -s options with -d options.')
+        print('Please use -s options with -d options.', file=sys.stderr)
         sys.exit(1)
 
     if not args.urls and not sys.stdin.isatty():  # Get URLs from stdin
         args.urls = [url for url in sys.stdin.read().split() if url]
+
     elif len(sys.argv) == 1:
-        log.logger.critical('Please give at least one arguments or flags.'
-                            ' Use "-h" for more info.')
+        print(('Please give at least one arguments or flags.'
+               ' Use "-h" for more info.'),
+              file=sys.stderr)
         sys.exit(1)
 
     return args

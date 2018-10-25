@@ -1,5 +1,6 @@
 """Cmdlr cui print support module."""
 
+import sys
 import functools
 import textwrap
 
@@ -105,4 +106,5 @@ def print_analyzer_info(analyzer_infos, aname):
 
                 return
 
-        print('Analyzer: "{}" are not exists or enabled.'.format(aname))
+        print('Analyzer: "{}" are not exists or enabled.'.format(aname),
+              file=sys.stderr)
