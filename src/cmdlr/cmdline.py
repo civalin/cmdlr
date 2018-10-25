@@ -5,10 +5,11 @@ import textwrap
 import sys
 
 from . import info
-from .conf import Config
 from . import cuiprint
+from .conf import Config
 from .amgr import AnalyzerManager
 from .cmgr import ComicManager
+from .loopmgr import LoopManager
 
 
 def _parser_setting():
@@ -101,8 +102,6 @@ def main():
         cuiprint.print_comic_info(url_to_comics, detail_mode=args.urls)
 
     else:
-        from .loopmgr import LoopManager
-
         lmgr = LoopManager(config.max_concurrent)
 
         ctrl = {
