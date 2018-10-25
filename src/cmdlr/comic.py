@@ -6,8 +6,8 @@ import sys
 from . import log
 from . import schema
 from . import sessions
-from . import cvolume
 from .exception import ComicDirOccupied
+from .volfile import ComicVolume
 
 
 class Comic():
@@ -130,32 +130,19 @@ class Comic():
         Args:
             skip_errors (bool): allow part of images not be fetched correctly
         """
-        sd_volnames = cvolume.get_not_downloaded_volnames(
-            self.dir,
-            self.meta['name'],
-            list(self.meta['volumes'].keys())
-        )
+        comic_volume = ComicVolume(self)
+        wanted_volnames = comic_volume.get_wanted_names()
 
-        for volname in sorted(sd_volnames):
-            vurl = self.meta['volumes'][volname]
-
+        for volname in sorted(wanted_volnames):
             try:
-                await cvolume.download_one_volume(
-                    amgr=self.amgr,
-                    path=self.dir,
-                    curl=self.url,
-                    comic_name=self.meta['name'],
-                    vurl=vurl,
-                    volume_name=volname,
-                    skip_errors=skip_errors,
-                    loop=loop,
-                )
+                await comic_volume.download(loop, volname, skip_errors)
 
             except Exception:
                 log.logger.error(
                     ('Volume Download Failed: {cname}_{vname} ({vurl})'
                      .format(cname=self.meta['name'],
                              vname=volname,
-                             vurl=vurl)),
+                             vurl=self.meta['volumes'][volname]),
+                     ),
                     exc_info=sys.exc_info(),
                 )

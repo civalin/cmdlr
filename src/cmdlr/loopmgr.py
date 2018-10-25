@@ -113,7 +113,7 @@ class LoopManager:
         if len(coros) == 0:
             return _get_empty_coro()
 
-        return asyncio.wait(coros)
+        return asyncio.wait([self.loop.create_task(coro) for coro in coros])
 
     def start(self, config, amgr, cmgr, urls, ctrl):
         """Start core system."""

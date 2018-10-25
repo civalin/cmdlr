@@ -6,8 +6,8 @@ import textwrap
 
 import wcwidth
 
-from . import cvolume
 from .exception import NoMatchAnalyzer
+from .volfile import ComicVolume
 
 
 def _get_max_width(strings):
@@ -25,7 +25,7 @@ def _get_padding_space(string, max_width):
     return ' ' * length
 
 
-def _print_standard(comic, name_max_width, nd_volnames):
+def _print_standard(comic, name_max_width, wanted_vol_names):
     extra_info = {}
     meta = comic.meta
 
@@ -33,29 +33,29 @@ def _print_standard(comic, name_max_width, nd_volnames):
         meta['name'], name_max_width)
     extra_info['fin'] = '[F]' if meta['finished'] else '   '
 
-    nd_vol_num = len(nd_volnames)
-    extra_info['nd_vol_num_str'] = (
-        '{:<+4}'.format(nd_vol_num) if nd_vol_num else '    ')
+    wanted_vol_num = len(wanted_vol_names)
+    extra_info['wanted_vol_num_str'] = (
+        '{:<+4}'.format(wanted_vol_num) if wanted_vol_num else '    ')
 
-    print('{name}{name_padding} {fin} {nd_vol_num_str} {url}'
+    print('{name}{name_padding} {fin} {wanted_vol_num_str} {url}'
           .format(**meta, **extra_info))
 
 
-def _print_detail(comic, nd_volnames):
+def _print_detail(comic, wanted_vol_names):
     print('  => {dir}'.format(dir=comic.dir))
 
-    nd_volnames_set = set(nd_volnames)
+    wanted_vol_names_set = set(wanted_vol_names)
     vol_max_width = _get_max_width(comic.meta['volumes'].keys())
 
-    for vname, vurl in sorted(comic.meta['volumes'].items()):
+    for vol_name, vurl in sorted(comic.meta['volumes'].items()):
         info = {
-            'vname': vname,
+            'vol_name': vol_name,
             'vurl': vurl,
-            'no_exists': '+' if vname in nd_volnames_set else ' ',
-            'vol_padding': _get_padding_space(vname, vol_max_width),
+            'no_exists': '+' if vol_name in wanted_vol_names_set else ' ',
+            'vol_padding': _get_padding_space(vol_name, vol_max_width),
         }
 
-        print('    {no_exists} {vname}{vol_padding} {vurl}'
+        print('    {no_exists} {vol_name}{vol_padding} {vurl}'
               .format(**info))
 
     print()
@@ -71,16 +71,12 @@ def print_comic_info(url_to_comics, detail_mode):
     name_max_width = _get_max_width(names)
 
     for comic in comics:
-        nd_volnames = cvolume.get_not_downloaded_volnames(
-            comic.dir,
-            comic.meta['name'],
-            comic.meta['volumes'].keys(),
-        )
+        wanted_vol_names = ComicVolume(comic).get_wanted_names()
 
-        _print_standard(comic, name_max_width, nd_volnames)
+        _print_standard(comic, name_max_width, wanted_vol_names)
 
         if detail_mode:
-            _print_detail(comic, nd_volnames)
+            _print_detail(comic, wanted_vol_names)
 
 
 def print_analyzer_info(analyzer_infos, aname):
