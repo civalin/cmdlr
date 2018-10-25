@@ -6,7 +6,6 @@ import sys
 
 from . import info
 from .conf import Config
-from . import log
 from . import cuiprint
 from .amgr import AnalyzerManager
 from .cmgr import ComicManager
