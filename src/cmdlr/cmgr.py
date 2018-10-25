@@ -69,8 +69,8 @@ class ComicManager:
             try:
                 result.add(self.amgr.get_normalized_entry(url))
 
-            except NoMatchAnalyzer:
-                log.logger.error('No Matched Analyzer: {}'.format(url))
+            except NoMatchAnalyzer as e:
+                pass
 
         return result
 
@@ -93,7 +93,7 @@ class ComicManager:
         return [url for url in normalized_urls
                 if url not in self.url_to_comics]
 
-    async def build_comic(self, loop, curl, ctrl):
+    async def build_comic(self, loop, curl):
         """Build comic from url."""
         parsed_meta = await Comic.get_parsed_meta(
             loop, self.amgr, self.meta_toolkit, curl)
@@ -109,5 +109,4 @@ class ComicManager:
         log.logger.info('Meta Created: {name} ({curl})'
                         .format(**parsed_meta, curl=curl))
 
-        if ctrl.get('download'):
-            await comic.download(loop, ctrl.get('skip_download_errors'))
+        return comic

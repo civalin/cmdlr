@@ -47,7 +47,7 @@ class Comic():
 
         if os.path.exists(dir):
             raise ComicDirOccupied(
-                '"{}" already be occupied, comic "{}" cannot be created.'
+                '"{}" already be occupied.'
                 .format(dir, curl),
             )
 

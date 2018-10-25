@@ -7,6 +7,7 @@ import textwrap
 import wcwidth
 
 from . import cvolume
+from .exception import NoMatchAnalyzer
 
 
 def _get_max_width(strings):
@@ -108,3 +109,12 @@ def print_analyzer_info(analyzer_infos, aname):
 
         print('Analyzer: "{}" are not exists or enabled.'.format(aname),
               file=sys.stderr)
+
+
+def print_useless_urls(amgr, urls):
+    """Print urls without a matched analyzer."""
+    for url in urls:
+        try:
+            amgr.get_match_analyzer(url)
+        except NoMatchAnalyzer as e:
+            print('No Matched Analyzer: {}'.format(url), file=sys.stderr)

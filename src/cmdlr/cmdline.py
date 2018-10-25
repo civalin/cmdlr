@@ -93,14 +93,18 @@ def main():
         cuiprint.print_analyzer_info(amgr.get_analyzer_infos(), args.analyzer)
         return
 
+    cuiprint.print_useless_urls(amgr, args.urls)
+
     cmgr = ComicManager(config, amgr)
-    url_to_comics = cmgr.get_url_to_comics(args.urls)
 
     if args.list:
+        url_to_comics = cmgr.get_url_to_comics(args.urls)
         cuiprint.print_comic_info(url_to_comics, detail_mode=args.urls)
 
     else:
-        from . import core
+        from .core import LoopManager
+
+        lmgr = LoopManager(config.max_concurrent)
 
         ctrl = {
             'update_meta': args.update_meta,
@@ -108,7 +112,7 @@ def main():
             'skip_download_errors': args.skip_download_errors
         }
 
-        core.start(config=config,
+        lmgr.start(config=config,
                    amgr=amgr,
                    cmgr=cmgr,
                    urls=args.urls,
