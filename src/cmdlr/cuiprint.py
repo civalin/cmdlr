@@ -8,7 +8,7 @@ import wcwidth
 from . import cvolume
 
 
-def _get_max_dw(strings):
+def _get_max_width(strings):
     """Get max display width."""
     return functools.reduce(
         lambda acc, s: max(acc, wcwidth.wcswidth(s)),
@@ -17,55 +17,68 @@ def _get_max_dw(strings):
     )
 
 
-def _get_column_width(string, max_width):
-    len_diff = wcwidth.wcswidth(string) - len(string)
+def _get_padding_space(string, max_width):
+    length = max_width - wcwidth.wcswidth(string)
 
-    return max_width - len_diff
-
-
-def _print_standard(c, max_ndw):
-    cname = c.meta['name']
-    fin = '[F]' if c.meta['finished'] else '   '
-    name_cw = _get_column_width(cname, max_ndw)
-    nd_volnames = cvolume.get_not_downloaded_volnames(
-        c.dir, cname, c.meta['volumes'].keys())
-    ndlen = len(nd_volnames)
-    ndlenstr = '{:<+4}'.format(ndlen) if ndlen else '    '
-
-    tpl = ('{{name:<{name_cw}}} {{fin}} {{ndlenstr}} {{url}}'
-           .format(name_cw=name_cw))
-    print(tpl.format(**c.meta, fin=fin, ndlenstr=ndlenstr))
-
-    return nd_volnames
+    return ' ' * length
 
 
-def _print_detail(c, nd_volnames):
-    print('  => {dir}'.format(dir=c.dir))
+def _print_standard(comic, name_max_width, nd_volnames):
+    extra_info = {}
+    meta = comic.meta
+
+    extra_info['name_padding'] = _get_padding_space(
+        meta['name'], name_max_width)
+    extra_info['fin'] = '[F]' if meta['finished'] else '   '
+
+    nd_vol_num = len(nd_volnames)
+    extra_info['nd_vol_num_str'] = (
+        '{:<+4}'.format(nd_vol_num) if nd_vol_num else '    ')
+
+    print('{name}{name_padding} {fin} {nd_vol_num_str} {url}'
+          .format(**meta, **extra_info))
+
+
+def _print_detail(comic, nd_volnames):
+    print('  => {dir}'.format(dir=comic.dir))
 
     nd_volnames_set = set(nd_volnames)
-    max_vndw = _get_max_dw(c.meta['volumes'].keys())
+    vol_max_width = _get_max_width(comic.meta['volumes'].keys())
 
-    for vname, vurl in sorted(c.meta['volumes'].items()):
-        no_exists = '+' if vname in nd_volnames_set else ' '
-        vn_cw = _get_column_width(vname, max_vndw)
+    for vname, vurl in sorted(comic.meta['volumes'].items()):
+        info = {
+            'vname': vname,
+            'vurl': vurl,
+            'no_exists': '+' if vname in nd_volnames_set else ' ',
+            'vol_padding': _get_padding_space(vname, vol_max_width),
+        }
 
-        tpl = ('    {{no_exists}} {{vname:<{vn_cw}}} {{vurl}}'
-               .format(vn_cw=vn_cw))
-        print(tpl.format(vname=vname, no_exists=no_exists, vurl=vurl))
+        print('    {no_exists} {vname}{vol_padding} {vurl}'
+              .format(**info))
 
     print()
 
 
 def print_comic_info(url_to_comics, detail_mode):
     """Print comics in comic's pool with selected urls."""
-    names = [c.meta['name'] for c in url_to_comics.values()]
-    max_ndw = _get_max_dw(names)
+    names, comics = zip(*sorted([
+        (comic.meta['name'], comic)
+        for comic in url_to_comics.values()
+    ]))
 
-    for _, c in sorted([(c.meta['name'], c) for c in url_to_comics.values()]):
-        nd_volnames = _print_standard(c, max_ndw)
+    name_max_width = _get_max_width(names)
+
+    for comic in comics:
+        nd_volnames = cvolume.get_not_downloaded_volnames(
+            comic.dir,
+            comic.meta['name'],
+            comic.meta['volumes'].keys(),
+        )
+
+        _print_standard(comic, name_max_width, nd_volnames)
 
         if detail_mode:
-            _print_detail(c, nd_volnames)
+            _print_detail(comic, nd_volnames)
 
 
 def print_analyzer_info(analyzer_infos, aname):
@@ -85,7 +98,10 @@ def print_analyzer_info(analyzer_infos, aname):
         for local_aname, desc in analyzer_infos:
             if aname == local_aname:
                 print('[{}]'.format(aname))
-                print(textwrap.indent(desc, ' ' * 4))
+                print(textwrap.indent(
+                    desc,
+                    ' ' * 4,
+                ))
 
                 return
 
