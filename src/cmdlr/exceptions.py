@@ -25,6 +25,10 @@ class NoImagesFound(BaseCmdlrException):
     """Not found any images in one volume."""
 
 
+class ExternalDependencyNotFound(BaseCmdlrException):
+    """Not found some external dependency like js runtime."""
+
+
 class ExtraAnalyzersDirNotExists(BaseCmdlrException):
     """Extra analyzer dir already be set but not exists."""
 

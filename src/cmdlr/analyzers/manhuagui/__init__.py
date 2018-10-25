@@ -7,14 +7,14 @@ import random
 import urllib.parse as UP
 
 from bs4 import BeautifulSoup
-import execjs
 
 from cmdlr import exceptions
 from cmdlr.analyzers import BaseAnalyzer
+from cmdlr.autil import run_in_nodejs
 
 
 @functools.lru_cache()
-def _get_shared_jsctx():
+def _get_shared_js():
     dirpath = os.path.dirname(os.path.abspath(__file__))
     lzs_path = os.path.join(dirpath, 'lz-string.min.js')
 
@@ -27,9 +27,7 @@ def _get_shared_jsctx():
     };
     """
 
-    final_code = lzs_code + extend_code
-
-    return execjs.compile(final_code)
+    return lzs_code + extend_code
 
 
 def _get_name(soup):
@@ -63,10 +61,14 @@ def _get_volumes(soup, baseurl):
 
     if vs_node:  # 18X only
         lzstring = vs_node['value']
-        shared_jsctx = _get_shared_jsctx()
-        volumes_html = shared_jsctx.eval(
-            'LZString.decompressFromBase64("{lzstring}")'
-            .format(lzstring=lzstring))
+        shared_js = _get_shared_js()
+
+        volumes_html = run_in_nodejs(
+            shared_js
+            + ('LZString.decompressFromBase64("{lzstring}")'
+               .format(lzstring=lzstring))
+        ).eval
+
         volumes_node = BeautifulSoup(volumes_html, 'lxml')
 
     else:
@@ -127,6 +129,7 @@ class Analyzer(BaseAnalyzer):
     > Hint: The real servers url are look like:
             `http://{code}.hamreus.com:8080`
     """
+
     entry_patterns = [
         re.compile(
             r'^https?://(www|tw).(?:manhuagui|ikanman).com/comic/(\d+)/?$',
@@ -191,7 +194,6 @@ class Analyzer(BaseAnalyzer):
 
         return 'https://{}.manhuagui.com/comic/{}/'.format(subdomain, id)
 
-
     async def get_comic_info(self, resp, loop, **kwargs):
         """Find comic info from entry."""
         html = await resp.text()
@@ -211,11 +213,12 @@ class Analyzer(BaseAnalyzer):
         js_string = soup.find('script', string=re.compile(r'window\["')).string
         encrypted_js_string = re.sub(r'^window\[.+?\]', '', js_string)
 
-        shared_jsctx = _get_shared_jsctx()
-        SMH_js_string = shared_jsctx.eval(encrypted_js_string)
+        shared_js = _get_shared_js()
+        SMH_js_string = run_in_nodejs(shared_js + encrypted_js_string).eval
+
         c_info_js_string = 'cInfo = {};'.format(
             re.search(r'{.*}', SMH_js_string).group(0))
-        c_info = execjs.compile(c_info_js_string).eval('cInfo')
+        c_info = run_in_nodejs(c_info_js_string).env.get('cInfo')
 
         img_servers = self.__get_real_image_servers()
 

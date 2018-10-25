@@ -34,7 +34,6 @@ setup(
         'wcwidth',
         'lxml >=3.8, <4',
         'beautifulsoup4',
-        'pyexecjs >=1.4.0, <2',
         ],
     setup_requires=[],
     package_dir={'': 'src'},
