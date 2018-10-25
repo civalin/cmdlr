@@ -2,8 +2,9 @@
 
 import os
 
-from . import exceptions
 from . import log
+from .exception import DuplicateComic
+from .exception import NoMatchAnalyzer
 from .comic import Comic
 from .metatool import MetaToolkit
 
@@ -31,7 +32,7 @@ class ComicManager:
                     if comic.url in self.url_to_comics:
                         another_comic_dir = self.url_to_comics[comic.url].dir
 
-                        raise exceptions.DuplicateComic(
+                        raise DuplicateComic(
                             'Comic "{url}" in both "{dir1}" and "{dir2}",'
                             ' please remove at least one.'
                             .format(url=comic.url,
@@ -42,7 +43,7 @@ class ComicManager:
                     else:
                         self.url_to_comics[comic.url] = comic
 
-                except exceptions.NoMatchAnalyzer as e:
+                except NoMatchAnalyzer as e:
                     log.logger.debug('{} ({})'.format(e, dir))
 
     def __load_comic_in_dirs(self):
@@ -68,7 +69,7 @@ class ComicManager:
             try:
                 result.add(self.amgr.get_normalized_entry(url))
 
-            except exceptions.NoMatchAnalyzer:
+            except NoMatchAnalyzer:
                 log.logger.error('No Matched Analyzer: {}'.format(url))
 
         return result
@@ -98,7 +99,7 @@ class ComicManager:
             loop, self.amgr, self.meta_toolkit, curl)
 
         if curl in self.url_to_comics:
-            raise exceptions.DuplicateComic('Duplicate comic found. Cancel.')
+            raise DuplicateComic('Duplicate comic found. Cancel.')
 
         comic = Comic.build_from_parsed_meta(
             self.config, self.amgr, self.meta_toolkit, parsed_meta, curl)

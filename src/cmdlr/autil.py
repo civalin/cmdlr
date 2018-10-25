@@ -6,7 +6,7 @@ import tempfile
 import subprocess
 from collections import namedtuple
 
-from .exceptions import ExternalDependencyNotFound
+from .exception import ExternalDependencyNotFound
 
 
 JSResult = namedtuple('JSResult', ['eval', 'env'])

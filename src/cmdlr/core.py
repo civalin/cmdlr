@@ -6,7 +6,7 @@ import pprint
 
 from . import sessions
 from . import log
-from . import exceptions
+from .exception import NoMatchAnalyzer
 
 
 _semaphore = None
@@ -32,7 +32,7 @@ async def _run_comic_coros_by_order(curl, coros):
             for coro in coros:
                 await coro
 
-        except exceptions.NoMatchAnalyzer as e:
+        except NoMatchAnalyzer as e:
             log.logger.error(e)
 
         except Exception as e:

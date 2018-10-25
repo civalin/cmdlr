@@ -9,7 +9,8 @@ import tempfile
 from . import log
 from . import yamla
 from . import sessions
-from . import exceptions
+from .exception import NoImagesFound
+from .exception import InvalidValue
 
 
 def _get_volume_cbzpath(comic_path, comic_name, volume_name):
@@ -54,7 +55,7 @@ def _get_img_download(amgr, curl, tmpdirpath, cname, vname, skip_errors):
                 ext = get_image_extension(resp)
 
                 if not ext:
-                    raise exceptions.InvalidValue(
+                    raise InvalidValue(
                         'Cannot determine file extension'
                         ' of "{}" content type.'.format(resp.content_type)
                     )
@@ -171,7 +172,7 @@ async def download_one_volume(
                                      loop=loop)
 
         if len(imgdl_tasks) == 0:
-            raise exceptions.NoImagesFound(
+            raise NoImagesFound(
                 'Not found any images in volume: [{}] => [{}] {}'
                 .format(comic_name, volume_name, vurl))
 

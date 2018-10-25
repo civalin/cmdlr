@@ -8,7 +8,7 @@ import urllib.parse as UP
 
 from bs4 import BeautifulSoup
 
-from cmdlr import exceptions
+from cmdlr.exception import AnalyzerRuntimeError
 from cmdlr.analyzer import BaseAnalyzer
 from cmdlr.autil import run_in_nodejs
 
@@ -189,7 +189,7 @@ class Analyzer(BaseAnalyzer):
             subdomain = 'tw'
 
         else:
-            raise exceptions.AnalyzerRuntimeError(
+            raise AnalyzerRuntimeError(
                 'manhuagui.data_source should be one of ["tw", "cn", null]')
 
         return 'https://{}.manhuagui.com/comic/{}/'.format(subdomain, id)

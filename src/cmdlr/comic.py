@@ -7,7 +7,7 @@ from . import log
 from . import schema
 from . import sessions
 from . import cvolume
-from . import exceptions
+from .exception import ComicDirOccupied
 
 
 class Comic():
@@ -46,7 +46,7 @@ class Comic():
         dir = os.path.join(config.incoming_dir, name)
 
         if os.path.exists(dir):
-            raise exceptions.ComicDirOccupied(
+            raise ComicDirOccupied(
                 '"{}" already be occupied, comic "{}" cannot be created.'
                 .format(dir, curl),
             )

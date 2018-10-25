@@ -7,8 +7,10 @@ import sys
 import functools
 import re
 
-from . import exceptions
 from . import analyzers as _analyzers  # NOQA
+from .exception import NoMatchAnalyzer
+from .exception import ExtraAnalyzersDirNotExists
+from .exception import AnalyzerRuntimeError
 
 
 class AnalyzerManager:
@@ -32,7 +34,7 @@ class AnalyzerManager:
         analyzer_dirs = [os.path.join(os.path.dirname(__file__), 'analyzers')]
 
         if extra_analyzer_dir and not os.path.isdir(extra_analyzer_dir):
-            raise exceptions.ExtraAnalyzersDirNotExists(
+            raise ExtraAnalyzersDirNotExists(
                 'extra_analyzer_dir already be set but not exists, path: "{}"'
                 .format(extra_analyzer_dir))
 
@@ -69,7 +71,7 @@ class AnalyzerManager:
                     mappers.append((re.compile(pattern), analyzer))
 
                 else:
-                    raise exceptions.AnalyzerRuntimeError(
+                    raise AnalyzerRuntimeError(
                         'some entry pattern in analyzer "{}"'
                         ' neither str nor re.compile type'
                         .format(aname)
@@ -80,7 +82,7 @@ class AnalyzerManager:
                 if pattern.search(curl):
                     return analyzer
 
-            raise exceptions.NoMatchAnalyzer(
+            raise NoMatchAnalyzer(
                 'No Matched Analyzer: {}'.format(curl),
             )
 
