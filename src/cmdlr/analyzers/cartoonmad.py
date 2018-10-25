@@ -5,7 +5,7 @@ import urllib.parse as UP
 
 from bs4 import BeautifulSoup
 
-from cmdlr.analyzers import BaseAnalyzer
+from cmdlr.analyzer import BaseAnalyzer
 
 
 def _get_soup(binary):

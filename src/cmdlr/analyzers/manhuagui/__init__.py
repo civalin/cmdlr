@@ -9,7 +9,7 @@ import urllib.parse as UP
 from bs4 import BeautifulSoup
 
 from cmdlr import exceptions
-from cmdlr.analyzers import BaseAnalyzer
+from cmdlr.analyzer import BaseAnalyzer
 from cmdlr.autil import run_in_nodejs
 
 
