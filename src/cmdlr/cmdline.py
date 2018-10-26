@@ -4,22 +4,25 @@ import argparse
 import textwrap
 import sys
 
-from . import info
-from . import cuiprint
+from .info import DESCRIPTION
+from .info import VERSION
+
 from .conf import Config
 from .amgr import AnalyzerManager
 from .cmgr import ComicManager
 from .loopmgr import LoopManager
 
+from . import cuiprint
+
 
 def _parser_setting():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
-        description=textwrap.fill(info.DESCRIPTION, 70))
+        description=textwrap.fill(DESCRIPTION, 70))
 
     parser.add_argument(
         '--version', action='version',
-        version='.'.join(map(lambda x: str(x), info.VERSION)))
+        version='.'.join(map(lambda x: str(x), VERSION)))
 
     parser.add_argument(
         'urls', metavar='URL', type=str, nargs='*',

@@ -5,21 +5,33 @@
 import sys
 
 from setuptools import setup, find_packages
-import src.cmdlr.info
+
+from src.cmdlr.info import PROJECT_NAME
+from src.cmdlr.info import VERSION
+from src.cmdlr.info import AUTHOR
+from src.cmdlr.info import AUTHOR_EMAIL
+from src.cmdlr.info import LICENSE
+from src.cmdlr.info import PROJECT_URL
+from src.cmdlr.info import DESCRIPTION
+
 
 if not sys.version_info >= (3, 5, 0):
     print("ERROR: You cannot install because python version < 3.5")
     sys.exit(1)
 
+
 setup(
-    name=src.cmdlr.info.PROJECT_NAME,
-    version='.'.join(map(lambda x: str(x), src.cmdlr.info.VERSION)),
-    author=src.cmdlr.info.AUTHOR,
-    author_email=src.cmdlr.info.AUTHOR_EMAIL,
-    license=src.cmdlr.info.LICENSE,
-    url=src.cmdlr.info.PROJECT_URL,
-    description=src.cmdlr.info.DESCRIPTION,
+    name=PROJECT_NAME,
+    version='.'.join(map(lambda x: str(x), VERSION)),
+
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    license=LICENSE,
+    url=PROJECT_URL,
+    description=DESCRIPTION,
     long_description='''''',
+    keywords='comic download archive',
+
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
@@ -27,6 +39,7 @@ setup(
         "Environment :: Console",
         "Operating System :: POSIX :: Linux",
         "Topic :: System :: Archiving"],
+
     install_requires=[
         'pyyaml >=3, <4',
         'aiohttp >=2, <3',
@@ -36,12 +49,13 @@ setup(
         'beautifulsoup4',
         ],
     setup_requires=[],
+
     package_dir={'': 'src'},
     packages=find_packages('src'),
     include_package_data=True,
+
     entry_points={
         'console_scripts': ['cmdlr = cmdlr.cmdline:main'],
         'setuptools.installation': ['eggsecutable = cmdlr.cmdline:main']
         },
-    keywords='comic download archive',
     )
