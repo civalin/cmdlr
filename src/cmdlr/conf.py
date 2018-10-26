@@ -2,8 +2,10 @@
 
 import os
 
-from . import yamla
-from . import schema
+from .schema import config_schema
+
+from .yamla import from_yaml_file
+from .yamla import to_yaml_file
 
 
 def _normalize_path(path):
@@ -39,11 +41,11 @@ class Config:
         dirpath = os.path.dirname(filepath)
 
         os.makedirs(dirpath, exist_ok=True)
-        yamla.to_file(filepath, cls.default_config, comment_out=True)
+        to_yaml_file(filepath, cls.default_config, comment_out=True)
 
     def __init__(self):
         """Init the internal __config variable."""
-        self.__config = schema.config(type(self).default_config)
+        self.__config = config_schema(type(self).default_config)
 
     def load_or_build(self, *filepaths):
         """Load and update internal config from specific filepaths.
@@ -55,9 +57,9 @@ class Config:
             if not os.path.exists(filepath):
                 type(self).__build_config_file(filepath)
 
-            incoming_config = schema.config(yamla.from_file(filepath))
+            incoming_config = config_schema(from_yaml_file(filepath))
 
-            self.__config = schema.config({
+            self.__config = config_schema({
                 **self.__config,
                 **incoming_config,
             })

@@ -3,9 +3,10 @@
 import os
 import sys
 
-from .. import schema
+from ..schema import parsed_meta_schema
 from ..log import logger
 from ..exception import ComicDirOccupied
+
 from .volfile import ComicVolume
 
 
@@ -29,7 +30,7 @@ class Comic():
             ori_meta = await get_comic_info(resp, request=request, loop=loop)
 
             try:
-                parsed_meta = schema.parsed_meta(ori_meta)
+                parsed_meta = parsed_meta_schema(ori_meta)
 
             except Exception as e:
                 e.ori_meta = ori_meta

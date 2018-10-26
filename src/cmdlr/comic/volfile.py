@@ -5,7 +5,7 @@ import zipfile
 import datetime as DT
 from tempfile import TemporaryDirectory
 
-from .. import yamla
+from ..yamla import to_yaml_file
 from ..log import logger
 from .ifpool import ImageFetchPool
 
@@ -44,7 +44,7 @@ class ComicVolume:
     def __save_meta(self, dirpath, name):
         filepath = os.path.join(dirpath, '.volume-meta.yaml')
 
-        yamla.to_file(
+        to_yaml_file(
             filepath,
             {'comic_url': self.comic.url,
              'volume_url': self.comic.meta['volumes'][name],

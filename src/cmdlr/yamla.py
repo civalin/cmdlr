@@ -8,7 +8,7 @@ import yaml
 yaml.Dumper.ignore_aliases = lambda *args: True
 
 
-def from_file(filepath):
+def from_yaml_file(filepath):
     """Get yaml data from file."""
     with open(filepath, 'r', encoding='utf8') as f:
         return (yaml.load(
@@ -17,7 +17,7 @@ def from_file(filepath):
         ) or {})
 
 
-def to_file(filepath, data, comment_out=False):
+def to_yaml_file(filepath, data, comment_out=False):
     """Save data to yaml file."""
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
 

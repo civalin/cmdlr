@@ -12,7 +12,9 @@ from .amgr import AnalyzerManager
 from .cmgr import ComicManager
 from .loopmgr import LoopManager
 
-from . import cuiprint
+from .cuiprint import print_analyzer_info
+from .cuiprint import print_useless_urls
+from .cuiprint import print_comic_info
 
 
 def _parser_setting():
@@ -93,16 +95,16 @@ def main():
     amgr = AnalyzerManager(config)
 
     if 'analyzer' in args:
-        cuiprint.print_analyzer_info(amgr.get_analyzer_infos(), args.analyzer)
+        print_analyzer_info(amgr.get_analyzer_infos(), args.analyzer)
         return
 
-    cuiprint.print_useless_urls(amgr, args.urls)
+    print_useless_urls(amgr, args.urls)
 
     cmgr = ComicManager(config, amgr)
 
     if args.list:
         url_to_comics = cmgr.get_url_to_comics(args.urls)
-        cuiprint.print_comic_info(url_to_comics, detail_mode=args.urls)
+        print_comic_info(url_to_comics, detail_mode=args.urls)
 
     else:
         lmgr = LoopManager(config.max_concurrent)
@@ -113,8 +115,4 @@ def main():
             'skip_download_errors': args.skip_download_errors
         }
 
-        lmgr.start(config=config,
-                   amgr=amgr,
-                   cmgr=cmgr,
-                   urls=args.urls,
-                   ctrl=ctrl)
+        lmgr.start(config, amgr, cmgr, args.urls, ctrl)

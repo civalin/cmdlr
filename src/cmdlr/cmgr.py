@@ -29,6 +29,10 @@ class ComicManager:
                 try:
                     comic = Comic(self.amgr, self.meta_toolkit, comicdir)
 
+                except NoMatchAnalyzer as e:
+                    logger.debug('{} ({})'.format(e, comicdir))
+
+                else:
                     if comic.url in self.url_to_comics:
                         another_comic_dir = self.url_to_comics[comic.url].dir
 
@@ -42,9 +46,6 @@ class ComicManager:
 
                     else:
                         self.url_to_comics[comic.url] = comic
-
-                except NoMatchAnalyzer as e:
-                    log.logger.debug('{} ({})'.format(e, dir))
 
     def __load_comic_in_dirs(self):
         for dir in self.config.dirs:

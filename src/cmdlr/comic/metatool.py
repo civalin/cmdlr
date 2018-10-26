@@ -25,8 +25,10 @@ import pickle
 import tempfile
 import atexit
 
-from .. import schema
-from .. import yamla
+from ..schema import meta_schema
+
+from ..yamla import from_yaml_file
+from ..yamla import to_yaml_file
 
 
 _CACHE_USE = True
@@ -95,22 +97,22 @@ class MetaToolkit:
                 meta = meta_from_cache
 
             else:
-                meta = yamla.from_file(meta_filepath)
+                meta = from_yaml_file(meta_filepath)
                 self.__meta_to_cache(meta_filepath, meta_mtime, meta)
 
         else:
-            meta = yamla.from_file(meta_filepath)
+            meta = from_yaml_file(meta_filepath)
 
         return meta
 
     def save(self, meta_filepath, meta):
         """Save comic meta to meta_filepath."""
-        normalized_meta = schema.meta(meta)
+        normalized_meta = meta_schema(meta)
 
         meta_dirpath = os.path.dirname(meta_filepath)
         os.makedirs(meta_dirpath, exist_ok=True)
 
-        yamla.to_file(meta_filepath, normalized_meta)
+        to_yaml_file(meta_filepath, normalized_meta)
 
         if _CACHE_USE:
             meta_mtime = os.path.getmtime(meta_filepath)

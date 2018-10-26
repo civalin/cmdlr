@@ -38,7 +38,7 @@ def _dict_value_unique(v):
     return v
 
 
-parsed_meta = Schema({
+parsed_meta_schema = Schema({
     Required('name'): All(Length(min=1), _safepathcomp_str),
     Required('description'): All(str, _st_str),
     Required('authors'): All([_st_str], Unique()),
@@ -52,13 +52,13 @@ parsed_meta = Schema({
 })
 
 
-meta = parsed_meta.extend({
+meta_schema = parsed_meta_schema.extend({
     Required('url'): FqdnUrl(),
     Required('volumes_checked_time'): DT.datetime,
     Required('volumes_modified_time'): DT.datetime,
 })
 
-config = Schema({
+config_schema = Schema({
     'delay': All(float, Range(min=0)),
     'dirs': All(
         Length(min=1),
