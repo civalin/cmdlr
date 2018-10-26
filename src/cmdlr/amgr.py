@@ -7,7 +7,6 @@ import sys
 import functools
 import re
 
-from . import analyzers as _analyzers  # NOQA
 from .exception import NoMatchAnalyzer
 from .exception import ExtraAnalyzersDirNotExists
 from .exception import AnalyzerRuntimeError
