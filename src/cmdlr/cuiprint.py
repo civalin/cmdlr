@@ -94,10 +94,13 @@ def print_analyzer_info(analyzer_infos, aname):
 
     else:
         for local_aname, desc in analyzer_infos:
+            safe_desc = (desc if desc
+                         else 'This analyzer without a description :(\n')
+
             if aname == local_aname:
                 print('[{}]'.format(aname))
                 print(textwrap.indent(
-                    desc,
+                    safe_desc,
                     ' ' * 4,
                 ))
 
