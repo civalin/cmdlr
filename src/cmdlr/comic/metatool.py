@@ -48,6 +48,7 @@ class MetaToolkit:
             self.cache_changed = False
 
         else:
+            self.cache = {}
             self.cache_changed = True
 
         def save_back_hook():
