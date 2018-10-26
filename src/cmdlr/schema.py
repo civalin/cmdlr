@@ -40,15 +40,15 @@ def _dict_value_unique(v):
 
 parsed_meta_schema = Schema({
     Required('name'): All(Length(min=1), _safepathcomp_str),
-    Required('description'): All(str, _st_str),
-    Required('authors'): All([_st_str], Unique()),
-    Required('finished'): bool,
     Required('volumes'): Schema(All(
         dict,
         Length(min=1),
         _dict_value_unique,
         {All(Length(min=1), _safepathcomp_str): FqdnUrl()}
     )),
+    Required('finished'): bool,
+    'description': All(str, _st_str),
+    'authors': All([_st_str], Unique()),
 })
 
 
