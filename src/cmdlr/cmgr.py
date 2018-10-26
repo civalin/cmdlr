@@ -93,10 +93,14 @@ class ComicManager:
         return [url for url in normalized_urls
                 if url not in self.url_to_comics]
 
-    async def build_comic(self, loop, curl):
+    async def build_comic(self, request_pool, curl):
         """Build comic from url."""
         parsed_meta = await Comic.get_parsed_meta(
-            loop, self.amgr, self.meta_toolkit, curl)
+            request_pool,
+            self.amgr,
+            self.meta_toolkit,
+            curl,
+        )
 
         if curl in self.url_to_comics:
             raise DuplicateComic('Duplicate comic found. Cancel.')

@@ -1,0 +1,46 @@
+"""Maintain aiohttp sessions."""
+
+import aiohttp
+
+from .. import info
+
+
+class SessionPool:
+    """Maintain a aiohttp client session pool."""
+
+    default_session_init_kwargs = {
+        'headers': {
+            'user-agent': '{}/{}'.format(info.PROJECT_NAME, info.VERSION)
+        },
+        'read_timeout': 120,
+        'conn_timeout': 120,
+    }
+
+    def __init__(self, config, loop):
+        """Session pool init."""
+        self.config = config
+        self.loop = loop
+
+        self.sessions = []
+
+    def build_session(self, session_init_kwargs):
+        """Build a new session."""
+        real_session_init_kwargs = {
+            **self.default_session_init_kwargs,
+            **session_init_kwargs,
+        }
+        session = aiohttp.ClientSession(
+            loop=self.loop,
+            **real_session_init_kwargs,
+        )
+
+        self.sessions.append(session)
+
+        return session
+
+    def close(self):
+        """Close all dispatched sessions."""
+        for session in self.sessions:
+            session.close()
+
+        self.sessions.clear()

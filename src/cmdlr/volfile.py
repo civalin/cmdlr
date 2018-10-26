@@ -6,7 +6,6 @@ import datetime as DT
 import asyncio
 from tempfile import TemporaryDirectory
 
-from . import sessions
 from . import log
 from . import yamla
 from .exception import NoImagesFound
@@ -27,12 +26,13 @@ class ImageFetchPool:
         with open(filepath, mode='wb') as f:
             f.write(binary)
 
-    def __init__(self, loop, comic, vname, dirpath, skip_errors):
+    def __init__(self, request_pool, comic, vname, dirpath, skip_errors):
         """Init all data."""
-        self.loop = loop
-
         self.analyzer = comic.analyzer
-        self.request = sessions.get_request(comic.url)
+
+        self.request = request_pool.get_request(self.analyzer)
+        self.loop = request_pool.loop
+
         self.cname = comic.meta['name']
 
         self.vname = vname
@@ -186,16 +186,18 @@ class ComicVolume:
         os.rename(tmp_filepath, filepath)
         log.logger.info('Archived: {}'.format(filepath))
 
-    async def download(self, loop, name, skip_errors):
+    async def download(self, request_pool, name, skip_errors):
         """Download a volume by volname."""
         with TemporaryDirectory(prefix='cmdlr_') as tmpdir:
             vurl = self.comic.meta['volumes'][name]
             analyzer = self.comic.analyzer
-            request = sessions.get_request(self.comic.url)
 
             image_pool = ImageFetchPool(
-                loop, self.comic, name, tmpdir, skip_errors)
+                request_pool, self.comic, name, tmpdir, skip_errors)
             save_image = image_pool.get_save_image()
+
+            request = request_pool.get_request(analyzer)
+            loop = request_pool.loop
 
             async with request(url=vurl, **analyzer.volume_req_kwargs) as resp:
                 await analyzer.save_volume_images(

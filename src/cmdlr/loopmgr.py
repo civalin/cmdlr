@@ -5,7 +5,7 @@ import sys
 import pprint
 from collections import Iterable
 
-from . import sessions
+from .reqpool import RequestPool
 from . import log
 from .exception import NoMatchAnalyzer
 
@@ -53,20 +53,20 @@ class LoopManager:
                     'Unexpected Book Error: {}\n{}'.format(curl, extra_info),
                     exc_info=sys.exc_info())
 
-    def __build_coro_from_comic(self, comic, ctrl):
+    def __build_coro_from_comic(self, comic, request_pool, ctrl):
         """Get coro to process a exists comic."""
         coro_generators = []
 
         if ctrl.get('update_meta'):
             async def update_meta_cogen(*args):
-                await comic.update_meta(self.loop)
+                await comic.update_meta(request_pool)
 
             coro_generators.append(update_meta_cogen)
 
         if ctrl.get('download'):
             async def download_cogen(*args):
                 await comic.download(
-                    self.loop,
+                    request_pool,
                     ctrl.get('skip_download_errors'),
                 )
 
@@ -74,10 +74,10 @@ class LoopManager:
 
         return self.__run_cogens(coro_generators, comic.url)
 
-    def __build_coro_from_url(self, cmgr, url, ctrl):
+    def __build_coro_from_url(self, cmgr, url, request_pool, ctrl):
         """Get coro to process a non-exists url."""
         async def create_meta_cogen(*args):
-            comic = await cmgr.build_comic(self.loop, url)
+            comic = await cmgr.build_comic(request_pool, url)
 
             return comic
 
@@ -86,7 +86,7 @@ class LoopManager:
         if ctrl.get('download'):
             async def download_cogen(comic):
                 await comic.download(
-                    self.loop,
+                    request_pool,
                     ctrl.get('skip_download_errors'),
                 )
 
@@ -94,17 +94,17 @@ class LoopManager:
 
         return self.__run_cogens(coro_generators, url)
 
-    def __get_main_task(self, cmgr, urls, ctrl):
+    def __get_main_task(self, cmgr, urls, request_pool, ctrl):
         """Get main task for loop."""
         url_to_comics = cmgr.get_url_to_comics(urls)
         exist_coros = [
-            self.__build_coro_from_comic(comic, ctrl)
+            self.__build_coro_from_comic(comic, request_pool, ctrl)
             for comic in url_to_comics.values()
         ]
 
         non_exist_urls = cmgr.get_non_exist_urls(urls)
         non_exist_coros = [
-            self.__build_coro_from_url(cmgr, url, ctrl)
+            self.__build_coro_from_url(cmgr, url, request_pool, ctrl)
             for url in non_exist_urls
         ]
 
@@ -117,12 +117,13 @@ class LoopManager:
 
     def start(self, config, amgr, cmgr, urls, ctrl):
         """Start core system."""
-        sessions.init(self.loop, config=config, amgr=amgr)
+        request_pool = RequestPool(config, self.loop)
 
         try:
             self.loop.run_until_complete(self.__get_main_task(
                 cmgr=cmgr,
                 urls=urls,
+                request_pool=request_pool,
                 ctrl=ctrl,
             ))
 
@@ -132,4 +133,4 @@ class LoopManager:
             sys.exit(1)
 
         finally:
-            sessions.close()
+            request_pool.close()

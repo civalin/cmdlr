@@ -5,7 +5,6 @@ import sys
 
 from . import log
 from . import schema
-from . import sessions
 from .exception import ComicDirOccupied
 from .volfile import ComicVolume
 
@@ -16,10 +15,12 @@ class Comic():
     comic_meta_filename = '.comic-meta.yaml'
 
     @staticmethod
-    async def get_parsed_meta(loop, amgr, meta_toolkit, curl):
+    async def get_parsed_meta(request_pool, amgr, meta_toolkit, curl):
         """Get infomation about specific curl."""
         analyzer = amgr.get_match_analyzer(curl)
-        request = sessions.get_request(curl)
+
+        request = request_pool.get_request(analyzer)
+        loop = request_pool.loop
 
         comic_req_kwargs = analyzer.comic_req_kwargs
         get_comic_info = analyzer.get_comic_info
@@ -107,13 +108,13 @@ class Comic():
         """Get comic url."""
         return self.meta['url']
 
-    async def update_meta(self, loop):
+    async def update_meta(self, request_pool):
         """Load comic info from url.
 
         It will cause a lot of network and parsing operation.
         """
         parsed_meta = await self.get_parsed_meta(
-            loop,
+            request_pool,
             self.amgr,
             self.meta_toolkit,
             self.url,
@@ -124,7 +125,7 @@ class Comic():
         log.logger.info('Meta Updated: {name} ({curl})'
                         .format(**parsed_meta, curl=self.url))
 
-    async def download(self, loop, skip_errors=False):
+    async def download(self, request_pool, skip_errors=False):
         """Download comic volume in database.
 
         Args:
@@ -135,7 +136,11 @@ class Comic():
 
         for volname in sorted(wanted_volnames):
             try:
-                await comic_volume.download(loop, volname, skip_errors)
+                await comic_volume.download(
+                    request_pool,
+                    volname,
+                    skip_errors,
+                )
 
             except Exception:
                 log.logger.error(
