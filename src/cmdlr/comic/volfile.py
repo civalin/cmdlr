@@ -5,8 +5,8 @@ import zipfile
 import datetime as DT
 from tempfile import TemporaryDirectory
 
-from .. import log
 from .. import yamla
+from ..log import logger
 from .ifpool import ImageFetchPool
 
 
@@ -66,7 +66,7 @@ class ComicVolume:
                 zfile.write(real_path, in_zip_path)
 
         os.rename(tmp_filepath, filepath)
-        log.logger.info('Archived: {}'.format(filepath))
+        logger.info('Archived: {}'.format(filepath))
 
     async def download(self, request_pool, name, skip_errors):
         """Download a volume by volname."""

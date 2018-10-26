@@ -3,8 +3,8 @@
 import os
 import sys
 
-from .. import log
 from .. import schema
+from ..log import logger
 from ..exception import ComicDirOccupied
 from .volfile import ComicVolume
 
@@ -122,8 +122,8 @@ class Comic():
 
         self.__merge_and_save_meta(parsed_meta)
 
-        log.logger.info('Meta Updated: {name} ({curl})'
-                        .format(**parsed_meta, curl=self.url))
+        logger.info('Meta Updated: {name} ({curl})'
+                    .format(**parsed_meta, curl=self.url))
 
     async def download(self, request_pool, skip_errors=False):
         """Download comic volume in database.
@@ -143,7 +143,7 @@ class Comic():
                 )
 
             except Exception:
-                log.logger.error(
+                logger.error(
                     ('Volume Download Failed: {cname}_{vname} ({vurl})'
                      .format(cname=self.meta['name'],
                              vname=volname,

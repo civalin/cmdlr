@@ -6,7 +6,7 @@ import asyncio
 
 from ..exception import NoImagesFound
 from ..exception import InvalidValue
-from .. import log
+from ..log import logger
 
 
 class ImageFetchPool:
@@ -54,7 +54,7 @@ class ImageFetchPool:
             filepath = self.__get_image_filepath(page_num, ext, self.dirpath)
             self.__save_binary(filepath, binary)
 
-            log.logger.info('Image Fetched: {}_{}_{:03}'.format(
+            logger.info('Image Fetched: {}_{}_{:03}'.format(
                 self.cname, self.vname, page_num))
 
     async def __save_image_error_process(self,
@@ -66,7 +66,7 @@ class ImageFetchPool:
             pass
 
         except Exception as e:
-            log.logger.error(
+            logger.error(
                 'Image Fetch Failed : {}_{}_{:03} ({} => {}: {})'
                 .format(self.cname, self.vname, page_num,
                         url, type(e).__name__, e),

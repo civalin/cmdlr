@@ -5,7 +5,7 @@ import asyncio
 
 import aiohttp
 
-from .. import log
+from ..log import logger
 
 
 def build_request(config, session, semaphore, host_pool):
@@ -65,7 +65,7 @@ def build_request(config, session, semaphore, host_pool):
                 except aiohttp.ClientError as e:
                     current_try = try_idx + 1
 
-                    log.logger.error(
+                    logger.error(
                         'Request Failed ({}/{}): {} => {}: {}'
                         .format(
                             current_try, max_try,

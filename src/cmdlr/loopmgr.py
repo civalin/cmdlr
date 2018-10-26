@@ -6,7 +6,7 @@ import pprint
 from collections import Iterable
 
 from .reqpool import RequestPool
-from . import log
+from .log import logger
 from .exception import NoMatchAnalyzer
 
 
@@ -40,7 +40,7 @@ class LoopManager:
                 await run()
 
             except NoMatchAnalyzer as e:
-                log.logger.error(e)
+                logger.error(e)
 
             except Exception as e:
                 if hasattr(e, 'ori_meta'):
@@ -49,7 +49,7 @@ class LoopManager:
                 else:
                     extra_info = ''
 
-                log.logger.error(
+                logger.error(
                     'Unexpected Book Error: {}\n{}'.format(curl, extra_info),
                     exc_info=sys.exc_info())
 
@@ -128,8 +128,8 @@ class LoopManager:
             ))
 
         except Exception as e:
-            log.logger.critical('Critical Error: {}'.format(e),
-                                exc_info=sys.exc_info())
+            logger.critical('Critical Error: {}'.format(e),
+                            exc_info=sys.exc_info())
             sys.exit(1)
 
         finally:

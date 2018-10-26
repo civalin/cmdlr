@@ -2,7 +2,7 @@
 
 import os
 
-from . import log
+from .log import logger
 from .exception import DuplicateComic
 from .exception import NoMatchAnalyzer
 from .comic import Comic
@@ -110,7 +110,7 @@ class ComicManager:
 
         self.url_to_comics[curl] = comic
 
-        log.logger.info('Meta Created: {name} ({curl})'
-                        .format(**parsed_meta, curl=curl))
+        logger.info('Meta Created: {name} ({curl})'
+                    .format(**parsed_meta, curl=curl))
 
         return comic
