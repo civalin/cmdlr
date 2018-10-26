@@ -25,8 +25,8 @@ import pickle
 import tempfile
 import atexit
 
-from . import schema
-from . import yamla
+from .. import schema
+from .. import yamla
 
 
 _CACHE_USE = True

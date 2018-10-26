@@ -6,7 +6,7 @@ from . import log
 from .exception import DuplicateComic
 from .exception import NoMatchAnalyzer
 from .comic import Comic
-from .metatool import MetaToolkit
+from .comic import MetaToolkit
 
 
 class ComicManager:

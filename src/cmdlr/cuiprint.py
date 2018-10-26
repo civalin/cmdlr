@@ -7,7 +7,7 @@ import textwrap
 import wcwidth
 
 from .exception import NoMatchAnalyzer
-from .volfile import ComicVolume
+from .comic import ComicVolume
 
 
 def _get_max_width(strings):

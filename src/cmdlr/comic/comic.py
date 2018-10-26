@@ -3,9 +3,9 @@
 import os
 import sys
 
-from . import log
-from . import schema
-from .exception import ComicDirOccupied
+from .. import log
+from .. import schema
+from ..exception import ComicDirOccupied
 from .volfile import ComicVolume
 
 
