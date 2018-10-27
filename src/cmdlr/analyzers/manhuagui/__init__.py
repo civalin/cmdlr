@@ -21,36 +21,29 @@ class Analyzer(BaseAnalyzer):
     [Entry examples]
 
     - http://tw.manhuagui.com/comic/23292/
-    - http://www.manhuagui.com/comic/23292/
+    - https://www.manhuagui.com/comic/23292/
 
 
 
-    [Configurations]
+    [Preferences Description]
 
-    ## `meta_source` ##
+        ## meta_source
 
-    (Not required, string or null, allow: 'tw', 'cn')
+        Choice the one of the following as metadata source:
 
-    Choice one of following as metadata source:
-
-    - <tw.manhuagui.com> (tw) or
-    - <www.manhuagui.com> (cn)
-
-    If null or not exists, respect the original entry url.
+        - <tw.manhuagui.com> (tw) or
+        - <www.manhuagui.com> (cn)
 
 
 
-    ## `disabled_image_servers` ##
+        ## image_host_codes
 
-    (Not required, list of strings)
+        Select which images servers should be used.
 
-    Select which images servers should *NOT* be used. Any non-exists server
-    code will be ignored.
+        Current available servers: ['eu', 'i', 'us']
 
-    Current available servers: ['dx', 'eu', 'i', 'lt', 'us']
-
-    > Hint: The real servers url are look like:
-            `http://{code}.hamreus.com:8080`
+        > Hint: The real servers url are look like this:
+                `https://{image_host_code}.hamreus.com`
     """
 
     entry_patterns = [

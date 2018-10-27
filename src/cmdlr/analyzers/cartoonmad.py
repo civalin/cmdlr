@@ -10,9 +10,10 @@ from cmdlr.autil import fetch
 class Analyzer(BaseAnalyzer):
     """The www.cartoonmad.com analyzer.
 
-    # Entry examples #
+    [Entry examples]
 
     - http://www.cartoonmad.com/comic/5640.html
+    - https://www.cartoonmad.com/comic/5640.html
     """
 
     entry_patterns = [
