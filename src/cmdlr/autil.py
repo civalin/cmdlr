@@ -52,7 +52,7 @@ def run_in_nodejs(js):
     return _JSResult(**json.loads(ret_value.decode()))
 
 
-_FetchResult = namedtuple('FetchResult', ['soup', 'get_abspath'])
+_FetchResult = namedtuple('FetchResult', ['soup', 'absurl'])
 
 
 async def fetch(url, request, encoding='utf8', **req_kwargs):
@@ -64,8 +64,7 @@ async def fetch(url, request, encoding='utf8', **req_kwargs):
 
         base_url = str(resp.url)
 
-    def get_abspath(url):
+    def absurl(url):
         return urljoin(base_url, url)
 
-    return _FetchResult(soup=soup,
-                        get_abspath=get_abspath)
+    return _FetchResult(soup=soup, absurl=absurl)

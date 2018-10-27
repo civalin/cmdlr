@@ -40,7 +40,7 @@ class Analyzer(BaseAnalyzer):
                    .parent
                    .find_all(href=re.compile(r'^/comic/')))
 
-        return {a.string: fetch_result.get_abspath(a.get('href'))
+        return {a.string: fetch_result.absurl(a.get('href'))
                 for a in a_nodes}
 
     @staticmethod

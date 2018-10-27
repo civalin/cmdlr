@@ -30,7 +30,7 @@ async def _get_volumes_data_node(soup, loop):
     return volumes_data_node
 
 
-def _get_volumes_from_volumes_data_node(volumes_data_node, get_abspath):
+def _get_volumes_from_volumes_data_node(volumes_data_node, absurl):
     """Get all volumes from volumes data node."""
     result = {}
 
@@ -47,7 +47,7 @@ def _get_volumes_from_volumes_data_node(volumes_data_node, get_abspath):
         )
 
         name_url_mapper = {
-            '{}_{}'.format(sect_title, a['title']): get_abspath(a['href'])
+            '{}_{}'.format(sect_title, a['title']): absurl(a['href'])
             for a in chapter_a_nodes
         }
 
@@ -58,10 +58,10 @@ def _get_volumes_from_volumes_data_node(volumes_data_node, get_abspath):
 
 async def extract_volumes(fetch_result, loop):
     """Get all volumes."""
-    soup, get_abspath = fetch_result
+    soup, absurl = fetch_result
 
     volumes_data_node = await _get_volumes_data_node(soup, loop)
-    return _get_volumes_from_volumes_data_node(volumes_data_node, get_abspath)
+    return _get_volumes_from_volumes_data_node(volumes_data_node, absurl)
 
 
 def extract_name(fetch_result):
