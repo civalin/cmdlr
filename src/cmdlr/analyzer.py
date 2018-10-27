@@ -43,10 +43,10 @@ class BaseAnalyzer(metaclass=ABCMeta):
 
     @staticmethod
     def to_config(pref):
-        """Pre-processing user's config to internal format."""
+        """Pre-processing user's 'pref' to 'self.config' for ease to use."""
         return pref
 
-    # [Internal]: Don't touch it if it can be possible.
+    # [Internal]: Don't touch this if can be possible.
 
     def __init__(self, pref, *args, **kwargs):
         """Init this analyzer."""
