@@ -79,6 +79,11 @@ def build_request(config, session, semaphore, host_pool):
                     if current_try == max_try:
                         raise e from None
 
+                except Exception as e:
+                    await self.__aexit__(*sys.exc_info())
+
+                    raise e from None
+
         async def __aexit__(self, exc_type, exc, tb):
             """Async with exit."""
             if exc_type:
