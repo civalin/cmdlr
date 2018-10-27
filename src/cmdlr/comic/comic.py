@@ -96,11 +96,7 @@ class Comic():
 
     def __merge_and_save_meta(self, parsed_meta):
         """Merge comic meta to both meta file and self."""
-        self.meta = self.meta_toolkit.update(
-            self.meta,
-            parsed_meta['volumes'],
-            parsed_meta['finished'],
-        )
+        self.meta = self.meta_toolkit.update(self.meta, parsed_meta)
 
         self.meta_toolkit.save(self.meta_filepath, self.meta)
 

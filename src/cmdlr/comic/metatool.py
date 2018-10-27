@@ -120,17 +120,28 @@ class MetaToolkit:
             self.__meta_to_cache(meta_filepath, meta_mtime, normalized_meta)
 
     @staticmethod
-    def update(ori_meta, volumes, finished):
-        """Get updated meta data by original meta and new incoming info."""
+    def update(ori_meta, parsed_meta):
+        """Get updated meta by ori_meta and incoming parsed_meta."""
         ret_meta = ori_meta.copy()
 
         now = DT.datetime.now(DT.timezone.utc)
 
-        ret_meta['volumes_checked_time'] = now
-        ret_meta['finished'] = finished
+        # ret_meta['name'] = parsed_meta['name']  # cause filename change
+        ret_meta['finished'] = parsed_meta['finished']
 
-        if volumes != ret_meta.get('volumes'):
-            ret_meta['volumes'] = volumes
+        authors = parsed_meta.get('authors')
+        description = parsed_meta.get('description')
+
+        if authors:
+            ret_meta['authors'] = authors
+
+        if description:
+            ret_meta['description'] = description
+
+        ret_meta['volumes_checked_time'] = now
+
+        if parsed_meta['volumes'] != ret_meta.get('volumes'):
+            ret_meta['volumes'] = parsed_meta['volumes']
             ret_meta['volumes_modified_time'] = now
 
         return ret_meta
