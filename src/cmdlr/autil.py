@@ -34,8 +34,12 @@ def run_in_nodejs(js):
     const sandbox = {{}};
     vm.createContext(sandbox);
 
-    code = {};
-    evalValue = vm.runInContext(code, sandbox);
+    const code = {};
+    let evalValue = vm.runInContext(code, sandbox);
+
+    if (evalValue === undefined) {{
+        evalValue = null;
+    }}
 
     console.log(JSON.stringify({{eval: evalValue, env: sandbox}}))
     '''.format(json.dumps(js))
