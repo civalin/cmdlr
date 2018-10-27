@@ -59,6 +59,11 @@ def _parser_setting():
         help=('list all enabled analyzers.\n'
               'or print the detail if give a name.\n'))
 
+    parser.add_argument(
+        '-c', metavar='FILE', dest='extra_config_path', type=str,
+        help=('merge a extra config file into runtime'),
+    )
+
     return parser
 
 
@@ -88,6 +93,10 @@ def main():
 
     config = Config()
     config_filepaths = [Config.default_config_filepath]
+
+    if args.extra_config_path:
+        config_filepaths.append(args.extra_config_path)
+
     config.load_or_build(*config_filepaths)
 
     amgr = AnalyzerManager(config)
