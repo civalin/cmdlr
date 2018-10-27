@@ -28,32 +28,30 @@ def _parser_setting():
 
     parser.add_argument(
         'urls', metavar='URL', type=str, nargs='*',
-        help=('select some books which want to process.\n'
-              'if no urls are given, select all subscribed books.\n'
-              'if some urls haven\'t been subscribed,'
-              ' subscrube these now.\n'
-              'more process depend on which flags be given.'))
+        help=('select which ones should processing.\n'
+              'no one be given mean select all existing.\n'
+              'perform subscription if a url hasn\'t been subscribed.'))
 
     parser.add_argument(
         '-m', '--update-meta', dest='update_meta', action='store_true',
-        help='request update meta, not only when subscribe.')
+        help='update metadata from remote addresses.')
 
     parser.add_argument(
         '-d', '--download', dest='download', action='store_true',
-        help='download the volumes files.')
+        help='download the volume files.')
 
     parser.add_argument(
         '-s', '--skip-download-errors',
         dest='skip_download_errors', action='store_true',
-        help=('generate volume files even if some images fetch failed.\n'
-              'may cause incomplete volume files, so use carefully.\n'
+        help=('force build the volume files even if some download failed.\n'
+              'may cause some incomplete volume files.\n'
               'must using with --download flag.'))
 
     parser.add_argument(
         '-l', '--list', dest='list', action='store_true',
-        help=('list exists comics info.\n'
-              'also display extra data if URLs are given.\n'
-              'this flag will prevent any current status change.'))
+        help=('list all comics info.\n'
+              'show more info if URLs was given.\n'
+              'this flag will prevent any change in current system.'))
 
     parser.add_argument(
         '-a', dest='analyzer', nargs='?', type=str,
