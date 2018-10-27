@@ -59,7 +59,7 @@ meta_schema = parsed_meta_schema.extend({
 })
 
 config_schema = Schema({
-    'delay': All(float, Range(min=0)),
+    'delay': All(Any(float, int), Range(min=0)),
     'dirs': All(
         Length(min=1),
         [All(Length(min=1), _safepath_str)],
