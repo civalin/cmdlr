@@ -38,9 +38,6 @@ class Config:
     @classmethod
     def __build_config_file(cls, filepath):
         """Create a config file template at specific filepath."""
-        dirpath = os.path.dirname(filepath)
-
-        os.makedirs(dirpath, exist_ok=True)
         to_yaml_file(filepath, cls.default_config, comment_out=True)
 
     def __init__(self):

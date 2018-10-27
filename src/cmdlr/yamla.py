@@ -19,7 +19,10 @@ def from_yaml_file(filepath):
 
 def to_yaml_file(filepath, data, comment_out=False):
     """Save data to yaml file."""
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    dirpath = os.path.dirname(filepath)
+
+    if dirpath:
+        os.makedirs(dirpath, exist_ok=True)
 
     with open(filepath, 'w', encoding='utf8') as f:
         content = yaml.dump(data,
