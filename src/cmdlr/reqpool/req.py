@@ -8,7 +8,7 @@ import aiohttp
 from ..log import logger
 
 
-def build_request(config, session, semaphore, host_pool):
+def build_request(config, session, global_semaphore, host_pool):
     """Get the request class."""
     max_try = config.max_try
 
@@ -29,12 +29,12 @@ def build_request(config, session, semaphore, host_pool):
             await host_pool.acquire(self.url)
 
             self.global_semaphore_acquired = True
-            await semaphore.acquire()
+            await global_semaphore.acquire()
 
         def __release(self):
             if self.global_semaphore_acquired:
                 self.global_semaphore_acquired = False
-                semaphore.release()
+                global_semaphore.release()
 
             if self.host_semaphore_acquired:
                 self.host_semaphore_acquired = False
