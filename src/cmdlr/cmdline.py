@@ -108,7 +108,7 @@ def main():
         print_comic_info(url_to_comics, detail_mode=args.urls)
 
     else:
-        lmgr = LoopManager(config.max_concurrent)
+        lmgr = LoopManager(config)
 
         ctrl = {
             'update_meta': args.update_meta,
@@ -116,4 +116,4 @@ def main():
             'skip_errors': args.skip_errors
         }
 
-        lmgr.start(config, amgr, cmgr, args.urls, ctrl)
+        lmgr.start(amgr, cmgr, args.urls, ctrl)

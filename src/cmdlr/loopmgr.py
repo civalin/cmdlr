@@ -10,18 +10,15 @@ from .log import logger
 from .exception import NoMatchAnalyzer
 
 
-async def _get_empty_coro():
-    pass
-
-
 class LoopManager:
     """Control the main loop."""
 
-    def __init__(self, max_concurrent):
+    def __init__(self, config):
         """Init core loop manager."""
+        self.config = config
         self.loop = asyncio.get_event_loop()
         self.__semaphore = asyncio.Semaphore(
-            value=max_concurrent,
+            value=config.max_concurrent,
             loop=self.loop,
         )
 
@@ -94,36 +91,41 @@ class LoopManager:
 
         return self.__run_cogens(coro_generators, url)
 
-    def __get_main_task(self, cmgr, urls, request_pool, ctrl):
+    async def __get_main_task(self, cmgr, urls, ctrl):
         """Get main task for loop."""
-        url_to_comics = cmgr.get_url_to_comics(urls)
-        exist_coros = [
-            self.__build_coro_from_comic(comic, request_pool, ctrl)
-            for comic in url_to_comics.values()
-        ]
+        try:
+            request_pool = RequestPool(self.config, self.loop)
 
-        non_exist_urls = cmgr.get_non_exist_urls(urls)
-        non_exist_coros = [
-            self.__build_coro_from_url(cmgr, url, request_pool, ctrl)
-            for url in non_exist_urls
-        ]
+            url_to_comics = cmgr.get_url_to_comics(urls)
+            exist_coros = [
+                self.__build_coro_from_comic(comic, request_pool, ctrl)
+                for comic in url_to_comics.values()
+            ]
 
-        coros = non_exist_coros + exist_coros
+            non_exist_urls = cmgr.get_non_exist_urls(urls)
+            non_exist_coros = [
+                self.__build_coro_from_url(cmgr, url, request_pool, ctrl)
+                for url in non_exist_urls
+            ]
 
-        if len(coros) == 0:
-            return _get_empty_coro()
+            coros = non_exist_coros + exist_coros
 
-        return asyncio.wait([self.loop.create_task(coro) for coro in coros])
+            if len(coros) == 0:
+                return
 
-    def start(self, config, amgr, cmgr, urls, ctrl):
+            await asyncio.wait(
+                [self.loop.create_task(coro) for coro in coros],
+            )
+
+        finally:
+            await request_pool.close()
+
+    def start(self, amgr, cmgr, urls, ctrl):
         """Start core system."""
-        request_pool = RequestPool(config, self.loop)
-
         try:
             self.loop.run_until_complete(self.__get_main_task(
                 cmgr=cmgr,
                 urls=urls,
-                request_pool=request_pool,
                 ctrl=ctrl,
             ))
 
@@ -131,6 +133,3 @@ class LoopManager:
             logger.critical('Critical Error: {}'.format(e),
                             exc_info=sys.exc_info())
             sys.exit(1)
-
-        finally:
-            request_pool.close()

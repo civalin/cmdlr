@@ -40,6 +40,6 @@ class RequestPool:
 
         return request
 
-    def close(self):
+    async def close(self):
         """Close all resource."""
-        self.session_pool.close()
+        await self.session_pool.close()

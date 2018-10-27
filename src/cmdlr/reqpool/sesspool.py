@@ -38,9 +38,9 @@ class SessionPool:
 
         return session
 
-    def close(self):
+    async def close(self):
         """Close all dispatched sessions."""
         for session in self.sessions:
-            session.close()
+            await session.close()
 
         self.sessions.clear()

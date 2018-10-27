@@ -15,8 +15,9 @@ from src.cmdlr.info import PROJECT_URL
 from src.cmdlr.info import DESCRIPTION
 
 
-if not sys.version_info >= (3, 5, 0):
-    print("ERROR: You cannot install because python version < 3.5")
+if not sys.version_info >= (3, 5, 3):
+    print("ERROR: You cannot install because python version < 3.5.3")
+
     sys.exit(1)
 
 
@@ -42,7 +43,7 @@ setup(
 
     install_requires=[
         'pyyaml >=3, <4',
-        'aiohttp >=2, <3',
+        'aiohttp >=3, <4',
         'voluptuous',
         'wcwidth',
         'lxml >=3.8, <4',
