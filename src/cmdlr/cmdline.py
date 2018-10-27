@@ -33,31 +33,25 @@ def _parser_setting():
               'perform subscription if a url hasn\'t been subscribed.'))
 
     parser.add_argument(
-        '-m', '--update-meta', dest='update_meta', action='store_true',
-        help='update metadata from remote addresses.')
+        '-m', dest='update_meta', action='store_true',
+        help='update metadata')
 
     parser.add_argument(
-        '-d', '--download', dest='download', action='store_true',
-        help='download the volume files.')
+        '-d', dest='download', action='store_true',
+        help='download the volume files')
 
     parser.add_argument(
-        '-s', '--skip-download-errors',
-        dest='skip_download_errors', action='store_true',
-        help=('force build the volume files even if some download failed.\n'
-              'may cause some incomplete volume files.\n'
-              'must using with --download flag.'))
+        '-s', dest='skip_errors', action='store_true',
+        help='skip partial images download failed in one volume')
 
     parser.add_argument(
-        '-l', '--list', dest='list', action='store_true',
-        help=('list all comics info.\n'
-              'show more info if URLs was given.\n'
-              'this flag will prevent any change in current system.'))
+        '-l', dest='list', action='store_true',
+        help='list subscription, more information if urls were given')
 
     parser.add_argument(
-        '-a', dest='analyzer', nargs='?', type=str,
+        '-a', metavar='NAME', dest='analyzer', nargs='?', type=str,
         default=argparse.SUPPRESS,
-        help=('list all enabled analyzers.\n'
-              'or print the detail if give a name.\n'))
+        help='print the analyzer\'s information')
 
     parser.add_argument(
         '-c', metavar='FILE', dest='extra_config_path', type=str,
@@ -71,7 +65,7 @@ def _get_args():
     parser = _parser_setting()
     args = parser.parse_args()
 
-    if args.skip_download_errors and not args.download:
+    if args.skip_errors and not args.download:
         print('Please use -s options with -d options.', file=sys.stderr)
         sys.exit(1)
 
@@ -119,7 +113,7 @@ def main():
         ctrl = {
             'update_meta': args.update_meta,
             'download': args.download,
-            'skip_download_errors': args.skip_download_errors
+            'skip_errors': args.skip_errors
         }
 
         lmgr.start(config, amgr, cmgr, args.urls, ctrl)

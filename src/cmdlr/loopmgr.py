@@ -67,7 +67,7 @@ class LoopManager:
             async def download_cogen(*args):
                 await comic.download(
                     request_pool,
-                    ctrl.get('skip_download_errors'),
+                    ctrl.get('skip_errors'),
                 )
 
             coro_generators.append(download_cogen)
@@ -87,7 +87,7 @@ class LoopManager:
             async def download_cogen(comic):
                 await comic.download(
                     request_pool,
-                    ctrl.get('skip_download_errors'),
+                    ctrl.get('skip_errors'),
                 )
 
             coro_generators.append(download_cogen)
