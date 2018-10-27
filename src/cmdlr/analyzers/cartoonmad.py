@@ -1,49 +1,10 @@
 """The www.cartoonmad.com analyzer."""
 
 import re
-import urllib.parse as UP
-
-from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 from cmdlr.analyzer import BaseAnalyzer
-
-
-def _get_soup(binary):
-    html = binary.decode('big5', errors='ignore')
-
-    return BeautifulSoup(html, 'lxml')
-
-
-def _get_name(soup):
-    return soup.title.string.split(' - ')[0]
-
-
-def _get_description(soup):
-    return soup.find('fieldset', id='info').td.get_text().strip()
-
-
-def _get_authors(soup):
-    return [soup.find(string=re.compile('作者：')).string
-            .split('：')[1].strip()]
-
-
-def _get_finished(soup):
-    return True if soup.find('img', src='/image/chap9.gif') else False
-
-
-def _get_volumes(soup, baseurl):
-    a_nodes = (soup
-               .find('legend', string=re.compile('漫畫線上觀看'))
-               .parent
-               .find_all(href=re.compile(r'^/comic/')))
-
-    return {
-        a.string: UP.urljoin(
-            str(baseurl),
-            a.get('href'),
-        )
-        for a in a_nodes
-    }
+from cmdlr.autil import fetch
 
 
 class Analyzer(BaseAnalyzer):
@@ -53,6 +14,7 @@ class Analyzer(BaseAnalyzer):
 
     - http://www.cartoonmad.com/comic/5640.html
     """
+
     entry_patterns = [
         re.compile(
             r'^https?://(?:www.)?cartoonmad.com/comic/(\d+)(?:\.html)?$'
@@ -66,38 +28,59 @@ class Analyzer(BaseAnalyzer):
 
         return 'https://www.cartoonmad.com/comic/{}.html'.format(id)
 
-    async def get_comic_info(self, resp, **kwargs):
-        """Find comic info from entry."""
-        soup = _get_soup(await resp.read())
+    @staticmethod
+    def __extract_name(fetch_result):
+        return fetch_result.soup.title.string.split(' - ')[0]
 
-        return {'name': _get_name(soup),
-                'description': _get_description(soup),
-                'authors': _get_authors(soup),
-                'finished': _get_finished(soup),
-                'volumes': _get_volumes(soup, str(resp.url))}
+    @staticmethod
+    def __extract_volumes(fetch_result):
+        a_nodes = (fetch_result.soup
+                   .find('legend', string=re.compile('漫畫線上觀看'))
+                   .parent
+                   .find_all(href=re.compile(r'^/comic/')))
 
-    async def save_volume_images(self, resp, save_image, **kwargs):
+        return {a.string: fetch_result.get_abspath(a.get('href'))
+                for a in a_nodes}
+
+    @staticmethod
+    def __extract_finished(fetch_result):
+        return (True
+                if fetch_result.soup.find('img', src='/image/chap9.gif')
+                else False)
+
+    @staticmethod
+    def __extract_description(fetch_result):
+        return (fetch_result.soup
+                .find('fieldset', id='info').td.get_text().strip())
+
+    @staticmethod
+    def __extract_authors(fetch_result):
+        return [fetch_result.soup
+                .find(string=re.compile('作者：'))
+                .string.split('：')[1].strip()]
+
+    async def get_comic_info(self, url, request, **unused):
+        """Get comic info."""
+        fetch_result = await fetch(url, request, encoding='big5')
+
+        return {
+            'name': self.__extract_name(fetch_result),
+            'volumes': self.__extract_volumes(fetch_result),
+            'description': self.__extract_description(fetch_result),
+            'authors': self.__extract_authors(fetch_result),
+            'finished': self.__extract_finished(fetch_result),
+        }
+
+    async def save_volume_images(self, url, request, save_image, **unused):
         """Get all images in one volume."""
-        def get_page_count(soup):
-            return len(soup.find_all('option', value=True))
+        soup, _ = await fetch(url, request, encoding='big5')
+        base_url = soup.find('img', src=re.compile(r'http://web'),)['src']
 
-        def get_img_url_generator(soup):
-            baseimgurl = soup.find(
-                'img',
-                src=re.compile(r'http://web'),
-            )['src']
+        def get_img_url(page_number):
+            return urljoin(base_url,
+                           '{:0>3}.jpg'.format(page_number))
 
-            def get_img_url(page_number):
-                return UP.urljoin(
-                    baseimgurl,
-                    '{:0>3}.jpg'.format(page_number),
-                )
-
-            return get_img_url
-
-        soup = _get_soup(await resp.read())
-        get_img_url = get_img_url_generator(soup)
-        page_count = get_page_count(soup)
+        page_count = len(soup.find_all('option', value=True))
 
         for page_num in range(1, page_count + 1):
             save_image(page_num, url=get_img_url(page_num))

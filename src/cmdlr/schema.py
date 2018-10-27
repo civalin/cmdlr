@@ -73,5 +73,5 @@ config_schema = Schema({
     'max_concurrent': All(int, Range(min=1)),
     'max_retry': All(int, Range(min=0)),
     'proxy': Any(None, FqdnUrl()),
-    'customization': {str: dict},
+    'analyzer_pref': {str: dict},
 })

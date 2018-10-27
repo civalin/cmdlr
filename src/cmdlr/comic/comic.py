@@ -23,18 +23,18 @@ class Comic():
         request = request_pool.get_request(analyzer)
         loop = request_pool.loop
 
-        comic_req_kwargs = analyzer.comic_req_kwargs
         get_comic_info = analyzer.get_comic_info
 
-        async with request(url=curl, **comic_req_kwargs) as resp:
-            ori_meta = await get_comic_info(resp, request=request, loop=loop)
+        ori_meta = await get_comic_info(url=curl,
+                                        request=request,
+                                        loop=loop)
 
-            try:
-                parsed_meta = parsed_meta_schema(ori_meta)
+        try:
+            parsed_meta = parsed_meta_schema(ori_meta)
 
-            except Exception as e:
-                e.ori_meta = ori_meta
-                raise
+        except Exception as e:
+            e.ori_meta = ori_meta
+            raise
 
         return parsed_meta
 

@@ -7,25 +7,22 @@ from abc import abstractmethod
 class BaseAnalyzer(metaclass=ABCMeta):
     """Base class of cmdlr analyzer."""
 
+    # [Must override]
+
+    entry_patterns = []  # a list of str or re.complie instances.
+
+    @abstractmethod
+    async def get_comic_info(self, *, url, request, loop):
+        """Get comic info."""
+
+    @abstractmethod
+    async def save_volume_images(self, *, url, save_image, request, loop):
+        """Call save_image to all image url with page number."""
+
+    # [Optional]
+
     session_init_kwargs = {}
-    comic_req_kwargs = {}
-    volume_req_kwargs = {}
-
-    # should override by a list of str or re.complie instances.
-    entry_patterns = []
-
-    def __init__(self, customization):
-        """Init this analyzer."""
-        self.customization = customization
-
-    @abstractmethod
-    async def get_comic_info(self, resp, *, request, loop, **kwargs):
-        pass
-
-    @abstractmethod
-    async def save_volume_images(self, resp, save_image,
-                                 *, request, loop, **kwargs):
-        pass
+    default_pref = {}
 
     def entry_normalizer(self, url):
         """Normalize all possible entry url to single one form."""
@@ -43,3 +40,15 @@ class BaseAnalyzer(metaclass=ABCMeta):
             return '.gif'
         elif ctype == 'image/bmp':
             return '.bmp'
+
+    @staticmethod
+    def to_config(pref):
+        """Pre-processing user's config to internal format."""
+        return pref
+
+    # [Internal]: Don't touch it if it can be possible.
+
+    def __init__(self, pref, *args, **kwargs):
+        """Init this analyzer."""
+        real_pref = {**self.default_pref, **pref}
+        self.config = self.to_config(real_pref)

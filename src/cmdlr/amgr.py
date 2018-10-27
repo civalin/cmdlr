@@ -53,7 +53,7 @@ class AnalyzerManager:
 
                 aname = module_name
                 self.__analyzers[aname] = module.Analyzer(
-                    customization=self.config.get_customization(aname),
+                    pref=self.config.get_analyzer_pref(aname),
                 )
                 self.__analyzers[aname].aname = aname
 

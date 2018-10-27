@@ -81,9 +81,10 @@ class ComicVolume:
             request = request_pool.get_request(analyzer)
             loop = request_pool.loop
 
-            async with request(url=vurl, **analyzer.volume_req_kwargs) as resp:
-                await analyzer.save_volume_images(
-                    resp, save_image, request=request, loop=loop)
+            await analyzer.save_volume_images(url=vurl,
+                                              request=request,
+                                              save_image=save_image,
+                                              loop=loop)
 
             images_download_success = await image_pool.download()
 

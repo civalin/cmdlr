@@ -117,6 +117,6 @@ class Config:
         """Get extra analyzer dir."""
         return self.__config.get('proxy')
 
-    def get_customization(self, analyzer_name):
+    def get_analyzer_pref(self, analyzer_name):
         """Get user setting for an analyzer."""
-        return self.__config.get('customization', {}).get(analyzer_name, {})
+        return self.__config.get('analyzer_pref', {}).get(analyzer_name, {})

@@ -15,10 +15,10 @@ def build_request(config, session, semaphore, host_pool):
     class request:
         """session.request contextmanager."""
 
-        def __init__(self, **req_kwargs):
+        def __init__(self, url, **req_kwargs):
             """init."""
             self.req_kwargs = req_kwargs
-            self.url = req_kwargs['url']
+            self.url = url
 
             self.resp = None
             self.host_semaphore_acquired = False
@@ -49,6 +49,7 @@ def build_request(config, session, semaphore, host_pool):
             real_req_kwargs = {
                 **{'method': 'GET', 'proxy': config.proxy},
                 **self.req_kwargs,
+                'url': self.url,
             }
 
             self.resp = await session.request(**real_req_kwargs)
