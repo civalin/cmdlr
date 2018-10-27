@@ -1,26 +1,23 @@
-"""Cmdlr cui print support module."""
+"""Print comic(s) infomations."""
 
-import sys
-import functools
-import textwrap
+from functools import reduce
 
-import wcwidth
+from wcwidth import wcswidth
 
-from .exception import NoMatchAnalyzer
-from .comic import ComicVolume
+from ..comic import ComicVolume
 
 
 def _get_max_width(strings):
     """Get max display width."""
-    return functools.reduce(
-        lambda acc, s: max(acc, wcwidth.wcswidth(s)),
+    return reduce(
+        lambda acc, s: max(acc, wcswidth(s)),
         strings,
         0,
     )
 
 
 def _get_padding_space(string, max_width):
-    length = max_width - wcwidth.wcswidth(string)
+    length = max_width - wcswidth(string)
 
     return ' ' * length
 
@@ -30,12 +27,19 @@ def _print_standard(comic, name_max_width, wanted_vol_names):
     meta = comic.meta
 
     extra_info['name_padding'] = _get_padding_space(
-        meta['name'], name_max_width)
-    extra_info['fin'] = '[F]' if meta['finished'] else '   '
+        meta['name'],
+        name_max_width,
+    )
+    extra_info['fin'] = (
+        '[F]' if meta['finished']
+        else '   '
+    )
 
     wanted_vol_num = len(wanted_vol_names)
     extra_info['wanted_vol_num_str'] = (
-        '{:<+4}'.format(wanted_vol_num) if wanted_vol_num else '    ')
+        '{:<+4}'.format(wanted_vol_num) if wanted_vol_num
+        else '    '
+    )
 
     print('{name}{name_padding} {fin} {wanted_vol_num_str} {url}'
           .format(**meta, **extra_info))
@@ -63,6 +67,9 @@ def _print_detail(comic, wanted_vol_names):
 
 def print_comic_info(url_to_comics, detail_mode):
     """Print comics in comic's pool with selected urls."""
+    if len(url_to_comics) == 0:
+        return
+
     names, comics = zip(*sorted([
         (comic.meta['name'], comic)
         for comic in url_to_comics.values()
@@ -77,43 +84,3 @@ def print_comic_info(url_to_comics, detail_mode):
 
         if detail_mode:
             _print_detail(comic, wanted_vol_names)
-
-
-def print_analyzer_info(analyzer_infos, aname):
-    """Print analyzer info by analyzer name."""
-    if aname is None:
-        print('Enabled analyzers:')
-
-        for local_aname, _ in analyzer_infos:
-            print(textwrap.indent(
-                '- {}'.format(local_aname),
-                ' ' * 4,
-            ))
-
-        print()
-
-    else:
-        for local_aname, desc in analyzer_infos:
-            safe_desc = (desc if desc
-                         else 'This analyzer without a description :(\n')
-
-            if aname == local_aname:
-                print('[{}]'.format(aname))
-                print(textwrap.indent(
-                    safe_desc,
-                    ' ' * 4,
-                ))
-
-                return
-
-        print('Analyzer: "{}" are not exists or enabled.'.format(aname),
-              file=sys.stderr)
-
-
-def print_useless_urls(amgr, urls):
-    """Print urls without a matched analyzer."""
-    for url in urls:
-        try:
-            amgr.get_match_analyzer(url)
-        except NoMatchAnalyzer as e:
-            print('No Matched Analyzer: {}'.format(url), file=sys.stderr)

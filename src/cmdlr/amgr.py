@@ -102,8 +102,18 @@ class AnalyzerManager:
         def get_desc(analyzer):
             return analyzer.__doc__
 
+        def get_default_pref(analyzer):
+            return analyzer.default_pref
+
+        def get_current_pref(aname, analyzer):
+            return {**analyzer.default_pref,
+                    **self.config.get_analyzer_pref(aname)}
+
         unsorted_infos = [
-            (aname, get_desc(analyzer))
+            (aname,
+             get_desc(analyzer),
+             get_default_pref(analyzer),
+             get_current_pref(aname, analyzer))
             for aname, analyzer in self.__analyzers.items()
         ]
 

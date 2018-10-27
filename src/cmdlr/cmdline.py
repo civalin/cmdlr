@@ -12,9 +12,9 @@ from .amgr import AnalyzerManager
 from .cmgr import ComicManager
 from .loopmgr import LoopManager
 
-from .cuiprint import print_analyzer_info
-from .cuiprint import print_useless_urls
-from .cuiprint import print_comic_info
+from .infoprint import print_analyzer_info
+from .infoprint import print_not_matched_urls
+from .infoprint import print_comic_info
 
 
 def _parser_setting():
@@ -98,7 +98,7 @@ def main():
         print_analyzer_info(amgr.get_analyzer_infos(), args.analyzer)
         return
 
-    print_useless_urls(amgr, args.urls)
+    print_not_matched_urls(amgr, args.urls)
 
     cmgr = ComicManager(config, amgr)
 
