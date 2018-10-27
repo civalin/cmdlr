@@ -51,11 +51,10 @@ class AnalyzerManager:
                 sys.modules[full_module_name] = module
                 spec.loader.exec_module(module)
 
-                aname = module_name
-                self.__analyzers[aname] = module.Analyzer(
-                    pref=self.config.get_analyzer_pref(aname),
+                analyzer_name = module_name
+                self.__analyzers[analyzer_name] = module.Analyzer(
+                    pref=self.config.get_analyzer_pref(analyzer_name),
                 )
-                self.__analyzers[aname].aname = aname
 
     def __build_analyzer_picker(self):
         retype = type(re.compile(''))
