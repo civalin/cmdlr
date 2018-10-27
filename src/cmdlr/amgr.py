@@ -4,12 +4,19 @@ import importlib
 import pkgutil
 import os
 import sys
-import functools
 import re
+from functools import lru_cache
+from collections import namedtuple
 
 from .exception import NoMatchAnalyzer
 from .exception import ExtraAnalyzersDirNotExists
 from .exception import AnalyzerRuntimeError
+
+
+_AnalyzerInfo = namedtuple(
+    'AnalyzerInfo',
+    ['name', 'desc', 'default_pref', 'current_pref'],
+)
 
 
 class AnalyzerManager:
@@ -21,16 +28,19 @@ class AnalyzerManager:
         """Import all analyzers."""
         self.__analyzers = {}
         self.__analyzer_picker = None
+        self.__analyzer_infos = []  # _AnalyzerInfo list
         self.config = config
 
         self.__import_all_analyzer()
         self.__build_analyzer_picker()
 
-    def __import_all_analyzer(self):
-        extra_analyzer_dir = self.config.extra_analyzer_dir
-        disabled_analyzers = self.config.disabled_analyzers
+    def __get_analyzer_dirs(self):
+        buildin_analyzer_dir = os.path.join(
+            os.path.dirname(__file__),
+            'analyzers',
+        )
 
-        analyzer_dirs = [os.path.join(os.path.dirname(__file__), 'analyzers')]
+        extra_analyzer_dir = self.config.extra_analyzer_dir
 
         if extra_analyzer_dir and not os.path.isdir(extra_analyzer_dir):
             raise ExtraAnalyzersDirNotExists(
@@ -38,23 +48,48 @@ class AnalyzerManager:
                 .format(extra_analyzer_dir))
 
         elif extra_analyzer_dir:
-            analyzer_dirs[:0] = [extra_analyzer_dir]
+            analyzer_dirs = [extra_analyzer_dir, buildin_analyzer_dir]
+
+        else:
+            analyzer_dirs = [buildin_analyzer_dir]
+
+        return analyzer_dirs
+
+    def __register_analyzer(self, module, analyzer_name):
+        analyzer = module.Analyzer(
+            pref=self.config.get_analyzer_pref(analyzer_name),
+        )
+
+        self.__analyzers[analyzer_name] = analyzer
+
+        self.__analyzer_infos.append(_AnalyzerInfo(
+            name=analyzer_name,
+            desc=analyzer.__doc__,
+            default_pref=analyzer.default_pref,
+            current_pref={
+                **analyzer.default_pref,
+                **self.config.get_analyzer_pref(analyzer_name),
+            },
+        ))
+
+    def __import_all_analyzer(self):
+        disabled_analyzers = self.config.disabled_analyzers
+        analyzer_dirs = self.__get_analyzer_dirs()
 
         for finder, module_name, ispkg in pkgutil.iter_modules(analyzer_dirs):
             if module_name not in disabled_analyzers:
-                full_module_name = (type(self).analyzers_pkgpath
-                                    + '.'
-                                    + module_name)
+                full_module_name = ''.join([
+                    type(self).analyzers_pkgpath,
+                    '.',
+                    module_name,
+                ])
 
                 spec = finder.find_spec(full_module_name)
                 module = importlib.util.module_from_spec(spec)
                 sys.modules[full_module_name] = module
                 spec.loader.exec_module(module)
 
-                analyzer_name = module_name
-                self.__analyzers[analyzer_name] = module.Analyzer(
-                    pref=self.config.get_analyzer_pref(analyzer_name),
-                )
+                self.__register_analyzer(module, module_name)
 
     def __build_analyzer_picker(self):
         retype = type(re.compile(''))
@@ -86,34 +121,16 @@ class AnalyzerManager:
 
         self.__analyzer_picker = analyzer_picker
 
-    @functools.lru_cache(maxsize=None, typed=True)
+    @lru_cache(maxsize=None, typed=True)
     def get_match_analyzer(self, curl):
         """Get a url matched analyzer."""
         return self.__analyzer_picker(curl)
 
-    @functools.lru_cache(maxsize=None, typed=True)
+    @lru_cache(maxsize=None, typed=True)
     def get_normalized_entry(self, curl):
         """Return the normalized entry url."""
         return self.get_match_analyzer(curl).entry_normalizer(curl)
 
     def get_analyzer_infos(self):
         """Return all analyzer info."""
-        def get_desc(analyzer):
-            return analyzer.__doc__
-
-        def get_default_pref(analyzer):
-            return analyzer.default_pref
-
-        def get_current_pref(aname, analyzer):
-            return {**analyzer.default_pref,
-                    **self.config.get_analyzer_pref(aname)}
-
-        unsorted_infos = [
-            (aname,
-             get_desc(analyzer),
-             get_default_pref(analyzer),
-             get_current_pref(aname, analyzer))
-            for aname, analyzer in self.__analyzers.items()
-        ]
-
-        return sorted(unsorted_infos, key=lambda item: item[0])
+        return sorted(self.__analyzer_infos, key=lambda item: item[0])
