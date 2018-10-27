@@ -34,6 +34,8 @@ class HostPool:
         20: 3600,
     }
 
+    dyn_delay_inc_sensitivity = DT.timedelta(seconds=10)
+
     def __init__(self, config, loop):
         """Init host infos."""
         self.config = config
@@ -62,11 +64,18 @@ class HostPool:
 
     def __increase_dyn_delay_factor(self, url):
         host = self.__get_host(url)
-        host['dyn_delay_factor'] = min(20, host['dyn_delay_factor'] + 1)
-        host['dyn_delay_changed'] = DT.datetime.utcnow()
+
+        now = DT.datetime.utcnow()
+        active_time = (host['dyn_delay_changed']
+                       + self.dyn_delay_inc_sensitivity)
+
+        if now > active_time:
+            host['dyn_delay_factor'] = min(20, host['dyn_delay_factor'] + 1)
+            host['dyn_delay_changed'] = DT.datetime.utcnow()
 
     def __decrease_dyn_delay_factor(self, url):
         host = self.__get_host(url)
+
         host['dyn_delay_factor'] = max(0, host['dyn_delay_factor'] - 1)
         host['dyn_delay_changed'] = DT.datetime.utcnow()
 
