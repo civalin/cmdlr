@@ -71,7 +71,7 @@ config_schema = Schema({
     'disabled_analyzers': [_st_str],
     'per_host_concurrent': All(int, Range(min=1)),
     'max_concurrent': All(int, Range(min=1)),
-    'max_retry': All(int, Range(min=0)),
+    'max_try': All(int, Range(min=1)),
     'proxy': Any(None, FqdnUrl()),
     'analyzer_pref': {str: dict},
 })

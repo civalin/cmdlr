@@ -10,7 +10,7 @@ from ..log import logger
 
 def build_request(config, session, semaphore, host_pool):
     """Get the request class."""
-    max_try = config.max_retry + 1
+    max_try = config.max_try
 
     class request:
         """session.request contextmanager."""

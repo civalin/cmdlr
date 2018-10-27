@@ -35,7 +35,7 @@ class Config:
         'disabled_analyzers': [],
         'extra_analyzer_dir': None,
         'max_concurrent': 10,
-        'max_retry': 4,
+        'max_try': 5,
         'per_host_concurrent': 2,
         'proxy': None,
     }
@@ -112,9 +112,9 @@ class Config:
         return self.__config.get('max_concurrent')
 
     @property
-    def max_retry(self):
+    def max_try(self):
         """Get max retry number."""
-        return self.__config.get('max_retry')
+        return self.__config.get('max_try')
 
     @property
     def delay(self):
