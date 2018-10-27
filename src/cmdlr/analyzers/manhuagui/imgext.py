@@ -100,7 +100,7 @@ from urllib.parse import urlencode
 
 from cmdlr.autil import run_in_nodejs
 
-from .sharedjs import shared_js
+from .sharedjs import get_shared_js
 
 
 def _get_chapter_info(soup):
@@ -108,7 +108,7 @@ def _get_chapter_info(soup):
     target_js = soup.find('script', string=re.compile(r'window\["')).string
     encrypted_js = re.sub(r'^window\[.+?\]', '', target_js)
 
-    smh_js = run_in_nodejs(shared_js + encrypted_js).eval
+    smh_js = run_in_nodejs(get_shared_js() + encrypted_js).eval
 
     json_string = re.search(r'{.*}', smh_js).group(0)
 

@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 from cmdlr.autil import run_in_nodejs
 
-from .sharedjs import shared_js
+from .sharedjs import get_shared_js
 
 
 def _get_volumes_data_node(soup):
@@ -17,7 +17,7 @@ def _get_volumes_data_node(soup):
         lzstring = vs_node['value']
         question_js = ('LZString.decompressFromBase64("{lzstring}")'
                        .format(lzstring=lzstring))
-        full_js = shared_js + question_js
+        full_js = get_shared_js() + question_js
 
         volumes_html = run_in_nodejs(full_js).eval
         volumes_data_node = BeautifulSoup(volumes_html, 'lxml')

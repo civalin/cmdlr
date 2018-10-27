@@ -2,8 +2,11 @@
 
 import os
 
+from functools import lru_cache
 
-def _get_shared_js():
+
+@lru_cache(None)
+def get_shared_js():
     """Generate shared javascript library."""
     dirpath = os.path.dirname(os.path.abspath(__file__))
     lzs_path = os.path.join(dirpath, 'lz-string.min.js')
@@ -18,6 +21,3 @@ def _get_shared_js():
     """
 
     return lzs_code + extend_code
-
-
-shared_js = _get_shared_js()
