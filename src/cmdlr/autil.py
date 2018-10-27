@@ -1,9 +1,9 @@
 """Analyzer utils."""
 
-import shutil
 import json
-import tempfile
 import subprocess
+from tempfile import NamedTemporaryFile
+from shutil import which
 from collections import namedtuple
 from urllib.parse import urljoin
 
@@ -25,7 +25,7 @@ def run_in_nodejs(js):
         JSResult type result, already converted from build-in json module.
 
     """
-    cmd = shutil.which('node')
+    cmd = which('node')
     if not cmd:
         raise ExternalDependencyNotFound('Can not found node js in system.')
 
@@ -40,7 +40,7 @@ def run_in_nodejs(js):
     console.log(JSON.stringify({{eval: evalValue, env: sandbox}}))
     '''.format(json.dumps(js))
 
-    with tempfile.NamedTemporaryFile(mode='wt') as f:
+    with NamedTemporaryFile(mode='wt') as f:
         f.write(full_code)
         f.flush()
 
