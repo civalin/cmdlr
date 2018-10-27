@@ -9,7 +9,7 @@ from cmdlr.autil import run_in_nodejs
 from .sharedjs import get_shared_js
 
 
-def _get_volumes_data_node(soup):
+async def _get_volumes_data_node(soup, loop):
     """Get single node contain volumes data from entry soup."""
     vs_node = soup.find('input', id='__VIEWSTATE')
 
@@ -19,7 +19,9 @@ def _get_volumes_data_node(soup):
                        .format(lzstring=lzstring))
         full_js = get_shared_js() + question_js
 
-        volumes_html = run_in_nodejs(full_js).eval
+        volumes_html = (
+            await loop.run_in_executor(None, lambda: run_in_nodejs(full_js))
+        ).eval
         volumes_data_node = BeautifulSoup(volumes_html, 'lxml')
 
     else:
@@ -54,11 +56,11 @@ def _get_volumes_from_volumes_data_node(volumes_data_node, get_abspath):
     return result
 
 
-def extract_volumes(fetch_result):
+async def extract_volumes(fetch_result, loop):
     """Get all volumes."""
     soup, get_abspath = fetch_result
 
-    volumes_data_node = _get_volumes_data_node(soup)
+    volumes_data_node = await _get_volumes_data_node(soup, loop)
     return _get_volumes_from_volumes_data_node(volumes_data_node, get_abspath)
 
 

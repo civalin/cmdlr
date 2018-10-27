@@ -104,25 +104,25 @@ class Analyzer(BaseAnalyzer):
 
         return 'https://{}.manhuagui.com/comic/{}/'.format(subdomain, comic_id)
 
-    async def get_comic_info(self, url, request, **unused):
+    async def get_comic_info(self, url, request, loop):
         """Find comic info from entry."""
         fetch_result = await fetch(url, request)
 
         return {
             'name': extract_name(fetch_result),
-            'volumes': extract_volumes(fetch_result),
+            'volumes': await extract_volumes(fetch_result, loop),
             'description': extract_description(fetch_result),
             'authors': extract_authors(fetch_result),
             'finished': extract_finished(fetch_result),
         }
 
-    async def save_volume_images(self, url, request, save_image, **unused):
+    async def save_volume_images(self, url, request, save_image, loop):
         """Get all images in one volume."""
         soup, _ = await fetch(url, request)
 
         image_host_codes = self.config.get('image_host_codes')
 
-        image_urls = get_image_urls(soup, image_host_codes)
+        image_urls = await get_image_urls(soup, image_host_codes, loop)
 
         for page_num, img_url in enumerate(image_urls, start=1):
             save_image(page_num, url=img_url)

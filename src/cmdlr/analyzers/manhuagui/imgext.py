@@ -103,12 +103,16 @@ from cmdlr.autil import run_in_nodejs
 from .sharedjs import get_shared_js
 
 
-def _get_chapter_info(soup):
+async def _get_chapter_info(soup, loop):
     """Get single chapter info in volume entry soup."""
     target_js = soup.find('script', string=re.compile(r'window\["')).string
     encrypted_js = re.sub(r'^window\[.+?\]', '', target_js)
 
-    smh_js = run_in_nodejs(get_shared_js() + encrypted_js).eval
+    full_js = get_shared_js() + encrypted_js
+
+    smh_js = (
+        await loop.run_in_executor(None, lambda: run_in_nodejs(full_js))
+    ).eval
 
     json_string = re.search(r'{.*}', smh_js).group(0)
 
@@ -137,9 +141,9 @@ def _get_image_url(filename, chapter_info, image_host_codes):
     )
 
 
-def get_image_urls(soup, image_host_codes):
+async def get_image_urls(soup, image_host_codes, loop):
     """Get image's urls from soup and configuration."""
-    chapter_info = _get_chapter_info(soup)
+    chapter_info = await _get_chapter_info(soup, loop)
 
     filenames = chapter_info['files']
 
