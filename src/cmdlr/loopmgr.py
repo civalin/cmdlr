@@ -4,10 +4,64 @@ import asyncio
 import sys
 import pprint
 from collections import Iterable
+from itertools import groupby
+from itertools import zip_longest
+from itertools import chain
+from urllib.parse import urlparse
 
 from .reqpool import RequestPool
 from .log import logger
 from .exception import NoMatchAnalyzer
+
+
+def _get_optimized_order(comics):
+    """Get a list contain all comics with optimized ordering.
+
+    Build a list contain all comics input, and interlaced them by its
+    host of the entry url as much as possible.
+
+    Assume the input has 10 comics across 3 hosts, like this:
+
+    [hostA1, hostA2,
+     hostB1, hostB2, hostB3, hostB4, hostB5,
+     hostC1, hostC2, hostC3]
+
+    Then the returned list will be re-orderd to:
+
+    [hostA1, hostB1, hostC1,
+     hostA2, hostB2, hostC2,
+     hostB3, hostC3,
+     hostB4,
+     hostB5]
+
+    Args:
+        comics: iterable comic container
+
+    Returns:
+        a list
+
+    """
+    def get_host(comic):
+        return urlparse(comic.url).netloc
+
+    def sort_key(comic):
+        return (get_host(comic), comic.meta['name'])
+
+    def is_not_none(x):
+        return x is not None
+
+    sorted_comics = sorted(comics, key=sort_key)
+    grouped_comics = [
+        list(partial_comics)
+        for host, partial_comics
+        in groupby(sorted_comics, key=get_host)
+    ]
+    comics = list(filter(
+        is_not_none,
+        chain(*zip_longest(*grouped_comics)),
+    ))
+
+    return comics
 
 
 class LoopManager:
@@ -97,9 +151,10 @@ class LoopManager:
             request_pool = RequestPool(self.config, self.loop)
 
             url_to_comics = cmgr.get_url_to_comics(urls)
+            exist_comics = _get_optimized_order(url_to_comics.values())
             exist_coros = [
                 self.__build_coro_from_comic(comic, request_pool, ctrl)
-                for comic in url_to_comics.values()
+                for comic in exist_comics
             ]
 
             non_exist_urls = cmgr.get_non_exist_urls(urls)
