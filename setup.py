@@ -31,7 +31,6 @@ setup(
     url=PROJECT_URL,
     description=DESCRIPTION,
     long_description='''''',
-    keywords='comic download archive',
 
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -44,8 +43,8 @@ setup(
     install_requires=[
         'pyyaml >=3, <4',
         'aiohttp >=3, <4',
-        'voluptuous',
-        'wcwidth',
+        'voluptuous >=0.11.5, <0.12',
+        'wcwidth == 0.1.7',
         'beautifulsoup4',
         ],
     setup_requires=[],
