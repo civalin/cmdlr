@@ -1,32 +1,16 @@
 """Cmdlr config system."""
 
 import os
-from collections import Mapping
 
 from .schema import config_schema
 
 from .yamla import from_yaml_file
 from .yamla import to_yaml_file
+from .merge import merge_dict
 
 
 def _normalize_path(path):
     return os.path.expanduser(path)
-
-
-def _merge_dict(base_dict, incoming_dict):
-    """Merge 2 dict, and return new dict."""
-    bd_copy = base_dict.copy()
-
-    for k, _ in incoming_dict.items():
-        if (k in bd_copy
-                and isinstance(bd_copy[k], dict)
-                and isinstance(incoming_dict[k], Mapping)):
-            bd_copy[k] = _merge_dict(bd_copy[k], incoming_dict[k])
-
-        else:
-            bd_copy[k] = incoming_dict[k]
-
-    return bd_copy
 
 
 class Config:
@@ -72,7 +56,7 @@ class Config:
                 type(self).__build_config_file(filepath)
 
             incoming_config = config_schema(from_yaml_file(filepath))
-            merged_config = _merge_dict(self.__config, incoming_config)
+            merged_config = merge_dict(self.__config, incoming_config)
 
             self.__config = config_schema(merged_config)
 

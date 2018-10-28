@@ -4,6 +4,8 @@ import importlib
 from abc import ABCMeta
 from abc import abstractmethod
 
+from .merge import merge_dict
+
 
 ANALYZERS_PKGPATH = 'cmdlr.analyzers'
 
@@ -54,7 +56,7 @@ class BaseAnalyzer(metaclass=ABCMeta):
 
     def __init__(self, pref, *args, **kwargs):
         """Init this analyzer."""
-        self.current_pref = {**self.default_pref, **pref}
+        self.current_pref = merge_dict(self.default_pref, pref)
         self.config = self.to_config(self.current_pref)
 
     @property
