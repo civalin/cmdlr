@@ -9,12 +9,12 @@ from cmdlr.autil import run_in_nodejs
 from .sharedjs import get_shared_js
 
 
-async def _get_volumes_data_node(soup, loop):
-    """Get single node contain volumes data from entry soup."""
-    vs_node = soup.find('input', id='__VIEWSTATE')
+async def _get_volumes_data_tag(soup, loop):
+    """Get single tag contain volumes data from entry soup."""
+    vs_tag = soup.find('input', id='__VIEWSTATE')
 
-    if vs_node:  # 18X only
-        lzstring = vs_node['value']
+    if vs_tag:  # 18X only
+        lzstring = vs_tag['value']
         question_js = ('LZString.decompressFromBase64("{lzstring}")'
                        .format(lzstring=lzstring))
         full_js = get_shared_js() + question_js
@@ -22,33 +22,33 @@ async def _get_volumes_data_node(soup, loop):
         volumes_html = (
             await loop.run_in_executor(None, lambda: run_in_nodejs(full_js))
         ).eval
-        volumes_data_node = BeautifulSoup(volumes_html, 'html.parser')
+        volumes_data_tag = BeautifulSoup(volumes_html, 'html.parser')
 
     else:
-        volumes_data_node = soup.find('div', class_=['chapter', 'cf'])
+        volumes_data_tag = soup.find('div', class_=['chapter', 'cf'])
 
-    return volumes_data_node
+    return volumes_data_tag
 
 
-def _get_volumes_from_volumes_data_node(volumes_data_node, absurl):
-    """Get all volumes from volumes data node."""
+def _get_volumes_from_volumes_data_tag(volumes_data_tag, absurl):
+    """Get all volumes from volumes data tag."""
     result = {}
 
-    for sect_title_node in volumes_data_node.find_all('h4'):
-        sect_title = sect_title_node.get_text()
+    for sect_title_tag in volumes_data_tag.find_all('h4'):
+        sect_title = sect_title_tag.get_text()
 
-        chapter_data_node = (
-            sect_title_node
+        chapter_data_tag = (
+            sect_title_tag
             .find_next_sibling(class_='chapter-list')
         )
-        chapter_a_nodes = (
-            chapter_data_node
+        chapter_a_tags = (
+            chapter_data_tag
             .find_all('a', href=re.compile(r'^/comic/.*\.html$'))
         )
 
         name_url_mapper = {
             '{}_{}'.format(sect_title, a['title']): absurl(a['href'])
-            for a in chapter_a_nodes
+            for a in chapter_a_tags
         }
 
         result.update(name_url_mapper)
@@ -60,8 +60,8 @@ async def extract_volumes(fetch_result, loop):
     """Get all volumes."""
     soup, absurl = fetch_result
 
-    volumes_data_node = await _get_volumes_data_node(soup, loop)
-    return _get_volumes_from_volumes_data_node(volumes_data_node, absurl)
+    volumes_data_tag = await _get_volumes_data_tag(soup, loop)
+    return _get_volumes_from_volumes_data_tag(volumes_data_tag, absurl)
 
 
 def extract_name(fetch_result):

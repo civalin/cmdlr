@@ -35,13 +35,13 @@ class Analyzer(BaseAnalyzer):
 
     @staticmethod
     def __extract_volumes(fetch_result):
-        a_nodes = (fetch_result.soup
-                   .find('legend', string=re.compile('漫畫線上觀看'))
-                   .parent
-                   .find_all(href=re.compile(r'^/comic/')))
+        a_tags = (fetch_result.soup
+                  .find('legend', string=re.compile('漫畫線上觀看'))
+                  .parent
+                  .find_all(href=re.compile(r'^/comic/')))
 
         return {a.string: fetch_result.absurl(a.get('href'))
-                for a in a_nodes}
+                for a in a_tags}
 
     @staticmethod
     def __extract_finished(fetch_result):
@@ -75,7 +75,7 @@ class Analyzer(BaseAnalyzer):
     async def save_volume_images(self, url, request, save_image, **unused):
         """Get all images in one volume."""
         soup, _ = await fetch(url, request, encoding='big5')
-        base_url = soup.find('img', src=re.compile(r'http://web'),)['src']
+        base_url = soup.find('img', src=re.compile(r'http://web'))['src']
 
         def get_img_url(page_number):
             return urljoin(base_url,
