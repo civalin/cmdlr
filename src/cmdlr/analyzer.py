@@ -1,7 +1,11 @@
 """Cmdlr base analyzer implement."""
 
+import importlib
 from abc import ABCMeta
 from abc import abstractmethod
+
+
+ANALYZERS_PKGPATH = 'cmdlr.analyzers'
 
 
 class BaseAnalyzer(metaclass=ABCMeta):
@@ -46,9 +50,24 @@ class BaseAnalyzer(metaclass=ABCMeta):
         """Pre-processing user's 'pref' to 'self.config' for ease to use."""
         return pref
 
-    # [Internal]: Don't touch this if can be possible.
+    # [Internal]: Don't touch the following things!
 
     def __init__(self, pref, *args, **kwargs):
         """Init this analyzer."""
-        real_pref = {**self.default_pref, **pref}
-        self.config = self.to_config(real_pref)
+        self.current_pref = {**self.default_pref, **pref}
+        self.config = self.to_config(self.current_pref)
+
+    @property
+    def name(self):
+        """Get analyzer's name."""
+        # the analyzer module name must under this path:
+        #    'cmdlr.analyzers.<analyzer name>.<maybe exist...>'
+        return self.__class__.__module__.split('.')[2]
+
+    @property
+    def desc(self):
+        """Get analyzer's desc."""
+        module_name = '.'.join([ANALYZERS_PKGPATH, self.name])
+        module = importlib.import_module(module_name)
+
+        return module.__doc__

@@ -1,4 +1,10 @@
-"""The www.cartoonmad.com analyzer."""
+"""The www.cartoonmad.com analyzer.
+
+[Entry examples]
+
+    - http://www.cartoonmad.com/comic/5640.html
+    - https://www.cartoonmad.com/comic/5640.html
+"""
 
 import re
 from urllib.parse import urljoin

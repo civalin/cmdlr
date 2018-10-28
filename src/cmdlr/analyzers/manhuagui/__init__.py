@@ -1,4 +1,32 @@
-"""The *.manhuagui.com analyzer."""
+"""The *.manhuagui.com analyzer.
+
+[Entry examples]
+
+    - http://tw.manhuagui.com/comic/23292/
+    - https://www.manhuagui.com/comic/23292/
+
+
+
+[Preferences Description]
+
+    ## meta_source
+
+    Choice the one of the following as metadata source:
+
+    - <tw.manhuagui.com> (tw) or
+    - <www.manhuagui.com> (cn)
+
+
+
+    ## image_host_codes
+
+    Select which images servers should be used.
+
+    Current available servers: ['eu', 'i', 'us']
+
+    > Hint: The real servers url are look like this:
+            `https://{image_host_code}.hamreus.com`
+"""
 
 import re
 
@@ -16,35 +44,7 @@ from .imgext import get_image_urls
 
 
 class Analyzer(BaseAnalyzer):
-    """The *.manhuagui.com analyzer.
-
-    [Entry examples]
-
-    - http://tw.manhuagui.com/comic/23292/
-    - https://www.manhuagui.com/comic/23292/
-
-
-
-    [Preferences Description]
-
-        ## meta_source
-
-        Choice the one of the following as metadata source:
-
-        - <tw.manhuagui.com> (tw) or
-        - <www.manhuagui.com> (cn)
-
-
-
-        ## image_host_codes
-
-        Select which images servers should be used.
-
-        Current available servers: ['eu', 'i', 'us']
-
-        > Hint: The real servers url are look like this:
-                `https://{image_host_code}.hamreus.com`
-    """
+    """Manhuagui analyzer."""
 
     entry_patterns = [
         re.compile(

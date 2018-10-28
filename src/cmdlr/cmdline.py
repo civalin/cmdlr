@@ -96,7 +96,7 @@ def main():
     amgr = AnalyzerManager(config)
 
     if 'analyzer' in args:
-        print_analyzer_info(amgr.get_analyzer_infos(), args.analyzer)
+        print_analyzer_info(amgr.get_analyzers(), args.analyzer)
         return
 
     print_not_matched_urls(amgr, args.urls)

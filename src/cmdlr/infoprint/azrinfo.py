@@ -9,16 +9,16 @@ import yaml
 from ..exception import NoMatchAnalyzer
 
 
-def _print_analyzer_list(analyzer_infos):
+def _print_analyzer_list(analyzers):
     print('Enabled analyzers:')
 
-    names, _, _, _ = zip(*analyzer_infos)
+    names = [analyzer.name for analyzer in analyzers]
     names_text = indent('\n'.join(names), '    - ') + '\n'
 
     print(names_text)
 
 
-def _print_analyzer_detail(analyzer_info):
+def _print_analyzer_detail(analyzer):
     def get_pref_text(title, pref, name):
         wrapped_pref = {'analyzer_pref': {name: pref}}
         content = indent(yaml.dump(wrapped_pref), '    ')
@@ -27,47 +27,45 @@ def _print_analyzer_detail(analyzer_info):
 
     def get_prefs_text(default_pref, current_pref, name):
         if not default_pref:
-            return None
+            return ''
 
         return '\n\n'.join([
+            '--------------------',
             get_pref_text('[Preferences (default)]', default_pref, name),
             get_pref_text('[Preferences (current)]', current_pref, name),
         ]).strip()
 
-    name, desc, default_pref, current_pref = analyzer_info
-
-    nice_desc = (dedent(desc) if desc
-                 else 'This analyzer has no description :(').strip()
-    sections = [
-        text for text
-        in [nice_desc, get_prefs_text(default_pref, current_pref, name)]
-        if text
-    ]
+    sections = []
+    sections.append(dedent(analyzer.desc).strip())
+    sections.append(get_prefs_text(
+        analyzer.default_pref,
+        analyzer.current_pref,
+        analyzer.name,
+    ))
 
     total_text = '\n\n'.join(sections).strip() + '\n'
 
-    print('[{}]'.format(name))
+    print('[{}]'.format(analyzer.name))
     print(indent(
         total_text,
         '    ',
     ))
 
 
-def print_analyzer_info(analyzer_infos, aname):
+def print_analyzer_info(analyzers, analyzer_name):
     """Print analyzer info by analyzer name."""
-    if aname is None:
-        _print_analyzer_list(analyzer_infos)
+    if analyzer_name is None:
+        _print_analyzer_list(analyzers)
 
     else:
-        for analyzer_info in analyzer_infos:
-            local_name = analyzer_info[0]
-
-            if aname == local_name:
-                _print_analyzer_detail(analyzer_info)
+        for analyzer in analyzers:
+            if analyzer_name == analyzer.name:
+                _print_analyzer_detail(analyzer)
 
                 return
 
-        print('Analyzer: "{}" are not exists or enabled.'.format(aname),
+        print(('Analyzer: "{}" are not exists or enabled.'
+               .format(analyzer_name)),
               file=sys.stderr)
 
 

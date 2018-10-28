@@ -7,6 +7,7 @@ import sys
 import re
 from functools import lru_cache
 from collections import namedtuple
+from .analyzer import ANALYZERS_PKGPATH
 
 from .exception import NoMatchAnalyzer
 from .exception import ExtraAnalyzersDirNotExists
@@ -22,13 +23,10 @@ _AnalyzerInfo = namedtuple(
 class AnalyzerManager:
     """Import, active, dispatch and hold all analyzer."""
 
-    analyzers_pkgpath = 'cmdlr.analyzers'
-
     def __init__(self, config):
         """Import all analyzers."""
         self.__analyzers = {}
         self.__analyzer_picker = None
-        self.__analyzer_infos = []  # _AnalyzerInfo list
         self.config = config
 
         self.__import_all_analyzer()
@@ -62,16 +60,6 @@ class AnalyzerManager:
 
         self.__analyzers[analyzer_name] = analyzer
 
-        self.__analyzer_infos.append(_AnalyzerInfo(
-            name=analyzer_name,
-            desc=analyzer.__doc__,
-            default_pref=analyzer.default_pref,
-            current_pref={
-                **analyzer.default_pref,
-                **self.config.get_analyzer_pref(analyzer_name),
-            },
-        ))
-
     def __import_all_analyzer(self):
         disabled_analyzers = self.config.disabled_analyzers
         analyzer_dirs = self.__get_analyzer_dirs()
@@ -79,7 +67,7 @@ class AnalyzerManager:
         for finder, module_name, ispkg in pkgutil.iter_modules(analyzer_dirs):
             if module_name not in disabled_analyzers:
                 full_module_name = ''.join([
-                    type(self).analyzers_pkgpath,
+                    ANALYZERS_PKGPATH,
                     '.',
                     module_name,
                 ])
@@ -131,6 +119,6 @@ class AnalyzerManager:
         """Return the normalized entry url."""
         return self.get_match_analyzer(curl).entry_normalizer(curl)
 
-    def get_analyzer_infos(self):
-        """Return all analyzer info."""
-        return sorted(self.__analyzer_infos, key=lambda item: item[0])
+    def get_analyzers(self):
+        """Return all analyzers."""
+        return list(self.__analyzers.values())
