@@ -22,7 +22,7 @@ async def _get_volumes_data_node(soup, loop):
         volumes_html = (
             await loop.run_in_executor(None, lambda: run_in_nodejs(full_js))
         ).eval
-        volumes_data_node = BeautifulSoup(volumes_html, 'lxml')
+        volumes_data_node = BeautifulSoup(volumes_html, 'html.parser')
 
     else:
         volumes_data_node = soup.find('div', class_=['chapter', 'cf'])

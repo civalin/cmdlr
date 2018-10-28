@@ -46,7 +46,6 @@ setup(
         'aiohttp >=3, <4',
         'voluptuous',
         'wcwidth',
-        'lxml >=3.8, <4',
         'beautifulsoup4',
         ],
     setup_requires=[],

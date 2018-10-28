@@ -59,14 +59,30 @@ def run_in_nodejs(js):
 _FetchResult = namedtuple('FetchResult', ['soup', 'absurl'])
 
 
-async def fetch(url, request, encoding='utf8', **req_kwargs):
-    """Get BeautifulSoup from remote url."""
+async def fetch(url, request,
+                encoding='utf8', parser='html.parser', **req_kwargs):
+    """Get remote html resource and parse it.
+
+    Args:
+        url: a remote html resource url
+        request: the `request` function in analyzer
+        encoding: the html encoding, e.g., utf8, big5
+        parser: the BeautifulSoup parser code.
+        req_kwargs: all keyword arguments should pass to request()
+
+    Returns:
+        a FetchResult object `fetch_result`
+
+        fetch_result.soup: A BeautifulSoup object.
+        fetch_result.absurl: A function can re
+
+    """
     async with request(url, **req_kwargs) as resp:
         binary = await resp.read()
         base_url = str(resp.url)
 
     text = binary.decode(encoding, errors='ignore')
-    soup = BeautifulSoup(text, 'lxml')
+    soup = BeautifulSoup(text, parser)
 
     base_tag = soup.select_one('html > head > base[href]')
 
