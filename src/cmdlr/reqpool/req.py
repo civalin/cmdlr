@@ -8,9 +8,11 @@ import aiohttp
 from ..log import logger
 
 
-def build_request(config, session, global_semaphore, host_pool):
+def build_request(system, session, global_semaphore, host_pool):
     """Get the request class."""
-    max_try = config.max_try
+    max_try = system.get('max_try')
+    per_host_connection = system.get('per_host_connection')
+    delay = system.get('delay')
 
     class request:
         """session.request contextmanager."""
@@ -23,6 +25,8 @@ def build_request(config, session, global_semaphore, host_pool):
             self.resp = None
             self.host_semaphore_acquired = False
             self.global_semaphore_acquired = False
+
+            host_pool.register_host(url, per_host_connection, delay)
 
         async def __acquire(self):
             self.host_semaphore_acquired = True
@@ -47,7 +51,7 @@ def build_request(config, session, global_semaphore, host_pool):
             await asyncio.sleep(delay_sec)
 
             real_req_kwargs = {
-                **{'method': 'GET', 'proxy': config.proxy},
+                **{'method': 'GET'},
                 **self.req_kwargs,
                 'url': self.url,
             }

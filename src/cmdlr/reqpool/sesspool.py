@@ -16,9 +16,8 @@ class SessionPool:
         'conn_timeout': 120,
     }
 
-    def __init__(self, config, loop):
+    def __init__(self, loop):
         """Session pool init."""
-        self.config = config
         self.loop = loop
 
         self.sessions = []

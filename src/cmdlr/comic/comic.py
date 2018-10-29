@@ -45,7 +45,7 @@ class Comic():
         meta = meta_toolkit.create(parsed_meta, curl)
 
         name = meta['name']
-        dir = os.path.join(config.incoming_dir, name)
+        dir = os.path.join(config.incoming_data_dir, name)
 
         if os.path.exists(dir):
             raise ComicDirOccupied(

@@ -13,7 +13,7 @@ class Choreographer:
         """Prepare this choreographer."""
         self.loop = loop
 
-        self.total_channel = config.max_concurrent
+        self.total_channel = config.book_concurrent
 
         self.pending_aname_to_runners = aname_to_runners
         self.running_aname_to_tasks = {}

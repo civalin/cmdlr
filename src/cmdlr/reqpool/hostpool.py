@@ -4,7 +4,7 @@ import asyncio
 import collections
 import random
 import datetime as DT
-import urllib.parse as UP
+from urllib.parse import urlparse
 
 
 class HostPool:
@@ -36,31 +36,16 @@ class HostPool:
 
     dyn_delay_inc_sensitivity = DT.timedelta(seconds=10)
 
-    def __init__(self, config, loop):
+    def __init__(self, loop):
         """Init host infos."""
-        self.config = config
         self.loop = loop
 
-        self.hosts = collections.defaultdict(self.__default_host_info)
-
-    def __default_host_info(self):
-        return {
-            'dyn_delay_factor': 0,
-            'dyn_delay_changed': DT.datetime.utcnow(),
-            'semaphore': asyncio.Semaphore(
-                value=self.config.per_host_concurrent,
-                loop=self.loop),
-        }
+        self.hosts = {}
 
     def __get_host(self, url):
-        netloc = UP.urlparse(url).netloc
+        netloc = urlparse(url).netloc
 
         return self.hosts[netloc]
-
-    def __get_dyn_delay_factor(self, url):
-        host = self.__get_host(url)
-
-        return host.get('dyn_delay_factor')
 
     def __increase_dyn_delay_factor(self, url):
         host = self.__get_host(url)
@@ -81,10 +66,12 @@ class HostPool:
 
     def get_delay_sec(self, url):
         """Get delay seconds for the url (based on host)."""
-        dyn_delay_factor = self.__get_dyn_delay_factor(url)
-
+        host = self.__get_host(url)
+        dyn_delay_factor = host.get('dyn_delay_factor')
         dyn_delay_sec = self.dyn_delay_table[dyn_delay_factor]
-        static_delay_sec = random.random() * self.config.delay * 2
+
+        delay = host.get('delay')
+        static_delay_sec = random.random() * delay * 2
 
         return dyn_delay_sec + static_delay_sec
 
@@ -95,6 +82,20 @@ class HostPool:
     def decrease_delay(self, url):
         """Decrease delay seconds for the url (based on host)."""
         self.__decrease_dyn_delay_factor(url)
+
+    def register_host(self, url, per_host_connection, delay):
+        """Initialize a host and config it."""
+        netloc = urlparse(url).netloc
+
+        if netloc not in self.hosts:
+            self.hosts[netloc] = {
+                'delay': delay,
+                'dyn_delay_factor': 0,
+                'dyn_delay_changed': DT.datetime.utcnow(),
+                'semaphore': asyncio.Semaphore(
+                    value=per_host_connection,
+                    loop=self.loop),
+            }
 
     async def acquire(self, url):
         """Acquire semaphore for the url (based on host)."""

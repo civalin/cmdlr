@@ -38,15 +38,15 @@ class AnalyzerManager:
             'analyzers',
         )
 
-        extra_analyzer_dir = self.config.extra_analyzer_dir
+        analyzer_dir = self.config.analyzer_dir
 
-        if extra_analyzer_dir and not os.path.isdir(extra_analyzer_dir):
+        if analyzer_dir and not os.path.isdir(analyzer_dir):
             raise ExtraAnalyzersDirNotExists(
-                'extra_analyzer_dir already be set but not exists, path: "{}"'
-                .format(extra_analyzer_dir))
+                'analyzer_dir be set but not exists, path: "{}"'
+                .format(analyzer_dir))
 
-        elif extra_analyzer_dir:
-            analyzer_dirs = [extra_analyzer_dir, buildin_analyzer_dir]
+        elif analyzer_dir:
+            analyzer_dirs = [analyzer_dir, buildin_analyzer_dir]
 
         else:
             analyzer_dirs = [buildin_analyzer_dir]
@@ -61,11 +61,10 @@ class AnalyzerManager:
         self.__analyzers[analyzer_name] = analyzer
 
     def __import_all_analyzer(self):
-        disabled_analyzers = self.config.disabled_analyzers
         analyzer_dirs = self.__get_analyzer_dirs()
 
         for finder, module_name, ispkg in pkgutil.iter_modules(analyzer_dirs):
-            if module_name not in disabled_analyzers:
+            if self.config.is_enabled_analyzer(module_name):
                 full_module_name = ''.join([
                     ANALYZERS_PKGPATH,
                     '.',

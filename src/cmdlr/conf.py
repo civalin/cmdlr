@@ -17,14 +17,18 @@ class Config:
     """Config maintainer object."""
 
     default_config = {
-        'delay': 5.0,
-        'dirs': ['~/comics'],
-        'disabled_analyzers': [],
-        'extra_analyzer_dir': None,
-        'max_concurrent': 10,
-        'max_try': 5,
-        'per_host_concurrent': 2,
-        'proxy': None,
+        'data_dirs': [
+            '~/comics',
+        ],
+        'network': {
+            'delay': 1.0,
+            'max_try': 5,
+            'total_connection': 10,
+            'per_host_connection': 2,
+        },
+        'book_concurrent': 6,
+        'analyzer_dir': None,
+        'analyzer_pref': {},
     }
 
     default_config_filepath = os.path.join(
@@ -40,6 +44,18 @@ class Config:
     def __build_config_file(cls, filepath):
         """Create a config file template at specific filepath."""
         to_yaml_file(filepath, cls.default_config, comment_out=True)
+
+    def __get_default_analyzer_pref(self):
+        network = self.__config.get('network')
+
+        return {
+            'system': {
+                'enabled': True,
+                'max_try': network['max_try'],
+                'per_host_connection': network['per_host_connection'],
+                'delay': network['delay'],
+            },
+        }
 
     def __init__(self):
         """Init the internal __config variable."""
@@ -61,58 +77,67 @@ class Config:
             self.__config = config_schema(merged_config)
 
     @property
-    def incoming_dir(self):
+    def incoming_data_dir(self):
         """Get incoming dir."""
         return _normalize_path(
-            self.__config.get('dirs')[0]
+            self.__config.get('data_dirs')[0]
         )
 
     @property
-    def dirs(self):
+    def data_dirs(self):
         """Get all dirs."""
         return list(map(
             _normalize_path,
-            self.__config.get('dirs'),
+            self.__config.get('data_dirs'),
         ))
 
     @property
-    def extra_analyzer_dir(self):
-        """Get extra analyzer dir."""
-        extra_analyzer_dir = self.__config.get('extra_analyzer_dir')
+    def analyzer_dir(self):
+        """Get analyzer dir."""
+        analyzer_dir = self.__config.get('analyzer_dir')
 
-        if extra_analyzer_dir:
-            return _normalize_path(extra_analyzer_dir)
-
-    @property
-    def disabled_analyzers(self):
-        """Get disabled analyzers."""
-        return self.__config.get('disabled_analyzers')
+        if analyzer_dir:
+            return _normalize_path(analyzer_dir)
 
     @property
-    def per_host_concurrent(self):
-        """Get per-host concurrent number."""
-        return self.__config.get('per_host_concurrent')
+    def total_connection(self):
+        """Get total connection count."""
+        return self.__config.get('network').get('total_connection')
 
     @property
-    def max_concurrent(self):
-        """Get maximum concurrent number."""
-        return self.__config.get('max_concurrent')
+    def book_concurrent(self):
+        """Get book concurrent count."""
+        return self.__config.get('book_concurrent')
 
-    @property
-    def max_try(self):
-        """Get max retry number."""
-        return self.__config.get('max_try')
+    def is_enabled_analyzer(self, analyzer_name):
+        """Check a analyzer_name is enabled."""
+        system = self.get_analyzer_system_pref(analyzer_name)
 
-    @property
-    def delay(self):
-        """Get global download delay."""
-        return self.__config.get('delay')
+        return system.get('enabled')
 
-    @property
-    def proxy(self):
-        """Get extra analyzer dir."""
-        return self.__config.get('proxy')
+    def get_raw_analyzer_pref(self, analyzer_name):
+        """Get user setting for an analyzer, include "system"."""
+        default_analyzer_pref = self.__get_default_analyzer_pref()
+        user_analyzer_pref = (self
+                              .__config.get('analyzer_pref', {})
+                              .get(analyzer_name, {}))
+
+        raw_analyzer_pref = merge_dict(
+            default_analyzer_pref,
+            user_analyzer_pref,
+        )
+
+        return raw_analyzer_pref
 
     def get_analyzer_pref(self, analyzer_name):
-        """Get user setting for an analyzer."""
-        return self.__config.get('analyzer_pref', {}).get(analyzer_name, {})
+        """Get user setting for analyzer, without "system"."""
+        analyzer_pref = self.get_raw_analyzer_pref(analyzer_name)
+        analyzer_pref.pop('system')
+
+        return analyzer_pref
+
+    def get_analyzer_system_pref(self, analyzer_name):
+        """Get "system" part of user setting for analyzer."""
+        raw_analyzer_pref = self.get_raw_analyzer_pref(analyzer_name)
+
+        return raw_analyzer_pref.get('system')

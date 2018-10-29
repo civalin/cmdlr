@@ -53,7 +53,7 @@ class ComicManager:
                         self.url_to_comics[comic.url] = comic
 
     def __load_comic_in_dirs(self):
-        for dir in self.config.dirs:
+        for dir in self.config.data_dirs:
             if os.path.isdir(dir):
                 self.__load_comic_in_dir(dir)
 

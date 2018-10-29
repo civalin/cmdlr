@@ -3,8 +3,17 @@
 import datetime as DT
 import html
 
-from voluptuous import (
-    Schema, FqdnUrl, Required, Length, Range, Unique, All, Any, Invalid)
+from voluptuous import Schema
+from voluptuous import FqdnUrl
+from voluptuous import Required
+from voluptuous import Length
+from voluptuous import Range
+from voluptuous import Unique
+from voluptuous import All
+from voluptuous import Any
+from voluptuous import Invalid
+from voluptuous import ALLOW_EXTRA
+
 
 _trans_comp_table = str.maketrans('\?*<":>+[]/', '＼？＊＜”：＞＋〔〕／')
 _trans_path_table = str.maketrans('?*<">+[]', '？＊＜”＞＋〔〕')
@@ -59,19 +68,41 @@ meta_schema = parsed_meta_schema.extend({
 })
 
 config_schema = Schema({
-    'delay': All(Any(float, int), Range(min=0)),
-    'dirs': All(
+    'data_dirs': All(
+        [
+            All(_safepath_str, Length(min=1)),
+        ],
         Length(min=1),
-        [All(Length(min=1), _safepath_str)],
     ),
-    'extra_analyzer_dir': Any(
+
+    'analyzer_dir': Any(
         None,
-        All(Length(min=1), _safepath_str),
+        All(_safepath_str, Length(min=1)),
     ),
-    'disabled_analyzers': [_st_str],
-    'per_host_concurrent': All(int, Range(min=1)),
-    'max_concurrent': All(int, Range(min=1)),
-    'max_try': All(int, Range(min=1)),
-    'proxy': Any(None, FqdnUrl()),
-    'analyzer_pref': {str: dict},
+
+    'network': {
+        'total_connection': All(int, Range(min=1)),
+        'per_host_connection': All(int, Range(min=1)),
+        'max_try': All(int, Range(min=1)),
+        'delay': All(
+            Any(int, float),
+            Range(min=0),
+        ),
+    },
+
+    'book_concurrent': All(int, Range(min=1)),
+
+    'analyzer_pref': {
+        str: Schema({
+            'system': Schema({
+                'enabled': bool,
+                'max_try': All(int, Range(min=1)),
+                'per_host_connection': All(int, Range(min=1)),
+                'delay': All(
+                    Any(int, float),
+                    Range(min=0),
+                ),
+            }, extra=0),
+        }, extra=ALLOW_EXTRA),
+    },
 })

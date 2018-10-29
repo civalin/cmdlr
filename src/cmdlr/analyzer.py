@@ -6,6 +6,8 @@ from abc import abstractmethod
 
 from .merge import merge_dict
 
+from .exception import AnalyzerRuntimeError
+
 
 ANALYZERS_PKGPATH = 'cmdlr.analyzers'
 
@@ -56,6 +58,12 @@ class BaseAnalyzer(metaclass=ABCMeta):
 
     def __init__(self, pref, *args, **kwargs):
         """Init this analyzer."""
+        if 'system' in self.default_pref:
+            raise AnalyzerRuntimeError(
+                'key "system" not allow in default_pref" ({})'
+                .format(self.name)
+            )
+
         self.current_pref = merge_dict(self.default_pref, pref)
         self.config = self.to_config(self.current_pref)
 
