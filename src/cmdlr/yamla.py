@@ -1,6 +1,7 @@
 """Cmdlr yaml access functions."""
 
 import os
+from textwrap import indent
 
 import yaml
 
@@ -32,6 +33,6 @@ def to_yaml_file(filepath, data, comment_out=False):
                             indent=4)
 
         if comment_out:
-            content = '\n'.join('# ' + line for line in content.split('\n'))
+            content = indent(content, '# ')
 
         f.write(content)
