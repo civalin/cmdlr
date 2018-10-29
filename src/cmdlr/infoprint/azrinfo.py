@@ -52,23 +52,31 @@ def _print_analyzer_detail(analyzer):
     ))
 
 
-def print_analyzer_info(amgr, analyzer_name):
-    """Print analyzer info by analyzer name."""
+def print_analyzer_info(amgr, aname_or_url):
+    """Print analyzer info by analyzer name or url."""
     analyzers = amgr.get_all()
 
-    if analyzer_name is None:
+    if aname_or_url is None:
         _print_analyzer_list(analyzers)
 
     else:
-        for analyzer in analyzers:
-            if analyzer_name == analyzer.name:
-                _print_analyzer_detail(analyzer)
+        analyzer = None
 
-                return
+        try:
+            analyzer = amgr.get(aname_or_url)
 
-        print(('Analyzer: "{}" are not exists or enabled.'
-               .format(analyzer_name)),
-              file=sys.stderr)
+        except NoMatchAnalyzer:
+            for local_analyzer in analyzers:
+                if aname_or_url == local_analyzer.name:
+                    analyzer = local_analyzer
+
+        if analyzer:
+            _print_analyzer_detail(analyzer)
+
+        else:
+            print(('Analyzer: "{}" are not exists or enabled.'
+                   .format(aname_or_url)),
+                  file=sys.stderr)
 
 
 def print_not_matched_urls(amgr, urls):
@@ -76,5 +84,5 @@ def print_not_matched_urls(amgr, urls):
     for url in urls:
         try:
             amgr.get(url)
-        except NoMatchAnalyzer as e:
+        except NoMatchAnalyzer:
             print('No Matched Analyzer: {}'.format(url), file=sys.stderr)
