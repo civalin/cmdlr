@@ -1,12 +1,17 @@
 """Cmdlr multiple comics manager."""
 
 import os
+from collections import namedtuple
 
 from .log import logger
 from .exception import DuplicateComic
 from .exception import NoMatchAnalyzer
 from .comic import Comic
 from .comic import MetaToolkit
+
+
+_SelectedResult = namedtuple('SelectedResult',
+                             ['exist_comics', 'not_exist_urls'])
 
 
 class ComicManager:
@@ -52,66 +57,69 @@ class ComicManager:
             if os.path.isdir(dir):
                 self.__load_comic_in_dir(dir)
 
-    def __get_normalized_urls(self, urls):
-        """Convert a lot of urls to normalized urls.
-
-        This function will also strip out:
-            1. duplicated urls after normalization. and
-            2. the urls no match any analyzers.
-
-        return None if urls is None
-        """
-        if urls is None:
-            return None
-
-        result = set()
-
-        for url in set(urls):
-            try:
-                result.add(self.amgr.get_normalized_entry(url))
-
-            except NoMatchAnalyzer as e:
-                pass
-
-        return result
-
-    def get_url_to_comics(self, urls):
-        """Pick some comics be selected by input url."""
-        if not urls:
-            return self.url_to_comics
-
-        normalized_urls = self.__get_normalized_urls(urls)
-
-        return {
-            url: self.url_to_comics[url]
-            for url in normalized_urls if url in self.url_to_comics
-        }
-
     def get_non_exist_urls(self, urls):
         """Pick non-local existed urls."""
-        normalized_urls = self.__get_normalized_urls(urls)
+        normalized_urls = self.amgr.get_normalized_entrys(urls)
 
         return [url for url in normalized_urls
                 if url not in self.url_to_comics]
 
-    async def build_comic(self, request_pool, curl):
-        """Build comic from url."""
+    def get(self, url):
+        """Get a comic by a entry url.
+
+        Returns:
+            None if:
+                1. url without a match analyzer or
+                2. the comic was not exists
+
+        """
+        try:
+            normalized_url = self.amgr.get_normalized_entry(url)
+            return self.url_to_comics.get(normalized_url)
+
+        except NoMatchAnalyzer as e:
+            pass
+
+    def get_all(self):
+        """Get all comics."""
+        return list(self.url_to_comics.values())
+
+    def get_selected(self, urls):
+        """Get all comics selected."""
+        normalized_urls = self.amgr.get_normalized_entrys(urls)
+
+        url_comics = [(url, self.get(url)) for url in normalized_urls]
+
+        exist_comics = []
+        non_exist_urls = []
+
+        for url, comic in url_comics:
+            if comic is None:
+                non_exist_urls.append(url)
+
+            else:
+                exist_comics.append(comic)
+
+        return _SelectedResult(exist_comics, non_exist_urls)
+
+    async def new_comic(self, request_pool, url):
+        """Build and register a new comic from url."""
         parsed_meta = await Comic.get_parsed_meta(
             request_pool,
             self.amgr,
             self.meta_toolkit,
-            curl,
+            url,
         )
 
-        if curl in self.url_to_comics:
+        if url in self.url_to_comics:
             raise DuplicateComic('Duplicate comic found. Cancel.')
 
         comic = Comic.build_from_parsed_meta(
-            self.config, self.amgr, self.meta_toolkit, parsed_meta, curl)
+            self.config, self.amgr, self.meta_toolkit, parsed_meta, url)
 
-        self.url_to_comics[curl] = comic
+        self.url_to_comics[url] = comic
 
-        logger.info('Meta Created: {name} ({curl})'
-                    .format(**parsed_meta, curl=curl))
+        logger.info('Meta Created: {name} ({url})'
+                    .format(**parsed_meta, url=url))
 
         return comic

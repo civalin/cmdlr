@@ -65,14 +65,20 @@ def _print_detail(comic, wanted_vol_names):
     print()
 
 
-def print_comic_info(url_to_comics, detail_mode):
+def print_comic_info(cmgr, urls, detail_mode):
     """Print comics in comic's pool with selected urls."""
-    if len(url_to_comics) == 0:
+    if not urls:
+        comics = cmgr.get_all()
+
+    else:
+        comics, _ = cmgr.get_selected(urls)
+
+    if not comics:
         return
 
     names, comics = zip(*sorted([
         (comic.meta['name'], comic)
-        for comic in url_to_comics.values()
+        for comic in comics
     ]))
 
     name_max_width = _get_max_width(names)

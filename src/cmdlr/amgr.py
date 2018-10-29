@@ -110,15 +110,34 @@ class AnalyzerManager:
         self.__analyzer_picker = analyzer_picker
 
     @lru_cache(maxsize=None, typed=True)
-    def get_match_analyzer(self, curl):
+    def get_normalized_entry(self, curl):
+        """Return the normalized entry url."""
+        return self.get(curl).entry_normalizer(curl)
+
+    def get_normalized_entrys(self, curls):
+        """Return all of the urls to a new url list.
+
+        This returned url list make sure the following things:
+            1. all urls are be normalized
+            2. no duplicated
+            3. all urls match at least one analyzers.
+        """
+        result = set()
+
+        for url in set(curls):
+            try:
+                result.add(self.get_normalized_entry(url))
+
+            except NoMatchAnalyzer as e:
+                pass
+
+        return result
+
+    @lru_cache(maxsize=None, typed=True)
+    def get(self, curl):
         """Get a url matched analyzer."""
         return self.__analyzer_picker(curl)
 
-    @lru_cache(maxsize=None, typed=True)
-    def get_normalized_entry(self, curl):
-        """Return the normalized entry url."""
-        return self.get_match_analyzer(curl).entry_normalizer(curl)
-
-    def get_analyzers(self):
+    def get_all(self):
         """Return all analyzers."""
         return list(self.__analyzers.values())

@@ -18,7 +18,7 @@ class Comic():
     @staticmethod
     async def get_parsed_meta(request_pool, amgr, meta_toolkit, curl):
         """Get infomation about specific curl."""
-        analyzer = amgr.get_match_analyzer(curl)
+        analyzer = amgr.get(curl)
 
         request = request_pool.get_request(analyzer)
         loop = request_pool.loop
@@ -77,7 +77,7 @@ class Comic():
         meta_filepath = cls.__get_meta_filepath(dir)
         meta = meta_toolkit.load(meta_filepath)
 
-        analyzer = amgr.get_match_analyzer(meta['url'])
+        analyzer = amgr.get(meta['url'])
 
         # normalize url
         meta['url'] = analyzer.entry_normalizer(meta['url'])

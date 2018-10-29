@@ -10,7 +10,7 @@ from .info import VERSION
 from .conf import Config
 from .amgr import AnalyzerManager
 from .cmgr import ComicManager
-from .loopmgr import LoopManager
+from .loopctrl import LoopManager
 
 from .infoprint import print_analyzer_info
 from .infoprint import print_not_matched_urls
@@ -49,7 +49,7 @@ def _parser_setting():
         help='list subscription, more information if urls were given')
 
     parser.add_argument(
-        '-a', metavar='NAME', dest='analyzer', nargs='?', type=str,
+        '-a', metavar='NAME', dest='analyzer_name', nargs='?', type=str,
         default=argparse.SUPPRESS,
         help='print the analyzer\'s information')
 
@@ -95,8 +95,8 @@ def main():
 
     amgr = AnalyzerManager(config)
 
-    if 'analyzer' in args:
-        print_analyzer_info(amgr.get_analyzers(), args.analyzer)
+    if 'analyzer_name' in args:
+        print_analyzer_info(amgr, args.analyzer_name)
         return
 
     print_not_matched_urls(amgr, args.urls)
@@ -104,11 +104,10 @@ def main():
     cmgr = ComicManager(config, amgr)
 
     if args.list:
-        url_to_comics = cmgr.get_url_to_comics(args.urls)
-        print_comic_info(url_to_comics, detail_mode=args.urls)
+        print_comic_info(cmgr, urls=args.urls, detail_mode=args.urls)
 
     else:
-        lmgr = LoopManager(config)
+        lmgr = LoopManager(config, amgr, cmgr)
 
         ctrl = {
             'update_meta': args.update_meta,
@@ -116,4 +115,4 @@ def main():
             'skip_errors': args.skip_errors
         }
 
-        lmgr.start(amgr, cmgr, args.urls, ctrl)
+        lmgr.start(args.urls, ctrl)
