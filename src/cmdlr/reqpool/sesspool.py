@@ -1,6 +1,7 @@
 """Maintain aiohttp sessions."""
 
-import aiohttp
+from aiohttp import ClientSession
+from aiohttp import ClientTimeout
 
 from .. import info
 
@@ -12,8 +13,7 @@ class SessionPool:
         'headers': {
             'user-agent': '{}/{}'.format(info.PROJECT_NAME, info.VERSION)
         },
-        'read_timeout': 120,
-        'conn_timeout': 120,
+        'timeout': ClientTimeout(total=120),
     }
 
     def __init__(self, loop):
@@ -28,7 +28,7 @@ class SessionPool:
             **self.default_session_init_kwargs,
             **session_init_kwargs,
         }
-        session = aiohttp.ClientSession(
+        session = ClientSession(
             loop=self.loop,
             **real_session_init_kwargs,
         )
