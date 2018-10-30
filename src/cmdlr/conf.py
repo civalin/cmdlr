@@ -4,10 +4,8 @@ import os
 
 from .schema import config_schema
 
-from .yamla import to_yaml_filepath
 from .yamla import from_yaml_string
 from .yamla import from_yaml_filepath
-from .yamla import comment_out_transform
 from .merge import merge_dict
 
 
@@ -69,6 +67,30 @@ analyzer_pref: {}
 """.strip()
 
 
+def _comment_out(string):
+    """Comment out all lines if necessary in string."""
+    converted_lines = []
+
+    for line in string.strip().split('\n'):
+        if line:
+            import re
+            space = re.search('^\s*', line).group()
+            no_lspace_line = line.strip()
+
+            if no_lspace_line.startswith('#'):
+                converted_line = line
+
+            else:
+                converted_line = space + '# ' + no_lspace_line
+
+        else:
+            converted_line = line
+
+        converted_lines.append(converted_line)
+
+    return '\n'.join(converted_lines) + '\n'
+
+
 class Config:
     """Config maintainer object."""
 
@@ -86,11 +108,13 @@ class Config:
     @classmethod
     def __build_config_file(cls, filepath):
         """Create a config file template at specific filepath."""
-        to_yaml_filepath(
-            cls.default_config,
-            filepath,
-            transform=comment_out_transform,
-        )
+        dirpath = os.path.dirname(filepath)
+
+        if dirpath:
+            os.makedirs(dirpath, exist_ok=True)
+
+        with open(filepath, mode='w', encoding='utf8') as f:
+            f.write(_comment_out(_DEFAULT_CONFIG_YAML))
 
     def __get_default_analyzer_pref(self):
         network = self.__config.get('network')
