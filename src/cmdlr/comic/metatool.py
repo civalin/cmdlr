@@ -25,45 +25,13 @@ import pickle
 import tempfile
 import atexit
 
-from ruamel.yaml.comments import CommentedMap
-
 from ..schema import meta_schema
 
-from ..yamla import from_yaml_filepath
-from ..yamla import to_yaml_filepath
+from ..jsona import to_json_filepath
+from ..jsona import from_json_yaml_filepath
 
 
-_CACHE_USE = True
-
-
-def _get_ordered_meta(meta):
-    """Return a ordered base meta."""
-    ordered_keys = [
-        'name',
-        'authors',
-        'descriptions',
-        'finished',
-        'volumes',
-        'url',
-        'volumes_checked_time',
-        'volumes_modified_time',
-    ]
-
-    ordered_meta = CommentedMap([
-        (key, meta[key])
-        for key in ordered_keys if key in meta
-    ])
-
-    for key in meta.keys():
-        if key not in ordered_meta:
-            ordered_meta[key] = meta[key]
-
-    ordered_meta['volumes'] = CommentedMap(sorted(
-        [(vname, url) for vname, url in ordered_meta['volumes'].items()],
-        key=lambda item: item[0]
-    ))
-
-    return ordered_meta
+_CACHE_USE = False
 
 
 class MetaToolkit:
@@ -130,11 +98,11 @@ class MetaToolkit:
                 meta = meta_from_cache
 
             else:
-                meta = from_yaml_filepath(meta_filepath)
+                meta = from_json_yaml_filepath(meta_filepath)
                 self.__meta_to_cache(meta_filepath, meta_mtime, meta)
 
         else:
-            meta = from_yaml_filepath(meta_filepath)
+            meta = from_json_yaml_filepath(meta_filepath)
 
         return meta
 
@@ -145,7 +113,7 @@ class MetaToolkit:
         meta_dirpath = os.path.dirname(meta_filepath)
         os.makedirs(meta_dirpath, exist_ok=True)
 
-        to_yaml_filepath(normalized_meta, meta_filepath)
+        to_json_filepath(normalized_meta, meta_filepath)
 
         if _CACHE_USE:
             meta_mtime = os.path.getmtime(meta_filepath)
@@ -176,7 +144,7 @@ class MetaToolkit:
             building_meta['volumes'] = parsed_meta['volumes']
             building_meta['volumes_modified_time'] = now
 
-        return _get_ordered_meta(building_meta)
+        return building_meta
 
     @staticmethod
     def create(parsed_meta, url):
@@ -189,4 +157,4 @@ class MetaToolkit:
         building_meta['volumes_modified_time'] = now
         building_meta['url'] = url
 
-        return _get_ordered_meta(building_meta)
+        return building_meta

@@ -2,10 +2,10 @@
 
 import os
 import zipfile
-import datetime as DT
+from datetime import datetime
 from tempfile import TemporaryDirectory
 
-from ..yamla import to_yaml_filepath
+from ..jsona import to_json_filepath
 from ..log import logger
 from .ifpool import ImageFetchPool
 
@@ -42,14 +42,14 @@ class ComicVolume:
                 if filename not in exist_filenames]
 
     def __save_meta(self, dirpath, name):
-        filepath = os.path.join(dirpath, '.volume-meta.yaml')
+        filepath = os.path.join(dirpath, '.volume-meta.json')
 
-        to_yaml_filepath(
+        to_json_filepath(
             {'comic_url': self.comic.url,
              'volume_url': self.comic.meta['volumes'][name],
              'comic_name': self.comic.meta['name'],
              'volume_name': name,
-             'archived_time': DT.datetime.now(DT.timezone.utc)},
+             'archived_time': datetime.utcnow()},
             filepath,
         )
 

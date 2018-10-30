@@ -13,7 +13,7 @@ from .volfile import ComicVolume
 class Comic():
     """Comic data container."""
 
-    comic_meta_filename = '.comic-meta.yaml'
+    comic_meta_filename = '.comic-meta.json'
 
     @staticmethod
     async def get_parsed_meta(request_pool, amgr, meta_toolkit, curl):
@@ -67,7 +67,10 @@ class Comic():
         """check_localdir can be load as a Comic or not."""
         meta_filepath = cls.__get_meta_filepath(dir)
 
-        if os.path.isfile(meta_filepath):
+        # TODO: compatiability only, pending to remove
+        old_meta_filepath = os.path.splitext(meta_filepath)[0] + '.yaml'
+
+        if os.path.isfile(meta_filepath) or os.path.isfile(old_meta_filepath):
             return True
 
         return False
