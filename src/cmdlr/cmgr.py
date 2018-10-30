@@ -21,7 +21,7 @@ class ComicManager:
         """Init comic manager."""
         self.config = config
         self.amgr = amgr
-        self.meta_toolkit = MetaToolkit(config)
+        self.meta_toolkit = MetaToolkit()
         self.url_to_comics = {}
 
         self.__load_comic_in_dirs()
