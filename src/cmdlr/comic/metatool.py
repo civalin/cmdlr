@@ -25,13 +25,45 @@ import pickle
 import tempfile
 import atexit
 
+from ruamel.yaml.comments import CommentedMap
+
 from ..schema import meta_schema
 
-from ..yamla import from_yaml_file
-from ..yamla import to_yaml_file
+from ..yamla import from_yaml_filepath
+from ..yamla import to_yaml_filepath
 
 
 _CACHE_USE = True
+
+
+def _get_ordered_meta(meta):
+    """Return a ordered base meta."""
+    ordered_keys = [
+        'name',
+        'authors',
+        'descriptions',
+        'finished',
+        'volumes',
+        'url',
+        'volumes_checked_time',
+        'volumes_modified_time',
+    ]
+
+    ordered_meta = CommentedMap([
+        (key, meta[key])
+        for key in ordered_keys if key in meta
+    ])
+
+    for key in meta.keys():
+        if key not in ordered_meta:
+            ordered_meta[key] = meta[key]
+
+    ordered_meta['volumes'] = CommentedMap(sorted(
+        [(vname, url) for vname, url in ordered_meta['volumes'].items()],
+        key=lambda item: item[0]
+    ))
+
+    return ordered_meta
 
 
 class MetaToolkit:
@@ -98,11 +130,11 @@ class MetaToolkit:
                 meta = meta_from_cache
 
             else:
-                meta = from_yaml_file(meta_filepath)
+                meta = from_yaml_filepath(meta_filepath)
                 self.__meta_to_cache(meta_filepath, meta_mtime, meta)
 
         else:
-            meta = from_yaml_file(meta_filepath)
+            meta = from_yaml_filepath(meta_filepath)
 
         return meta
 
@@ -113,7 +145,7 @@ class MetaToolkit:
         meta_dirpath = os.path.dirname(meta_filepath)
         os.makedirs(meta_dirpath, exist_ok=True)
 
-        to_yaml_file(meta_filepath, normalized_meta)
+        to_yaml_filepath(normalized_meta, meta_filepath)
 
         if _CACHE_USE:
             meta_mtime = os.path.getmtime(meta_filepath)
@@ -122,38 +154,39 @@ class MetaToolkit:
     @staticmethod
     def update(ori_meta, parsed_meta):
         """Get updated meta by ori_meta and incoming parsed_meta."""
-        ret_meta = ori_meta.copy()
+        building_meta = ori_meta.copy()
 
         now = DT.datetime.now(DT.timezone.utc)
 
-        # ret_meta['name'] = parsed_meta['name']  # cause filename change
-        ret_meta['finished'] = parsed_meta['finished']
+        # building_meta['name'] = parsed_meta['name']  # cause filename change
+        building_meta['finished'] = parsed_meta['finished']
 
         authors = parsed_meta.get('authors')
         description = parsed_meta.get('description')
 
         if authors:
-            ret_meta['authors'] = authors
+            building_meta['authors'] = authors
 
         if description:
-            ret_meta['description'] = description
+            building_meta['description'] = description
 
-        ret_meta['volumes_checked_time'] = now
+        building_meta['volumes_checked_time'] = now
 
-        if parsed_meta['volumes'] != ret_meta.get('volumes'):
-            ret_meta['volumes'] = parsed_meta['volumes']
-            ret_meta['volumes_modified_time'] = now
+        if parsed_meta['volumes'] != building_meta.get('volumes'):
+            building_meta['volumes'] = parsed_meta['volumes']
+            building_meta['volumes_modified_time'] = now
 
-        return ret_meta
+        return _get_ordered_meta(building_meta)
 
     @staticmethod
     def create(parsed_meta, url):
         """Generate a fully new meta by parsed result and source url."""
-        ret_meta = parsed_meta.copy()
+        building_meta = parsed_meta.copy()
 
         now = DT.datetime.now(DT.timezone.utc)
-        ret_meta['volumes_checked_time'] = now
-        ret_meta['volumes_modified_time'] = now
-        ret_meta['url'] = url
 
-        return ret_meta
+        building_meta['volumes_checked_time'] = now
+        building_meta['volumes_modified_time'] = now
+        building_meta['url'] = url
+
+        return _get_ordered_meta(building_meta)

@@ -41,7 +41,7 @@ setup(
         "Topic :: System :: Archiving"],
 
     install_requires=[
-        'pyyaml >=3, <4',
+        'ruamel.yaml >=0.15.75, <0.16',
         'aiohttp >=3, <4',
         'voluptuous >=0.11.5, <0.12',
         'wcwidth == 0.1.7',

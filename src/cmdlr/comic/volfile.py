@@ -5,7 +5,7 @@ import zipfile
 import datetime as DT
 from tempfile import TemporaryDirectory
 
-from ..yamla import to_yaml_file
+from ..yamla import to_yaml_filepath
 from ..log import logger
 from .ifpool import ImageFetchPool
 
@@ -44,13 +44,13 @@ class ComicVolume:
     def __save_meta(self, dirpath, name):
         filepath = os.path.join(dirpath, '.volume-meta.yaml')
 
-        to_yaml_file(
-            filepath,
+        to_yaml_filepath(
             {'comic_url': self.comic.url,
              'volume_url': self.comic.meta['volumes'][name],
              'comic_name': self.comic.meta['name'],
              'volume_name': name,
              'archived_time': DT.datetime.now(DT.timezone.utc)},
+            filepath,
         )
 
     def __convert_to_cbz(self, from_dir, name):

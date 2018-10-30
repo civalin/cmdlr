@@ -4,8 +4,10 @@ import os
 
 from .schema import config_schema
 
-from .yamla import from_yaml_file
-from .yamla import to_yaml_file
+from .yamla import to_yaml_filepath
+from .yamla import from_yaml_string
+from .yamla import from_yaml_filepath
+from .yamla import comment_out_transform
 from .merge import merge_dict
 
 
@@ -13,23 +15,64 @@ def _normalize_path(path):
     return os.path.expanduser(path)
 
 
+_DEFAULT_CONFIG_YAML = """
+## This is config file for cmdlr.
+
+## The data directories should be scanning.
+##
+## the first entry of data_dirs also be considered as `incoming_dir`
+## all the "new / incoming" comics will be settled down in the `incoming_dir`
+data_dirs:
+- '~/comics'
+
+## global network settings
+network:
+  ## download delay
+  ##
+  ## every connection will random waiting:
+  ##     ((0 ~ delay) * 2) + `dynamic_delay` seconds
+  ##
+  ## Notice: the `dynamic_delay` only depending on network status.
+  delay: 1.0
+
+  max_try: 5               # max try for a single request
+  total_connection: 10     # all requests count in the same time
+  per_host_connection: 2   # all requests count in the same time & host
+
+book_concurrent: 6   # how many books can processing parallel
+
+## extra analyzer directory
+##
+## assign a exist directory and put analyzers module or package in here.
+## Only useful if user want to develop or use a local analyzer.
+analyzer_dir: null
+
+## analyzer preference
+##
+## Example:
+##
+## analyzer_pref:
+##   <analyzer1_name>:
+##     system:                   # every analyzers has `system` area
+##       enabled: true           # default: true
+##       delay: 2                # default: <network.delay>
+##       max_try: 5              # default: <network.max_retry>
+##       per_host_connection: 2  # default: <network.per_host_connection>
+##
+##     # Optional
+##     <analyzer1_pref1>: ...
+##     <analyzer1_pref2>: ...
+##
+## Use `cmdlr -a` to find the name of analyzers. and use `cmdlr -a NAME`
+## to check the analyzer's detail.
+analyzer_pref: {}
+""".strip()
+
+
 class Config:
     """Config maintainer object."""
 
-    default_config = {
-        'data_dirs': [
-            '~/comics',
-        ],
-        'network': {
-            'delay': 1.0,
-            'max_try': 5,
-            'total_connection': 10,
-            'per_host_connection': 2,
-        },
-        'book_concurrent': 6,
-        'analyzer_dir': None,
-        'analyzer_pref': {},
-    }
+    default_config = from_yaml_string(_DEFAULT_CONFIG_YAML)
 
     default_config_filepath = os.path.join(
         os.getenv(
@@ -43,7 +86,11 @@ class Config:
     @classmethod
     def __build_config_file(cls, filepath):
         """Create a config file template at specific filepath."""
-        to_yaml_file(filepath, cls.default_config, comment_out=True)
+        to_yaml_filepath(
+            cls.default_config,
+            filepath,
+            transform=comment_out_transform,
+        )
 
     def __get_default_analyzer_pref(self):
         network = self.__config.get('network')
@@ -71,7 +118,7 @@ class Config:
             if not os.path.exists(filepath):
                 type(self).__build_config_file(filepath)
 
-            incoming_config = config_schema(from_yaml_file(filepath))
+            incoming_config = config_schema(from_yaml_filepath(filepath))
             merged_config = merge_dict(self.__config, incoming_config)
 
             self.__config = config_schema(merged_config)
