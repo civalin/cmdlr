@@ -48,12 +48,9 @@ class MetaToolkit:
         building_meta = ori_meta.copy()
 
         now = datetime.utcnow()
-
-        # building_meta['name'] = parsed_meta['name']  # cause filename change
-        building_meta['finished'] = parsed_meta['finished']
-
         authors = parsed_meta.get('authors')
         description = parsed_meta.get('description')
+        finished = parsed_meta.get('finished')
 
         if authors:
             building_meta['authors'] = authors
@@ -61,9 +58,12 @@ class MetaToolkit:
         if description:
             building_meta['description'] = description
 
+        if finished:
+            building_meta['finished'] = finished
+
         building_meta['volumes_checked_time'] = now
 
-        if parsed_meta['volumes'] != building_meta.get('volumes'):
+        if building_meta.get('volumes') != parsed_meta['volumes']:
             building_meta['volumes'] = parsed_meta['volumes']
             building_meta['volumes_modified_time'] = now
 

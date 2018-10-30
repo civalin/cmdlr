@@ -55,7 +55,7 @@ parsed_meta_schema = Schema({
         _dict_value_unique,
         {All(Length(min=1), _safepathcomp_str): FqdnUrl()}
     )),
-    Required('finished'): bool,
+    'finished': bool,
     'description': All(str, _st_str),
     'authors': All([_st_str], Unique()),
 })
