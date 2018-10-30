@@ -15,6 +15,7 @@ from .loopctrl import LoopManager
 from .infoprint import print_analyzer_info
 from .infoprint import print_not_matched_urls
 from .infoprint import print_comic_info
+from .infoprint import print_comic_json
 
 
 def _parser_setting():
@@ -45,8 +46,12 @@ def _parser_setting():
         help='skip partial images download failed in one volume')
 
     parser.add_argument(
-        '-l', dest='list', action='store_true',
-        help='list subscription, more information if urls were given')
+        '-l', '--list', dest='list', action='store_true',
+        help='print subscriptions for human reading')
+
+    parser.add_argument(
+        '-j', '--json', dest='json', action='store_true',
+        help='print subscriptions as json lines')
 
     parser.add_argument(
         '-a', metavar='NAME', dest='analyzer_name', nargs='?', type=str,
@@ -105,6 +110,9 @@ def main():
 
     if args.list:
         print_comic_info(cmgr, urls=args.urls, detail_mode=args.urls)
+
+    elif args.json:
+        print_comic_json(cmgr)
 
     else:
         lmgr = LoopManager(config, amgr, cmgr)

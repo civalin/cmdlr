@@ -59,3 +59,11 @@ def to_json_filepath(data, filepath):
                   ensure_ascii=False,
                   indent=2,
                   cls=_MetaEncoder)
+
+
+def get_json_line(data):
+    """Get json string from data."""
+    return json.dumps(data,
+                      ensure_ascii=False,
+                      sort_keys=True,
+                      cls=_MetaEncoder)

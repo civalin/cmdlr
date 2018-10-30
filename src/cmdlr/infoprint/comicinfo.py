@@ -5,6 +5,7 @@ from functools import reduce
 from wcwidth import wcswidth
 
 from ..comic import ComicVolume
+from ..jsona import get_json_line
 
 
 def _get_max_width(strings):
@@ -30,10 +31,6 @@ def _print_standard(comic, name_max_width, wanted_vol_names):
         meta['name'],
         name_max_width,
     )
-    extra_info['fin'] = (
-        '[F]' if meta['finished']
-        else '   '
-    )
 
     wanted_vol_num = len(wanted_vol_names)
     extra_info['wanted_vol_num_str'] = (
@@ -41,7 +38,7 @@ def _print_standard(comic, name_max_width, wanted_vol_names):
         else '    '
     )
 
-    print('{name}{name_padding} {fin} {wanted_vol_num_str} {url}'
+    print('{name}{name_padding}  {wanted_vol_num_str} {url}'
           .format(**meta, **extra_info))
 
 
@@ -90,3 +87,28 @@ def print_comic_info(cmgr, urls, detail_mode):
 
         if detail_mode:
             _print_detail(comic, wanted_vol_names)
+
+
+def print_comic_json(cmgr):
+    """Print all info in jsonline format."""
+    comics = cmgr.get_all()
+
+    for comic in comics:
+        wanted_vol_names = sorted(ComicVolume(comic).get_wanted_names())
+        wanted_vol_count = len(wanted_vol_names)
+
+        data = {
+            'meta': comic.meta,
+            'dir': comic.dir,
+            'volumes': {
+                'wanted': {
+                    'names': wanted_vol_names,
+                    'count': wanted_vol_count,
+                },
+                'existed': {
+                    'count': len(comic.meta['volumes']) - wanted_vol_count
+                },
+            }
+        }
+
+        print(get_json_line(data))
