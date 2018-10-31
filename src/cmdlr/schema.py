@@ -75,6 +75,11 @@ config_schema = Schema({
         Length(min=1),
     ),
 
+    'logging_dir': Any(
+        None,
+        All(_safepath_str, Length(min=1))
+    ),
+
     'analyzer_dir': Any(
         None,
         All(_safepath_str, Length(min=1)),

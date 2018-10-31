@@ -8,6 +8,7 @@ from .info import DESCRIPTION
 from .info import VERSION
 
 from .conf import Config
+from .log import init_logging
 from .amgr import AnalyzerManager
 from .cmgr import ComicManager
 from .loopctrl import LoopManager
@@ -86,10 +87,7 @@ def _get_args():
     return args
 
 
-def main():
-    """Command ui entry point."""
-    args = _get_args()
-
+def _get_config(args):
     config = Config()
     config_filepaths = [Config.default_config_filepath]
 
@@ -97,6 +95,16 @@ def main():
         config_filepaths.append(args.extra_config_path)
 
     config.load_or_build(*config_filepaths)
+
+    return config
+
+
+def main():
+    """Command ui entry point."""
+    args = _get_args()
+    config = _get_config(args)
+
+    init_logging(config.logging_dir)
 
     amgr = AnalyzerManager(config)
 

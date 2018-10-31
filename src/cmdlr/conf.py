@@ -1,16 +1,13 @@
 """Cmdlr config system."""
 
 import os
+import re
 
 from .schema import config_schema
 
 from .yamla import from_yaml_string
 from .yamla import from_yaml_filepath
 from .merge import merge_dict
-
-
-def _normalize_path(path):
-    return os.path.expanduser(path)
 
 
 _DEFAULT_CONFIG_YAML = """
@@ -22,6 +19,11 @@ _DEFAULT_CONFIG_YAML = """
 ## all the "new / incoming" comics will be settled down in the `incoming_dir`
 data_dirs:
 - '~/comics'
+
+## The directory be used to save the logs.
+##
+## if null, stop logging any messages into filesystem.
+logging_dir: null
 
 ## global network settings
 network:
@@ -67,13 +69,16 @@ analyzer_pref: {}
 """.strip()
 
 
+def _normalize_path(path):
+    return os.path.expanduser(path)
+
+
 def _comment_out(string):
     """Comment out all lines if necessary in string."""
     converted_lines = []
 
     for line in string.strip().split('\n'):
         if line:
-            import re
             space = re.search('^\s*', line).group()
             no_lspace_line = line.strip()
 
@@ -161,6 +166,13 @@ class Config:
             _normalize_path,
             self.__config.get('data_dirs'),
         ))
+
+    @property
+    def logging_dir(self):
+        """Get logging dir."""
+        return _normalize_path(
+            self.__config.get('logging_dir') or ''
+        )
 
     @property
     def analyzer_dir(self):
