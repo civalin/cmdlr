@@ -20,9 +20,9 @@ class LoopManager:
 
     async def __get_main_task(self, urls, ctrl):
         """Get main task for loop."""
-        try:
-            request_pool = RequestPool(self.config, self.loop)
+        request_pool = RequestPool(self.config, self.loop)
 
+        try:
             aname_to_runners = get_aname_to_runners(
                 self.cmgr,
                 self.amgr,

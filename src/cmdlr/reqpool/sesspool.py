@@ -3,34 +3,22 @@
 from aiohttp import ClientSession
 from aiohttp import ClientTimeout
 
-from .. import info
-
 
 class SessionPool:
     """Maintain a aiohttp client session pool."""
 
-    default_session_init_kwargs = {
-        'headers': {
-            'user-agent': '{}/{}'.format(info.PROJECT_NAME, info.VERSION)
-        },
-        'timeout': ClientTimeout(total=120),
-    }
-
-    def __init__(self, loop):
+    def __init__(self):
         """Session pool init."""
-        self.loop = loop
-
         self.sessions = []
 
-    def build_session(self, session_init_kwargs):
+    def build_session(self, analyzer_system):
         """Build a new session."""
-        real_session_init_kwargs = {
-            **self.default_session_init_kwargs,
-            **session_init_kwargs,
+        session_init_kwargs = {
+            'timeout': ClientTimeout(total=analyzer_system['timeout']),
         }
+
         session = ClientSession(
-            loop=self.loop,
-            **real_session_init_kwargs,
+            **session_init_kwargs,
         )
 
         self.sessions.append(session)

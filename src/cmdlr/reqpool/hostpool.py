@@ -1,7 +1,6 @@
 """Maintain host infos."""
 
 import asyncio
-import collections
 import random
 import datetime as DT
 from urllib.parse import urlparse

@@ -86,13 +86,17 @@ config_schema = Schema({
     ),
 
     'network': {
-        'total_connection': All(int, Range(min=1)),
-        'per_host_connection': All(int, Range(min=1)),
-        'max_try': All(int, Range(min=1)),
         'delay': All(
             Any(int, float),
             Range(min=0),
         ),
+        'timeout': All(
+            Any(int, float),
+            Range(min=1),
+        ),
+        'max_try': All(int, Range(min=1)),
+        'total_connections': All(int, Range(min=1)),
+        'per_host_connections': All(int, Range(min=1)),
     },
 
     'book_concurrent': All(int, Range(min=1)),
@@ -101,12 +105,16 @@ config_schema = Schema({
         str: Schema({
             'system': Schema({
                 'enabled': bool,
-                'max_try': All(int, Range(min=1)),
-                'per_host_connection': All(int, Range(min=1)),
                 'delay': All(
                     Any(int, float),
                     Range(min=0),
                 ),
+                'timeout': All(
+                    Any(int, float),
+                    Range(min=1),
+                ),
+                'max_try': All(int, Range(min=1)),
+                'per_host_connection': All(int, Range(min=1)),
             }, extra=0),
         }, extra=ALLOW_EXTRA),
     },

@@ -52,7 +52,8 @@ class Analyzer(BaseAnalyzer):
         ),
     ]
 
-    session_init_kwargs = {
+    default_request_kwargs = {
+        'method': 'GET',
         'headers': {
             'referer': 'http://www.manhuagui.com/comic/',
             'user-agent': ('Mozilla/5.0 AppleWebKit/537.3'

@@ -7,6 +7,7 @@ from abc import abstractmethod
 from .merge import merge_dict
 
 from .exception import AnalyzerRuntimeError
+from . import info
 
 
 ANALYZERS_PKGPATH = 'cmdlr.analyzers'
@@ -29,7 +30,12 @@ class BaseAnalyzer(metaclass=ABCMeta):
 
     # [Optional]
 
-    session_init_kwargs = {}
+    default_request_kwargs = {
+        'method': 'GET',
+        'headers': {
+            'user-agent': '{}/{}'.format(info.PROJECT_NAME, info.VERSION)
+        },
+    }
     default_pref = {}
 
     def entry_normalizer(self, url):

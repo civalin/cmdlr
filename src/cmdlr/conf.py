@@ -29,15 +29,16 @@ logging_dir: null
 network:
   ## download delay
   ##
-  ## every connection will random waiting:
+  ## every connections will random waiting:
   ##     ((0 ~ delay) * 2) + `dynamic_delay` seconds
   ##
   ## Notice: the `dynamic_delay` only depending on network status.
   delay: 1.0
 
-  max_try: 5               # max try for a single request
-  total_connection: 10     # all requests count in the same time
-  per_host_connection: 2   # all requests count in the same time & host
+  timeout: 120               # timeout of a trying of a request
+  max_try: 5                 # max try for a single request
+  total_connections: 10      # all requests in the same time in whole system
+  per_host_connections: 2    # all requests in the same time in a host
 
 book_concurrent: 6   # how many books can processing parallel
 
@@ -53,11 +54,12 @@ analyzer_dir: null
 ##
 ## analyzer_pref:
 ##   <analyzer1_name>:
-##     system:                   # every analyzers has `system` area
-##       enabled: true           # default: true
-##       delay: 2                # default: <network.delay>
-##       max_try: 5              # default: <network.max_retry>
-##       per_host_connection: 2  # default: <network.per_host_connection>
+##     system:                  # any analyzers have a `system` area
+##       enabled: true            # default: true
+##       delay: 1.0               # default: <network.delay>
+##       timeout: 120             # default: <network.timeout>
+##       max_try: 5               # default: <network.max_retry>
+##       per_host_connections: 2  # default: <network.per_host_connections>
 ##
 ##     # Optional
 ##     <analyzer1_pref1>: ...
@@ -99,8 +101,6 @@ def _comment_out(string):
 class Config:
     """Config maintainer object."""
 
-    default_config = from_yaml_string(_DEFAULT_CONFIG_YAML)
-
     default_config_filepath = os.path.join(
         os.getenv(
             'XDG_CONFIG_HOME',
@@ -122,20 +122,22 @@ class Config:
             f.write(_comment_out(_DEFAULT_CONFIG_YAML))
 
     def __get_default_analyzer_pref(self):
-        network = self.__config.get('network')
+        network = self.__config['network']
 
         return {
             'system': {
                 'enabled': True,
-                'max_try': network['max_try'],
-                'per_host_connection': network['per_host_connection'],
                 'delay': network['delay'],
+                'timeout': network['timeout'],
+                'max_try': network['max_try'],
+                'per_host_connections': network['per_host_connections'],
             },
         }
 
     def __init__(self):
         """Init the internal __config variable."""
-        self.__config = config_schema(type(self).default_config)
+        default_config = from_yaml_string(_DEFAULT_CONFIG_YAML)
+        self.__config = config_schema(default_config)
 
     def load_or_build(self, *filepaths):
         """Load and update internal config from specific filepaths.
@@ -156,7 +158,7 @@ class Config:
     def incoming_data_dir(self):
         """Get incoming dir."""
         return _normalize_path(
-            self.__config.get('data_dirs')[0]
+            self.__config['data_dirs'][0]
         )
 
     @property
@@ -164,45 +166,46 @@ class Config:
         """Get all dirs."""
         return list(map(
             _normalize_path,
-            self.__config.get('data_dirs'),
+            self.__config['data_dirs'],
         ))
 
     @property
     def logging_dir(self):
         """Get logging dir."""
-        return _normalize_path(
-            self.__config.get('logging_dir') or ''
-        )
+        logging_dir = self.__config['logging_dir']
+
+        if logging_dir:
+            return _normalize_path(logging_dir)
 
     @property
     def analyzer_dir(self):
         """Get analyzer dir."""
-        analyzer_dir = self.__config.get('analyzer_dir')
+        analyzer_dir = self.__config['analyzer_dir']
 
         if analyzer_dir:
             return _normalize_path(analyzer_dir)
 
     @property
-    def total_connection(self):
+    def total_connections(self):
         """Get total connection count."""
-        return self.__config.get('network').get('total_connection')
+        return self.__config['network']['total_connections']
 
     @property
     def book_concurrent(self):
         """Get book concurrent count."""
-        return self.__config.get('book_concurrent')
+        return self.__config['book_concurrent']
 
     def is_enabled_analyzer(self, analyzer_name):
         """Check a analyzer_name is enabled."""
         system = self.get_analyzer_system_pref(analyzer_name)
 
-        return system.get('enabled')
+        return system['enabled']
 
     def get_raw_analyzer_pref(self, analyzer_name):
         """Get user setting for an analyzer, include "system"."""
         default_analyzer_pref = self.__get_default_analyzer_pref()
         user_analyzer_pref = (self
-                              .__config.get('analyzer_pref', {})
+                              .__config['analyzer_pref']
                               .get(analyzer_name, {}))
 
         raw_analyzer_pref = merge_dict(
@@ -223,4 +226,4 @@ class Config:
         """Get "system" part of user setting for analyzer."""
         raw_analyzer_pref = self.get_raw_analyzer_pref(analyzer_name)
 
-        return raw_analyzer_pref.get('system')
+        return raw_analyzer_pref['system']

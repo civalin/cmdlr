@@ -16,10 +16,10 @@ class RequestPool:
         self.loop = loop
 
         self.host_pool = HostPool(loop)
-        self.session_pool = SessionPool(loop)
+        self.session_pool = SessionPool()
 
         self.semaphore = asyncio.Semaphore(
-            value=config.total_connection,
+            value=config.total_connections,
             loop=loop,
         )
 
@@ -30,9 +30,14 @@ class RequestPool:
         request = self.requests.get(analyzer)
 
         if not request:
+            analyzer_system = self.config.get_analyzer_system_pref(
+                analyzer.name
+            )
+
             request = build_request(
-                self.config.get_analyzer_system_pref(analyzer.name),
-                self.session_pool.build_session(analyzer.session_init_kwargs),
+                analyzer,
+                analyzer_system,
+                self.session_pool.build_session(analyzer_system),
                 self.semaphore,
                 self.host_pool,
             )
