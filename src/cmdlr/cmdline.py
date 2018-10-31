@@ -44,7 +44,7 @@ def _parser_setting():
 
     parser.add_argument(
         '-s', dest='skip_errors', action='store_true',
-        help='skip partial images download failed in one volume')
+        help='allow to skip partial downloading failed in a volume')
 
     parser.add_argument(
         '-l', '--list', dest='list', action='store_true',
@@ -61,7 +61,13 @@ def _parser_setting():
 
     parser.add_argument(
         '-c', metavar='FILE', dest='extra_config_path', type=str,
-        help=('merge a extra config file into runtime'),
+        help=('assign a extra config file and merge in'),
+    )
+
+    parser.add_argument(
+        '-C', action='store_true', dest='stop_default_config',
+        help=('suppress the default config file:\n  {}'
+              .format(Config.default_config_filepath)),
     )
 
     return parser
@@ -89,7 +95,10 @@ def _get_args():
 
 def _get_config(args):
     config = Config()
-    config_filepaths = [Config.default_config_filepath]
+    config_filepaths = []
+
+    if args.stop_default_config is not True:
+        config_filepaths.append(Config.default_config_filepath)
 
     if args.extra_config_path:
         config_filepaths.append(args.extra_config_path)
