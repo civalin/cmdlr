@@ -43,6 +43,7 @@ setup(
     install_requires=[
         'pyyaml >=3.13, <4',
         'aiohttp >=3, <4',
+        'aiohttp_socks ==0.2',
         'voluptuous >=0.11.5, <0.12',
         'wcwidth == 0.1.7',
         'beautifulsoup4',

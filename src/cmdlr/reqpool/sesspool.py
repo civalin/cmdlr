@@ -3,6 +3,8 @@
 from aiohttp import ClientSession
 from aiohttp import ClientTimeout
 
+from aiohttp_socks import SocksConnector
+
 
 class SessionPool:
     """Maintain a aiohttp client session pool."""
@@ -16,6 +18,12 @@ class SessionPool:
         session_init_kwargs = {
             'timeout': ClientTimeout(total=analyzer_system['timeout']),
         }
+
+        if analyzer_system['socks_proxy']:
+            session_init_kwargs['connector'] = SocksConnector.from_url(
+                analyzer_system['socks_proxy'],
+                rdns=True,
+            )
 
         session = ClientSession(
             **session_init_kwargs,

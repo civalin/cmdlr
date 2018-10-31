@@ -40,6 +40,13 @@ network:
   total_connections: 10      # all requests in the same time in whole system
   per_host_connections: 2    # all requests in the same time in a host
 
+  ## assign a socks proxy configuration
+  ##
+  ## the configuration look like:
+  ##   socks5://username:password@127.0.0.1:1080
+  ## if null, stop to using any socks proxy
+  socks_proxy: null
+
 book_concurrent: 6   # how many books can processing parallel
 
 ## extra analyzer directory
@@ -60,6 +67,7 @@ analyzer_dir: null
 ##       timeout: 120             # default: <network.timeout>
 ##       max_try: 5               # default: <network.max_retry>
 ##       per_host_connections: 2  # default: <network.per_host_connections>
+##       socks_proxy: null        # default: <network.socks_proxy>
 ##
 ##     # Optional
 ##     <analyzer1_pref1>: ...
@@ -131,6 +139,7 @@ class Config:
                 'timeout': network['timeout'],
                 'max_try': network['max_try'],
                 'per_host_connections': network['per_host_connections'],
+                'socks_proxy': network['socks_proxy'],
             },
         }
 

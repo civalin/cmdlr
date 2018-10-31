@@ -97,6 +97,10 @@ config_schema = Schema({
         'max_try': All(int, Range(min=1)),
         'total_connections': All(int, Range(min=1)),
         'per_host_connections': All(int, Range(min=1)),
+        'socks_proxy': Any(
+            None,
+            All(_safepath_str, Length(min=1)),
+        ),
     },
 
     'book_concurrent': All(int, Range(min=1)),
