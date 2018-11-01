@@ -54,7 +54,7 @@ def _print_analyzer_detail(analyzer):
 
 def print_analyzer_info(amgr, aname_or_url):
     """Print analyzer info by analyzer name or url."""
-    analyzers = amgr.get_all()
+    analyzers = sorted(amgr.get_all(), key=lambda analyzer: analyzer.name)
 
     if aname_or_url is None:
         _print_analyzer_list(analyzers)
@@ -84,5 +84,6 @@ def print_not_matched_urls(amgr, urls):
     for url in urls:
         try:
             amgr.get(url)
+
         except NoMatchAnalyzer:
             print('No Matched Analyzer: {}'.format(url), file=sys.stderr)
