@@ -8,6 +8,17 @@ from ..comic import ComicVolume
 from ..jsona import get_json_line
 
 
+def _pick_comics(urls, cmgr):
+    """Pick comics by commandline url."""
+    if not urls:
+        comics = cmgr.get_all()
+
+    else:
+        comics, _ = cmgr.get_selected(urls)
+
+    return comics
+
+
 def _get_max_width(strings):
     """Get max display width."""
     return reduce(
@@ -64,11 +75,7 @@ def _print_detail(comic, wanted_vol_names):
 
 def print_comic_info(cmgr, urls, detail_mode):
     """Print comics in comic's pool with selected urls."""
-    if not urls:
-        comics = cmgr.get_all()
-
-    else:
-        comics, _ = cmgr.get_selected(urls)
+    comics = _pick_comics(urls, cmgr)
 
     if not comics:
         return
@@ -89,9 +96,9 @@ def print_comic_info(cmgr, urls, detail_mode):
             _print_detail(comic, wanted_vol_names)
 
 
-def print_comic_json(cmgr):
+def print_comic_json(cmgr, urls):
     """Print all info in jsonline format."""
-    comics = cmgr.get_all()
+    comics = _pick_comics(urls, cmgr)
 
     for comic in comics:
         wanted_vol_names = sorted(ComicVolume(comic).get_wanted_names())

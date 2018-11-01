@@ -129,7 +129,7 @@ def main():
         print_comic_info(cmgr, urls=args.urls, detail_mode=args.urls)
 
     elif args.json:
-        print_comic_json(cmgr)
+        print_comic_json(cmgr, urls=args.urls)
 
     else:
         lmgr = LoopManager(config, amgr, cmgr)
