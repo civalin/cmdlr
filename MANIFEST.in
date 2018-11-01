@@ -3,6 +3,7 @@ recursive-exclude src/cmdlr *.swp
 recursive-exclude src/cmdlr *.pyc
 recursive-exclude src/cmdlr *.pyo
 include README.md
+include DEVELOP.md
 include CHANGELOG.md
 include LICENSE
 include cmdlr.py
