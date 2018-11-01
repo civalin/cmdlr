@@ -4,9 +4,42 @@ Extensible command line tool to subscribe online comics.
 
 
 
-## Interface
+## Supported Sites
+
+- `cartoonmad`: www.cartoonmad.com
+- `manhuagui`: manhuagui.com (external dependency: [nodejs](https://nodejs.org))
+
+
+
+## Usage
+
+### Daily Use
+
+```sh
+# subscribe a book
+$ cmdlr https://example.com/to/the/book/entry
+
+# update metadata of books then download new volumes
+$ cmdlr -md
+
+# unsubscribe: just remove the directory of the book
+$ rm -r <data_dir>/<book_dir>/
+```
+
+
+### Configuration
+
+The default configuration file are located in:
+
+1. `$XDG_CONFIG_HOME/cmdlr/config.yaml` or
+2. `~/.config/cmdlr/config.yaml`
+
+
+
+### Interface
 
 ```
+$ cmdlr -h
 usage: cmdlr.py [-h] [--version] [-m] [-d] [-s] [-l] [-j] [-a [NAME]]
                 [-c FILE] [-C]
                 [URL [URL ...]]
@@ -37,40 +70,8 @@ optional arguments:
 ## Install
 
 ```sh
-pip3 install cmdlr  # require python >= 3.5.3
+$ pip3 install cmdlr  # require python >= 3.5.3
 ```
-
-
-
-## Supported Sites
-
-- `cartoonmad`: www.cartoonmad.com
-- `manhuagui`: manhuagui.com (external dependency: [nodejs](https://nodejs.org))
-
-
-
-## Usage
-
-### Daily Use
-
-```sh
-# subscribe a book
-$ cmdlr https://example.com/to/the/book/entry
-
-# update metadata of books then download new volumes
-$ cmdlr -md
-
-# unsubscribe: just remove the directory of the book
-$ rm -r <data_dir>/<book_dir>/
-```
-
-
-#### Configuration
-
-The default configuration file are located in:
-
-1. `$XDG_CONFIG_HOME/cmdlr/config.yaml` or
-2. `~/.config/cmdlr/config.yaml`
 
 
 
