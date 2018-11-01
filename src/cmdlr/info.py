@@ -1,9 +1,9 @@
 """Cmdlr infomation files."""
 
-VERSION = (3, 1, 2)
-DESCRIPTION = ('An extensible comic subscriber.')
+VERSION = (4, 0, 0)
+DESCRIPTION = ('Extensible comic subscriber.')
 LICENSE = 'MIT'
 AUTHOR = 'visig'
 AUTHOR_EMAIL = 'visig@protonmail.ch'
-PROJECT_URL = 'https://github.com/civalin/cmdlr'
+PROJECT_URL = 'https://gitlab.com/visig/cmdlr'
 PROJECT_NAME = 'cmdlr'

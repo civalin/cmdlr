@@ -16,7 +16,7 @@ from src.cmdlr.info import DESCRIPTION
 
 
 if not sys.version_info >= (3, 5, 3):
-    print("ERROR: You cannot install because python version < 3.5.3")
+    print("ERROR: You cannot install due to python version < 3.5.3")
 
     sys.exit(1)
 
