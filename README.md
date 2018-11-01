@@ -36,37 +36,6 @@ The default configuration file are located in:
 
 
 
-### Interface
-
-```
-$ cmdlr -h
-usage: cmdlr.py [-h] [--version] [-m] [-d] [-s] [-l] [-j] [-a [NAME]]
-                [-c FILE] [-C]
-                [URL [URL ...]]
-
-Extensible comic subscriber.
-
-positional arguments:
-  URL         select which ones should processing.
-              no one be given mean select all existing.
-              perform subscription if a url hasn't been subscribed.
-
-optional arguments:
-  -h, --help  show this help message and exit
-  --version   show program's version number and exit
-  -m          update metadata
-  -d          download the volume files
-  -s          allow to skip partial downloading failed in a volume
-  -l, --list  print subscriptions for human reading
-  -j, --json  print subscriptions as json lines
-  -a [NAME]   print the analyzer's information
-  -c FILE     assign a extra config file and merge in
-  -C          suppress the default config file:
-                ~/.config/cmdlr/config.yaml
-```
-
-
-
 ## Install
 
 ```sh
