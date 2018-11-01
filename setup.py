@@ -47,7 +47,7 @@ setup(
         'voluptuous >=0.11.5, <0.12',
         'wcwidth == 0.1.7',
         'beautifulsoup4',
-        ],
+    ],
     setup_requires=[],
 
     package_dir={'': 'src'},
@@ -56,6 +56,5 @@ setup(
 
     entry_points={
         'console_scripts': ['cmdlr = cmdlr.cmdline:main'],
-        'setuptools.installation': ['eggsecutable = cmdlr.cmdline:main']
-        },
-    )
+    },
+)
