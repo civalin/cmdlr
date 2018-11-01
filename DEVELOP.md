@@ -1,4 +1,4 @@
-If you want to write a analyzer, this is for you.
+If you want to write an analyzer, this is for you.
 
 # Develop An Analyzer
 
@@ -8,15 +8,12 @@ To support more sites, please write an analyzer as plugin.
 
 ## Setup
 
-1. Set you config `analyzer_dir` to an empty local directory, e.g., `~/test-analyzers`.
+1. Set the config option `analyzer_dir` to an empty local directory, e.g., `~/test-analyzers`.
 2. Create an empty python file in `analyzer_dir`, e.g., `~/test-analyzers/example.py`.
-3. Create an empty analyzer in this file. e.g.,
+3. Paste a do-nothing analyzer in this file. Here is it:
 
 ```python
 """The www.example.com analyzer.
-
-Here is a desciption text and can be read by `cmdlr -a <analyzer_name>`.
-Write anything that an user may want to know.
 
 [Entry examples]
 
@@ -45,9 +42,7 @@ class Analyzer(BaseAnalyzer):
 ```sh
 $ cmdlr -a
 Enabled analyzers:
-    - cartoonmad
-    - example           # here is you new analyzer (if filename == `example.py`)
-    - manhuagui
+    - example           # here is the new analyzer (if filename == `example.py`)
 ```
 
 
@@ -58,20 +53,20 @@ Now everything is setup, but this analyzer not do anything right now.
 
 ## Required Components
 
-Analyzer has a lot of functions, only three are necessary.
+Analyzer has many functions, but only those three are necessary.
 
 - `entry_patterns`
-    - determine a entry url should or should not be processed by this analyzer.
+    - determine a "entry url" should or should not be processed by this analyzer.
 - `async def get_comic_info(url, request, loop)`
-    - parsing entry url and return the metadata of this book.
+    - parsing a "entry url" and return the metadata of this book.
 - `async def save_volume_images(url, request, save_image, loop)`
-    - parsing a volume url in metadata, find out the all of the image's urls.
+    - parsing a "volume url" in metadata, find out the all of the image's urls.
 
 
 
 ### Required: `entry_patterns`
 
-A list of regex pattern strings or `re.compile()` results. For example:
+This is a list of regex strings or `re.compile()` results. For example:
 
 ```python
 entry_patterns = [r'^https?://(?:www\.)?example\.com/html/']
@@ -81,7 +76,7 @@ entry_patterns = [r'^https?://(?:www\.)?example\.com/html/']
 
 ### Required: `async def get_comic_info(url, request, loop)`
 
-Build the metadata of the url.
+Build the metadata by the input url.
 
 - Arguments:
     - `url` (str): the book's entry.
@@ -97,7 +92,7 @@ The expected returning: (for example)
 ```python
 {
     'name': 'comic name',           # required
-    'volumes': {                    # required: volume name mapping to volume url
+    'volumes': {                    # required: "volume name" mapping to "volume url"
         'volume_name_001': 'http://comicsite.com/to/volume/entry/001'
         'volume_name_002': 'http://comicsite.com/to/volume/entry/002'
         'volume_name_003': 'http://comicsite.com/to/volume/entry/003'
@@ -116,7 +111,7 @@ The expected returning: (for example)
 
 ### Required: `async def save_volume_images(url, request, save_image, loop)`
 
-Find out the all of the images in a volume. Basically, it include two steps:
+Find out all of the images in a volume. Basically, include two steps:
 
 1. find all image's **url** &  **page number**.
 2. run `save_image()` to scheduling the download for each images.

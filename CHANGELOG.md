@@ -21,8 +21,8 @@
 #### Good Things for User
 
 - Smarter book level tasks scheduling.
-    - `cmdlr` will automatic try to do the best that make all analyzers can working in the same time. Avoid traffic bursting or stoping of a part of sites.
-- Allow to configure network usage (like `timeout`, `delay`, `per_host_connections`) in analyzer level.
+    - `cmdlr` will automatic try to do the best that make all analyzers can working in the same time. Avoid traffic bursting or stoping at a part of sites.
+- Allow to configure network usage (like `timeout`, `delay`, `per_host_connections`) on analyzer level.
 - Add Socks support.
 - Can assign a config file in command line interface.
 - Can logging to filesystem.
