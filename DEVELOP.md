@@ -132,7 +132,7 @@ Find out the all of the images in a volume. Basically, it include two steps:
 - Returns:
     - Not used.
 
-Run `save_image(...)`: (for example)
+Call `save_image(...)` for example:
 
 ```python
 for page_num, img_url in enumerate(img_urls, start=1):
@@ -147,6 +147,6 @@ TODO
 
 
 
-## Recipe
+## Recipes
 
 TODO
