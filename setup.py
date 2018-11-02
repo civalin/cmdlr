@@ -47,6 +47,7 @@ setup(
         'voluptuous >=0.11.5, <0.12',
         'wcwidth == 0.1.7',
         'beautifulsoup4',
+        'fake_useragent == 0.1.11',
     ],
     setup_requires=[],
 

@@ -7,7 +7,6 @@ from abc import abstractmethod
 from .merge import merge_dict
 
 from .exception import AnalyzerRuntimeError
-from . import info
 
 
 ANALYZERS_PKGPATH = 'cmdlr.analyzers'
@@ -30,13 +29,16 @@ class BaseAnalyzer(metaclass=ABCMeta):
 
     # [Optional]
 
+    default_pref = {}
     default_request_kwargs = {
         'method': 'GET',
         'headers': {
-            'user-agent': '{}/{}'.format(info.PROJECT_NAME, info.VERSION)
+            'user-agent': (
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                ' (KHTML, like Gecko) Chrome/70.0.3538.77 Safari/537.36'
+            ),
         },
     }
-    default_pref = {}
 
     def entry_normalizer(self, url):
         """Normalize all possible entry url to single one form."""

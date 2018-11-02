@@ -44,6 +44,7 @@ network:
   ##
   ## the configuration look like:
   ##   socks5://username:password@127.0.0.1:1080
+  ##
   ## if null, stop to using any socks proxy
   socks_proxy: null
 

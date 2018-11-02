@@ -34,6 +34,7 @@ from cmdlr.exception import AnalyzerRuntimeError
 from cmdlr.analyzer import BaseAnalyzer
 
 from cmdlr.autil import fetch
+from cmdlr.autil import get_random_useragent
 
 from .infoext import extract_volumes
 from .infoext import extract_name
@@ -52,20 +53,21 @@ class Analyzer(BaseAnalyzer):
         ),
     ]
 
-    default_request_kwargs = {
-        'method': 'GET',
-        'headers': {
-            'referer': 'http://www.manhuagui.com/comic/',
-            'user-agent': ('Mozilla/5.0 AppleWebKit/537.3'
-                           ' (KHTML, like Gecko)'
-                           ' Windows 10 Chrome/64.0.3938.120 Safari/537.36')
-        },
-    }
-
     default_pref = {
         'image_host_codes': ['eu', 'i', 'us'],
         'meta_source': 'tw',
     }
+
+    @property
+    def default_request_kwargs(self):
+        """Build default request kwargs."""
+        return {
+            'method': 'GET',
+            'headers': {
+                'referer': 'http://www.manhuagui.com/comic/',
+                'user-agent': self.config['user_agent'],
+            },
+        }
 
     @staticmethod
     def to_config(pref):
@@ -90,6 +92,7 @@ class Analyzer(BaseAnalyzer):
         return {
             'image_host_codes': pref['image_host_codes'],
             'entry_subdomain': get_entry_subdomain(pref),
+            'user_agent': get_random_useragent(),
         }
 
     def entry_normalizer(self, url):
