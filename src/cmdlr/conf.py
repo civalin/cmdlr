@@ -13,19 +13,29 @@ from .merge import merge_dict
 _DEFAULT_CONFIG_YAML = """
 ## This is config file for cmdlr.
 
+
+
 ## The data directories should be scanning.
 ##
-## the first entry of data_dirs also be considered as `incoming_dir`
+## The first entry of data_dirs also be considered as `incoming_dir`, and
 ## all the "new / incoming" comics will be settled down in the `incoming_dir`
 data_dirs:
 - '~/comics'
+
+
 
 ## The directory be used to save the logs.
 ##
 ## if null, stop logging any messages into filesystem.
 logging_dir: null
 
+
+
 ## global network settings
+##
+## ATTENTION: network settings only affect build-in network modules.
+##            Currently, the only exception is a `npm install` command for
+##            extra js dependency when js subsystem initialization.
 network:
   ## download delay
   ##
@@ -48,13 +58,19 @@ network:
   ## if null, stop to using any socks proxy
   socks_proxy: null
 
+
+
 book_concurrent: 6   # how many books can processing parallel
+
+
 
 ## extra analyzer directory
 ##
 ## assign a exist directory and put analyzers module or package in here.
 ## Only useful if user want to develop or use a local analyzer.
 analyzer_dir: null
+
+
 
 ## analyzer preference
 ##

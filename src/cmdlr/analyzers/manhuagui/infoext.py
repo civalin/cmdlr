@@ -19,9 +19,11 @@ async def _get_volumes_data_tag(soup, loop):
                        .format(lzstring=lzstring))
         full_js = get_shared_js() + question_js
 
-        volumes_html = (
-            await loop.run_in_executor(None, lambda: run_in_nodejs(full_js))
-        ).eval
+        volumes_html = await loop.run_in_executor(
+            None,
+            lambda: run_in_nodejs(full_js),
+        )
+
         volumes_data_tag = BeautifulSoup(volumes_html, 'html.parser')
 
     else:

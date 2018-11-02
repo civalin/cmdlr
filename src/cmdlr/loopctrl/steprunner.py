@@ -1,6 +1,7 @@
 """The book's steps runner."""
 
 import sys
+import subprocess
 from collections import Iterable
 from pprint import pprint
 
@@ -21,6 +22,14 @@ async def book_runner(steps, init_step_args, comic_url):
     """Run the steps one by one and pass args from previous returns."""
     try:
         await _run(steps, init_step_args)
+
+    except subprocess.CalledProcessError as e:
+        logger.error(
+            'Book Error: {}\n{}'.format(
+                comic_url,
+                e.stderr.decode(),
+            ),
+            exc_info=sys.exc_info())
 
     except Exception as e:
         if hasattr(e, 'ori_meta'):

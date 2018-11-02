@@ -110,9 +110,7 @@ async def _get_chapter_info(soup, loop):
 
     full_js = get_shared_js() + encrypted_js
 
-    smh_js = (
-        await loop.run_in_executor(None, lambda: run_in_nodejs(full_js))
-    ).eval
+    smh_js = await loop.run_in_executor(None, lambda: run_in_nodejs(full_js))
 
     json_string = re.search(r'{.*}', smh_js).group(0)
 
