@@ -132,7 +132,7 @@ for page_num, img_url in enumerate(img_urls, start=1):
 
 
 
-## Optional Components
+## 3. Optional Components
 
 An ananlyzer has five optional components.
 
@@ -254,7 +254,7 @@ This method can use the `resp` (a [aiohttp.ClientResponse] object) of image to d
 
 
 
-## Helper Functions
+## 4. Helper Functions
 
 We offer some helper functions in `cmdlr.autil` module.
 
