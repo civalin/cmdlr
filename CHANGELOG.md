@@ -2,6 +2,13 @@
 
 ## 4.X
 
+### 4.1.0
+
+- add: random user-agent support for analyzer.
+- security: resist malicious js attack in `run_in_nodejs`
+
+
+
 ### 4.0.0
 
 #### Major Break Changed
