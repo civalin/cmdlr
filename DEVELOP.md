@@ -136,15 +136,11 @@ for page_num, img_url in enumerate(img_urls, start=1):
 
 An ananlyzer has five optional components.
 
-- *method* `def entry_normalizer(self, pref)` (**Recommended to override**)
-- *property* `default_request_kwargs`
-- *property* `default_pref`
-- *staticmethod* `def to_config(pref)`
-- *method* `def get_image_extension(self, resp)`
-
 
 
 ### *method* `def entry_normalizer(self, pref)`
+
+(**Recommended to override**)
 
 Developer can use this method to make sure multiple **semantic equivalence** url can mapping to a single one form. Let's see an example:
 
@@ -257,10 +253,6 @@ This method can use the `resp` (a [aiohttp.ClientResponse] object) of image to d
 ## 4. Helper Functions
 
 We offer some helper functions in `cmdlr.autil` module.
-
-- *function* `async def fetch(url, request, encoding='utf8', **req_kwargs)`
-- *function* `def run_in_nodejs(js)`
-- *function* `def get_random_useragent()`
 
 
 
