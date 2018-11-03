@@ -1,7 +1,6 @@
 """Define request cmdlr used."""
 
 import sys
-import asyncio
 from functools import reduce
 
 import aiohttp
@@ -50,8 +49,7 @@ def build_request(
         async def __get_response(self):
             await self.__acquire()
 
-            delay_sec = host_pool.get_delay_sec(self.url)
-            await asyncio.sleep(delay_sec)
+            await host_pool.wait_for_delay(self.url)
 
             real_req_kwargs = reduce(
                 merge_dict,
@@ -97,13 +95,6 @@ def build_request(
 
         async def __aexit__(self, exc_type, exc, tb):
             """Async with exit."""
-            if exc_type:
-                if exc_type is not asyncio.CancelledError:
-                    host_pool.increase_delay(self.url)
-
-            else:
-                host_pool.decrease_delay(self.url)
-
             if self.resp:
                 await self.resp.release()
 

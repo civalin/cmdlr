@@ -37,7 +37,10 @@ class RequestPool:
             request = build_request(
                 analyzer,
                 analyzer_system,
-                self.session_pool.build_session(analyzer_system),
+                self.session_pool.build_session(
+                    analyzer_system,
+                    self.host_pool,
+                ),
                 self.semaphore,
                 self.host_pool,
             )
