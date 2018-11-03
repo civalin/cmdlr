@@ -53,7 +53,7 @@ Now everything was set up, but this analyzer not do anything right now.
 
 ## 2. Required Components
 
-Analyzer has many functions, but only those three are necessary.
+An Analyzer has many functions, but only those three are necessary.
 
 - *property* `entry_patterns`
     - determine a "entry url" should or should not be processed by this analyzer.
@@ -134,7 +134,7 @@ for page_num, img_url in enumerate(img_urls, start=1):
 
 ## 3. Optional Components
 
-An ananlyzer has five optional components.
+An ananlyzer has some optional components.
 
 
 
