@@ -12,7 +12,37 @@ from .exception import AnalyzerRuntimeError
 ANALYZERS_PKGPATH = 'cmdlr.analyzers'
 
 
-class BaseAnalyzer(metaclass=ABCMeta):
+class _BaseAnalyzer(metaclass=ABCMeta):
+    """Internal operation for BaseAnalyzer."""
+
+    def __init__(self, pref, *args, **kwargs):
+        """Init this analyzer."""
+        if 'system' in self.default_pref:
+            raise AnalyzerRuntimeError(
+                'key "system" not allow in default_pref" ({})'
+                .format(self.name)
+            )
+
+        self.current_pref = merge_dict(self.default_pref, pref)
+        self.config = self.to_config(self.current_pref)
+
+    @property
+    def name(self):
+        """Get analyzer's name."""
+        # the analyzer module name must under this path:
+        #    'cmdlr.analyzers.<analyzer name>.<maybe exist...>'
+        return self.__class__.__module__.split('.')[2]
+
+    @property
+    def desc(self):
+        """Get analyzer's desc."""
+        module_name = '.'.join([ANALYZERS_PKGPATH, self.name])
+        module = importlib.import_module(module_name)
+
+        return module.__doc__
+
+
+class BaseAnalyzer(_BaseAnalyzer):
     """Base class of cmdlr analyzer."""
 
     # [Must override]
@@ -61,31 +91,3 @@ class BaseAnalyzer(metaclass=ABCMeta):
     def to_config(pref):
         """Pre-processing user's 'pref' to 'self.config' for ease to use."""
         return pref
-
-    # [Internal]: Don't touch the following things!
-
-    def __init__(self, pref, *args, **kwargs):
-        """Init this analyzer."""
-        if 'system' in self.default_pref:
-            raise AnalyzerRuntimeError(
-                'key "system" not allow in default_pref" ({})'
-                .format(self.name)
-            )
-
-        self.current_pref = merge_dict(self.default_pref, pref)
-        self.config = self.to_config(self.current_pref)
-
-    @property
-    def name(self):
-        """Get analyzer's name."""
-        # the analyzer module name must under this path:
-        #    'cmdlr.analyzers.<analyzer name>.<maybe exist...>'
-        return self.__class__.__module__.split('.')[2]
-
-    @property
-    def desc(self):
-        """Get analyzer's desc."""
-        module_name = '.'.join([ANALYZERS_PKGPATH, self.name])
-        module = importlib.import_module(module_name)
-
-        return module.__doc__
