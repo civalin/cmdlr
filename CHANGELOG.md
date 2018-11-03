@@ -4,8 +4,9 @@
 
 ### 4.1.0
 
-- add: random user-agent support for analyzer.
+- add: support random user-agent for analyzer.
 - security: resist malicious js attack in `run_in_nodejs`
+- internal: change dynamic delay algorithm.
 
 
 
