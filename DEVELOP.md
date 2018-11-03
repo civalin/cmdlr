@@ -6,7 +6,7 @@ To support more sites, please write an analyzer as plugin.
 
 
 
-## Set up
+## 1. Set up
 
 1. Set the config option `analyzer_dir` to an empty local directory, e.g., `~/test-analyzers`.
 2. Create an empty python file in `analyzer_dir`, e.g., `~/test-analyzers/example.py`.
@@ -51,20 +51,20 @@ Now everything was set up, but this analyzer not do anything right now.
 
 
 
-## Required Components
+## 2. Required Components
 
 Analyzer has many functions, but only those three are necessary.
 
 - *property* `entry_patterns`
     - determine a "entry url" should or should not be processed by this analyzer.
-- *method* `async def get_comic_info(url, request, loop)`
+- *async method* `async def get_comic_info(url, request, loop)`
     - parsing a "entry url" and return the metadata of this book.
-- *method* `async def save_volume_images(url, request, save_image, loop)`
+- *async method* `async def save_volume_images(url, request, save_image, loop)`
     - parsing a "volume url" in metadata, find out the all of the image's urls.
 
 
 
-### Required: *property* `entry_patterns`
+### *property* `entry_patterns`
 
 This is a list of regex strings or `re.compile()` results. For example:
 
@@ -74,7 +74,7 @@ entry_patterns = [r'^https?://(?:www\.)?example\.com/html/']
 
 
 
-### Required: *method* `async def get_comic_info(url, request, loop)`
+### *async method* `async def get_comic_info(url, request, loop)`
 
 Build the metadata by the input url.
 
@@ -105,7 +105,7 @@ The expected returning: (for example)
 
 
 
-### Required: *method* `async def save_volume_images(url, request, save_image, loop)`
+### *async method* `async def save_volume_images(url, request, save_image, loop)`
 
 Find out all of the images in a volume. Basically, include two steps:
 
@@ -136,80 +136,15 @@ for page_num, img_url in enumerate(img_urls, start=1):
 
 An ananlyzer has five optional components.
 
-- *property* `default_pref`
-- *property* `default_request_kwargs`
-- *staticmethod* `def to_config(pref)`
 - *method* `def entry_normalizer(self, pref)` (**Recommended to override**)
+- *property* `default_request_kwargs`
+- *property* `default_pref`
+- *staticmethod* `def to_config(pref)`
 - *method* `def get_image_extension(self, resp)`
 
 
 
-### Optional: *property* `default_pref`
-
-The default preference settings for this analyzer.
-
-User can override those settings in their configuration file.
-
-For example:
-
-```python
-# in analyzer's file
-
-Analyzer(BaseAnalyzer):
-    default_pref = {
-        'https': True
-        'picture_size': 'big',
-    }
-```
-
-```yaml
-# in user's configuration file
-
-analyzer_pref:
-  <your_analyzer_name>:
-    picture_size: small  # override from big to small
-```
-
-Check `def to_config(pref)` for more detail.
-
-**default**: `{}`
-
-
-
-### Optional: *staticmethod* `def to_config(pref)`
-
-For ease to use, raw settings usually want some pre-processing.
-
-This function is used to convert the merged result of user's `analyzer_pref` and the `default_pref` (we call `pref`) to a new `config`.
-
-Analyzer framework will save this method's returns to `self.config`.
-
-**default**: return the `pref` itself.
-
-
-
-### Optional: *property* `default_request_kwargs`
-
-The `request(...)` function has a lot of parameters powered by [aiohttp.ClientSession.request].
-
-Developer can set up the default parameters here for all request.
-
-Hints:
-
-1. It affect the all `request()` call about this analyzer, include implicate call.
-2. This value will be readed each time request call, so developer can use `@property` to dynamic the value.
-
-**default**:
-
-```python
-{
-    'method': 'GET',
-}
-```
-
-
-
-### Optional: *method* `def entry_normalizer(self, pref)`
+### *method* `def entry_normalizer(self, pref)`
 
 Developer can use this method to make sure multiple **semantic equivalence** url can mapping to a single one form. Let's see an example:
 
@@ -246,11 +181,76 @@ Analyzer(BaseAnalyzer):
 
 
 
-### Optional: *method* `def get_image_extension(self, resp)`
+### *property* `default_request_kwargs`
+
+The `request(...)` function has a lot of parameters powered by [aiohttp.ClientSession.request].
+
+Developer can set up the default parameters here for all request.
+
+Hints:
+
+1. It affect the all `request()` call about this analyzer, include implicate call.
+2. This value will be readed each time request call, so developer can use `@property` to dynamic the value.
+
+**default**:
+
+```python
+{
+    'method': 'GET',
+}
+```
+
+
+
+### *property* `default_pref`
+
+The default preference settings for this analyzer.
+
+User can override those settings in their configuration file.
+
+For example:
+
+```python
+# in analyzer's file
+
+Analyzer(BaseAnalyzer):
+    default_pref = {
+        'https': True
+        'picture_size': 'big',
+    }
+```
+
+```yaml
+# in user's configuration file
+
+analyzer_pref:
+  <your_analyzer_name>:
+    picture_size: small  # override from big to small
+```
+
+Check `def to_config(pref)` for more detail.
+
+**default**: `{}`
+
+
+
+### *staticmethod* `def to_config(pref)`
+
+For ease to use, raw settings usually want some pre-processing.
+
+This function is used to convert the merged result of user's `analyzer_pref` and the `default_pref` (we call `pref`) to a new `config`.
+
+Analyzer framework will save this method's returns to `self.config`.
+
+**default**: return the `pref` itself.
+
+
+
+### *method* `def get_image_extension(self, resp)`
 
 This method can use the `resp` (a [aiohttp.ClientResponse] object) of image to determine the image file extension. (e.g., `.jpg`, `.png`)
 
-**default**: using `Content-Type` to calculate the file extension.
+**default**: using HTTP `Content-Type` to calculate the file extension.
 
 
 
@@ -264,7 +264,7 @@ We offer some helper functions in `cmdlr.autil` module.
 
 
 
-### *function* `async def fetch(url, request, encoding='utf8', **req_kwargs)`
+### *async function* `async def fetch(url, request, encoding='utf8', **req_kwargs)`
 
 A simple helper to get remote html resource and relevent `BeautifulSoup`.
 
