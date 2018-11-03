@@ -34,7 +34,7 @@ logging_dir: null
 ## global network settings
 ##
 ## ATTENTION: network settings only affect build-in network modules.
-##            Currently, the only exception is a `npm install` command for
+##            Currently, the only exception is `npm install` command for
 ##            extra js dependency when js subsystem initialization.
 network:
   ## download delay
@@ -43,7 +43,7 @@ network:
   ##     ((0 ~ delay) * 2) + `dynamic_delay` seconds
   ##
   ## Notice: the `dynamic_delay` only depending on network status.
-  delay: 1.0
+  delay: 2.5
 
   timeout: 120               # timeout of a trying of a request
   max_try: 5                 # max try for a single request
