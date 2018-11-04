@@ -1,6 +1,6 @@
 # Cmdlr
 
-Extensible command line tool to subscribe online comics.
+Extensible command line tool to tracking online comics.
 
 
 
