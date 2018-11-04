@@ -39,8 +39,8 @@ logging_dir: null
 network:
   ## download delay
   ##
-  ## every connections will random waiting:
-  ##     ((0 ~ delay) * 2) + `dynamic_delay` seconds
+  ## each connection will random waiting:
+  ##     max((0 ~ (delay * 2)), dynamic_delay) seconds
   ##
   ## Notice: the `dynamic_delay` only depending on network status.
   delay: 2.5

@@ -1,11 +1,17 @@
 """Maintain host infos."""
 
 import asyncio
-import random
 from datetime import datetime
 from datetime import timedelta
 from urllib.parse import urlparse
 from collections import deque
+from statistics import mean
+from random import gauss
+from math import inf
+
+
+def _clamp(value, _min=-inf, _max=inf):
+    return min(max(value, _min), _max)
 
 
 class HostPool:
@@ -42,25 +48,28 @@ class HostPool:
     def __get_remain_delay_sec(self, url):
         host = self.__get_host(url)
 
-        delay = host['delay']
-        static_delay_sec = random.random() * delay * 2
-
-        recent_elapsed_sec = host['recent_elapsed_seconds']
-        avg_elapsed_sec = sum(recent_elapsed_sec) / len(recent_elapsed_sec)
-
-        should_delay_sec = (
-            static_delay_sec
-            + avg_elapsed_sec
-            + host['error_delay']
+        user_delay = host['delay']
+        user_random_delay = _clamp(
+            gauss(
+                mu=user_delay,
+                sigma=user_delay * 0.4,
+            ),
+            _min=0,
+            _max=user_delay * 2,
         )
-        should_delay = timedelta(seconds=should_delay_sec)
+        mean_elapsed = mean(host['recent_elapsed_seconds'])
+        standard_delay = max(user_random_delay, mean_elapsed)
 
-        previous_request_start = host['previous_request_start']
-        now = datetime.utcnow()
-        already_pass = now - previous_request_start
-        remained = should_delay - already_pass
+        should_delay = standard_delay + host['error_delay']
 
-        return max(remained.total_seconds(), 0)
+        already_pass = (
+            datetime.utcnow()
+            - host['previous_request_start']
+        ).total_seconds()
+
+        remained_delay = should_delay - already_pass
+
+        return _clamp(remained_delay, _min=0)
 
     def add_an_elapsed(self, url, elapsed):
         """Add a new elapsed seconds for further calculations."""
@@ -78,13 +87,13 @@ class HostPool:
         """Increase error delay."""
         host = self.__get_host(url)
 
-        host['error_delay'] = min(host['error_delay'] + 2, 600)
+        host['error_delay'] = _clamp(host['error_delay'] + 2, _max=600)
 
     def decrease_error_delay(self, url):
         """Decrease error delay."""
         host = self.__get_host(url)
 
-        host['error_delay'] = max(host['error_delay'] - 2, 0)
+        host['error_delay'] = _clamp(host['error_delay'] - 2, _min=0)
 
     async def wait_for_delay(self, url):
         """Wait for delay (based on host)."""
