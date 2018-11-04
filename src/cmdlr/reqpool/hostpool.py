@@ -2,7 +2,6 @@
 
 import asyncio
 from datetime import datetime
-from datetime import timedelta
 from urllib.parse import urlparse
 from collections import deque
 from statistics import mean
