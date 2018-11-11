@@ -1,6 +1,7 @@
 """Define request cmdlr used."""
 
 import sys
+import asyncio
 from functools import reduce
 
 import aiohttp
@@ -71,7 +72,7 @@ def build_request(
                 try:
                     return await self.__get_response()
 
-                except aiohttp.ClientError as e:
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     current_try = try_idx + 1
 
                     logger.error(
