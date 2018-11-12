@@ -2,6 +2,14 @@
 
 ## 4.X
 
+### 4.1.1
+
+- fix: connections number out of control after some exceptions.
+- fix: request timeout error not catch properly.
+- tweak: make dynamic delay more reasonable.
+
+
+
 ### 4.1.0
 
 - add: support random user-agent for analyzer.
