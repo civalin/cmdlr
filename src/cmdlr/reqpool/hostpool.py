@@ -101,12 +101,8 @@ class HostPool:
         if delay_sec > 0:
             await asyncio.sleep(delay_sec)
 
-    async def acquire(self, url):
-        """Acquire semaphore for the url (based on host)."""
+    def get_semaphore(self, url):
+        """Return a semaphore (based on host)."""
         host = self.__get_host(url)
-        await host['semaphore'].acquire()
 
-    def release(self, url):
-        """Release semaphore for the url (based on host)."""
-        host = self.__get_host(url)
-        host['semaphore'].release()
+        return host['semaphore']

@@ -26,30 +26,15 @@ def build_request(
             self.url = url
 
             self.resp = None
-            self.host_semaphore_acquired = False
-            self.global_semaphore_acquired = False
 
             host_pool.register_host(url, per_host_connections, delay)
 
-        async def __acquire(self):
-            self.host_semaphore_acquired = True
-            await host_pool.acquire(self.url)
-
-            self.global_semaphore_acquired = True
-            await global_semaphore.acquire()
-
-        def __release(self):
-            if self.global_semaphore_acquired:
-                self.global_semaphore_acquired = False
-                global_semaphore.release()
-
-            if self.host_semaphore_acquired:
-                self.host_semaphore_acquired = False
-                host_pool.release(self.url)
+        async def __run_in_semaphore(self, async_func):
+            async with host_pool.get_semaphore(self.url):
+                async with global_semaphore:
+                    return await async_func()
 
         async def __get_response(self):
-            await self.__acquire()
-
             await host_pool.wait_for_delay(self.url)
 
             real_req_kwargs = reduce(
@@ -70,7 +55,7 @@ def build_request(
             """Async with enter."""
             for try_idx in range(max_try):
                 try:
-                    return await self.__get_response()
+                    return await self.__run_in_semaphore(self.__get_response)
 
                 except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                     current_try = try_idx + 1
@@ -98,7 +83,5 @@ def build_request(
             """Async with exit."""
             if self.resp:
                 await self.resp.release()
-
-            self.__release()
 
     return request
