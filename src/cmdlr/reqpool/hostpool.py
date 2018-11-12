@@ -51,7 +51,7 @@ class HostPool:
         user_random_delay = _clamp(
             gauss(
                 mu=user_delay,
-                sigma=user_delay * 0.4,
+                sigma=user_delay * 0.33,
             ),
             _min=0,
             _max=user_delay * 2,
