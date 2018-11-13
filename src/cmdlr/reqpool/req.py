@@ -1,6 +1,5 @@
 """Define request cmdlr used."""
 
-import sys
 import asyncio
 from functools import reduce
 
@@ -49,6 +48,8 @@ def build_request(
             self.resp = await session.request(**real_req_kwargs)
             self.resp.raise_for_status()
 
+            await self.resp.read()  # preload for catch exception & retry
+
             return self.resp
 
         async def __aenter__(self):
@@ -69,15 +70,8 @@ def build_request(
                         )
                     )
 
-                    await self.__aexit__(*sys.exc_info())
-
                     if current_try == max_try:
                         raise e from None
-
-                except Exception as e:
-                    await self.__aexit__(*sys.exc_info())
-
-                    raise e from None
 
         async def __aexit__(self, exc_type, exc, tb):
             """Async with exit."""
