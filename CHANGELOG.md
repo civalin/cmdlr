@@ -2,6 +2,13 @@
 
 ## 4.X
 
+### 4.1.2
+
+- fix: timeout error in body fetching phase can not be retried.
+- fix: connections semaphores had released before the body was fetched.
+
+
+
 ### 4.1.1
 
 - fix: connections number out of control after some exceptions.
