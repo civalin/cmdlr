@@ -47,7 +47,7 @@ network:
 
   timeout: 120               # timeout of a trying of a request
   max_try: 5                 # max try for a single request
-  total_connections: 10      # all requests in the same time in whole system
+  total_connections: 12      # all requests in the same time in whole system
   per_host_connections: 2    # all requests in the same time in a host
 
   ## assign a socks proxy configuration
