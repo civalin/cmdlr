@@ -4,6 +4,7 @@ import asyncio
 from functools import reduce
 
 import aiohttp
+from aiohttp_socks.errors import SocksError
 
 from ..log import logger
 from ..merge import merge_dict
@@ -58,7 +59,9 @@ def build_request(
                 try:
                     return await self.__run_in_semaphore(self.__get_response)
 
-                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                except (asyncio.TimeoutError,
+                        aiohttp.ClientError,
+                        SocksError) as e:
                     current_try = try_idx + 1
 
                     logger.error(
