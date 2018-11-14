@@ -21,7 +21,10 @@ def _print_analyzer_list(analyzers):
 def _print_analyzer_detail(analyzer):
     def get_pref_text(title, pref, name):
         wrapped_pref = {'analyzer_pref': {name: pref}}
-        content = indent(yaml.dump(wrapped_pref), '    ')
+        content = indent(
+            yaml.dump(wrapped_pref, allow_unicode=True),
+            '    ',
+        )
 
         return '\n\n'.join([title, content]).strip()
 
