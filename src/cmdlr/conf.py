@@ -82,7 +82,7 @@ analyzer_dir: null
 ##       enabled: true            # default: true
 ##       delay: 1.0               # default: <network.delay>
 ##       timeout: 120             # default: <network.timeout>
-##       max_try: 5               # default: <network.max_retry>
+##       max_try: 5               # default: <network.max_try>
 ##       per_host_connections: 2  # default: <network.per_host_connections>
 ##       socks_proxy: null        # default: <network.socks_proxy>
 ##
