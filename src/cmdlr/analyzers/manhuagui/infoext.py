@@ -61,8 +61,8 @@ def _get_volumes_from_volumes_data_tag(volumes_data_tag, absurl):
 async def extract_volumes(fetch_result, loop):
     """Get all volumes."""
     soup, absurl = fetch_result
-
     volumes_data_tag = await _get_volumes_data_tag(soup, loop)
+
     return _get_volumes_from_volumes_data_tag(volumes_data_tag, absurl)
 
 

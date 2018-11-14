@@ -26,9 +26,16 @@
 
     > Hint: The real servers url are look like this:
             `https://{image_host_code}.hamreus.com`
+
+
+
+    ## ignore_volume_patterns
+
+    Ignore some volumes if the volume name contain some regex patterns.
 """
 
 import re
+import logging
 
 from cmdlr.exception import AnalyzerRuntimeError
 from cmdlr.analyzer import BaseAnalyzer
@@ -55,6 +62,7 @@ class Analyzer(BaseAnalyzer):
 
     default_pref = {
         'image_host_codes': ['eu', 'i', 'us'],
+        'ignore_volume_patterns': ['�'],
         'meta_source': 'tw',
     }
 
@@ -72,9 +80,7 @@ class Analyzer(BaseAnalyzer):
     @staticmethod
     def to_config(pref):
         """Pre-build config."""
-        def get_entry_subdomain(pref):
-            meta_source = pref['meta_source']
-
+        def get_entry_subdomain(meta_source):
             if meta_source == 'tw':
                 entry_subdomain = 'tw'
 
@@ -89,9 +95,33 @@ class Analyzer(BaseAnalyzer):
 
             return entry_subdomain
 
+        def get_volume_filter(ignore_volume_patterns):
+            regexes = [re.compile(pat) for pat in ignore_volume_patterns]
+
+            def volume_filter(volumes):
+                logger = logging.getLogger('cmdlr.manhuagui')
+                should_removed = sorted([
+                    vname for vname in volumes.keys()
+                    if any(regex.search(vname) for regex in regexes)
+                ])
+
+                result = volumes.copy()
+
+                for vname in should_removed:
+                    vurl = result.pop(vname)
+                    logger.info('Ignore Volume by Patterns: {} ({})'
+                                .format(vname, vurl))
+
+                return result
+
+            return volume_filter
+
         return {
             'image_host_codes': pref['image_host_codes'],
-            'entry_subdomain': get_entry_subdomain(pref),
+            'entry_subdomain': get_entry_subdomain(pref['meta_source']),
+            'volume_filter': get_volume_filter(
+                pref['ignore_volume_patterns'],
+            ),
             'user_agent': get_random_useragent(),
         }
 
@@ -114,7 +144,9 @@ class Analyzer(BaseAnalyzer):
 
         return {
             'name': extract_name(fetch_result),
-            'volumes': await extract_volumes(fetch_result, loop),
+            'volumes': self.config['volume_filter'](
+                await extract_volumes(fetch_result, loop),
+            ),
             'description': extract_description(fetch_result),
             'authors': extract_authors(fetch_result),
             'finished': extract_finished(fetch_result),
