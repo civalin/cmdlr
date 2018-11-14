@@ -45,7 +45,7 @@ network:
   ## Notice: the `dynamic_delay` only depending on network status.
   delay: 2.5
 
-  timeout: 120               # timeout of a trying of a request
+  timeout: 300               # timeout of a trying of a request
   max_try: 5                 # max try for a single request
   total_connections: 12      # all requests in the same time in whole system
   per_host_connections: 2    # all requests in the same time in a host
