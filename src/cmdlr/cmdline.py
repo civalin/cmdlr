@@ -113,7 +113,7 @@ def main():
     args = _get_args()
     config = _get_config(args)
 
-    init_logging(config.logging_dir)
+    init_logging(config.logging_dir, config.logging_level)
 
     amgr = AnalyzerManager(config)
 

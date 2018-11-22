@@ -80,6 +80,8 @@ config_schema = Schema({
         All(_safepath_str, Length(min=1))
     ),
 
+    'logging_level': Any('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'),
+
     'analyzer_dir': Any(
         None,
         All(_safepath_str, Length(min=1)),

@@ -7,7 +7,6 @@ from logging import Formatter
 from logging import StreamHandler
 from logging import FileHandler
 from logging import DEBUG
-from logging import INFO
 
 from datetime import datetime
 
@@ -43,21 +42,21 @@ def _get_file_handler(logging_dir, formatter):
     return ch
 
 
-def _init_logger():
+def _init_logger(logging_level):
     logger = getLogger('cmdlr')
-    logger.setLevel(level=INFO)
+    logger.setLevel(level=logging_level)
 
     return logger
 
 
-def init_logging(logging_dir):
+def init_logging(logging_dir, logging_level):
     """Init logging system."""
     formatter = _get_formatter()
 
     stream_handler = _get_stream_handler(formatter)
     file_handler = _get_file_handler(logging_dir, formatter)
 
-    logger = _init_logger()
+    logger = _init_logger(logging_level)
 
     logger.addHandler(stream_handler)
 

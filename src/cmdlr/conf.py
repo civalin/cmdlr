@@ -24,6 +24,11 @@ data_dirs:
 
 
 
+## Set the logging level, is the one of DEBUG, INFO, WARNING, ERROR, CRITICAL
+logging_level: INFO
+
+
+
 ## The directory be used to save the logs.
 ##
 ## if null, stop logging any messages into filesystem.
@@ -202,6 +207,11 @@ class Config:
 
         if logging_dir:
             return _normalize_path(logging_dir)
+
+    @property
+    def logging_level(self):
+        """Get logging level."""
+        return self.__config['logging_level']
 
     @property
     def analyzer_dir(self):
