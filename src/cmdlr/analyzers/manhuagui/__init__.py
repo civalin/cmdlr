@@ -109,8 +109,8 @@ class Analyzer(BaseAnalyzer):
 
                 for vname in should_removed:
                     vurl = result.pop(vname)
-                    logger.info('Ignore Volume by Patterns: {} ({})'
-                                .format(vname, vurl))
+                    logger.debug('Ignore Volume by Patterns: {} ({})'
+                                 .format(vname, vurl))
 
                 return result
 

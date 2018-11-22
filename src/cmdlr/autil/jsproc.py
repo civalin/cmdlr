@@ -28,7 +28,7 @@ def _prepare_node_env():
     node_path = os.path.join(node_cache_dir, 'node_modules')
 
     if not os.path.exists(node_path):
-        logger.info('[npm] Retrieving external node.js modules...')
+        logger.debug('[npm] Retrieving external node.js modules...')
 
         external_modules = ['vm2@~3.6.4']
 
@@ -44,7 +44,7 @@ def _prepare_node_env():
             stdout=subprocess.DEVNULL,
         )
 
-        logger.info('[npm] Retrieving external node.js modules... Success.')
+        logger.debug('[npm] Retrieving external node.js modules... Success.')
 
     return node_cmd, node_path
 

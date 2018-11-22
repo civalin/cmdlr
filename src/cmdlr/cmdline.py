@@ -119,6 +119,7 @@ def main():
 
     if 'analyzer_name' in args:
         print_analyzer_info(amgr, args.analyzer_name)
+
         return
 
     print_not_matched_urls(amgr, args.urls)

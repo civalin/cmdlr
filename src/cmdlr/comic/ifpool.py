@@ -54,7 +54,7 @@ class ImageFetchPool:
             filepath = self.__get_image_filepath(page_num, ext, self.dirpath)
             self.__save_binary(filepath, binary)
 
-            logger.info('Image Fetched: {}_{}_{:03}'.format(
+            logger.debug('Image Fetched: {}_{}_{:03}'.format(
                 self.cname, self.vname, page_num))
 
     async def __save_image_error_process(self,
