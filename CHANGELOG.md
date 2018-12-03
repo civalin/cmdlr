@@ -2,6 +2,17 @@
 
 ## 4.X
 
+### 4.1.3
+
+- fix: redirect cause unexpected error.
+- fix: not catch SocksError properly so not retry in those situation.
+- improve: `-a` can print unicode in analyzer's pref.
+- add: allow user define the logging level. (default is INFO level)
+- tweak: move some kind of logs into DEBUG level .
+- analyzer.manhuagui: allow ignore some volume name by regex patterns.
+
+
+
 ### 4.1.2
 
 - fix: timeout error in body fetching phase can not be retried.
