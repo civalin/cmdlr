@@ -9,29 +9,48 @@ from aiohttp import TraceConfig
 from aiohttp_socks import SocksConnector
 
 
+def _start_timer(host_pool, url, start):
+        host_pool.update_previous_request_start(url)
+
+        return {
+            'start': start,
+            'url': url,
+        }
+
+
+def _stop_timer(host_pool, response, timer, end):
+    url = timer['url']
+    start = timer['start']
+
+    if response.status != 200:
+        host_pool.increase_error_delay(url)
+
+    else:
+        elapsed = end - start
+        host_pool.add_an_elapsed(url, elapsed)
+
+        host_pool.decrease_error_delay(url)
+
+
 def _get_timing_trace_config(host_pool):
     """Get trace config to log and calculate request delay."""
     async def on_request_start(session, trace_config_ctx, params):
+        now = session.loop.time()
         url = str(params.url)
 
-        host_pool.update_previous_request_start(url)
-
-        trace_config_ctx.start = session.loop.time()
+        trace_config_ctx.timer = _start_timer(host_pool, url, now)
 
     async def on_request_end(session, trace_config_ctx, params):
-        url = str(params.url)
-
-        if params.response.status != 200:
-            host_pool.increase_error_delay(url)
-
-        else:
-            elapsed = session.loop.time() - trace_config_ctx.start
-            host_pool.add_an_elapsed(url, elapsed)
-
-            host_pool.decrease_error_delay(url)
+        now = session.loop.time()
+        _stop_timer(
+            host_pool,
+            params.response,
+            trace_config_ctx.timer,
+            end=now,
+        )
 
     async def on_request_exception(session, trace_config_ctx, params):
-        url = str(params.url)
+        url = trace_config_ctx.timer['url']
 
         host_pool.increase_error_delay(url)
 
