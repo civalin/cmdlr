@@ -80,8 +80,9 @@ class Analyzer(BaseAnalyzer):
 
     async def save_volume_images(self, url, request, save_image, **unused):
         """Get all images in one volume."""
-        soup, _ = await fetch(url, request, encoding='big5')
-        base_url = soup.find('img', src=re.compile(r'http://web'))['src']
+        soup, absurl = await fetch(url, request, encoding='big5')
+        ref_url = soup.find('img', src=re.compile(r'/cartoonimg/'))['src']
+        base_url = absurl(ref_url)
 
         def get_img_url(page_number):
             return urljoin(base_url,
