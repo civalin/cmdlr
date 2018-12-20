@@ -78,14 +78,24 @@ class Analyzer(BaseAnalyzer):
             'finished': self.__extract_finished(fetch_result),
         }
 
+    @staticmethod
+    def __get_base_url(soup, absurl):
+        ref = soup.find('img', src=re.compile(r'/cartoonimg/'))
+        if ref:
+            base_url = absurl(ref['src'])
+        else:
+            base_url = soup.find('img', src=re.compile(r'http://web'))['src']
+
+        return base_url
+
+
     async def save_volume_images(self, url, request, save_image, **unused):
         """Get all images in one volume."""
-        soup, _ = await fetch(url, request, encoding='big5')
-        base_url = soup.find('img', src=re.compile(r'http://web'))['src']
+        soup, absurl = await fetch(url, request, encoding='big5')
+        base_url = self.__get_base_url(soup, absurl)
 
         def get_img_url(page_number):
-            return urljoin(base_url,
-                           '{:0>3}.jpg'.format(page_number))
+            return urljoin(base_url, '{:0>3}.jpg'.format(page_number))
 
         page_count = len(soup.find_all('option', value=True))
 
