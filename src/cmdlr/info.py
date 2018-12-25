@@ -1,6 +1,6 @@
 """Cmdlr infomation files."""
 
-VERSION = (4, 1, 3)
+VERSION = (4, 1, 4)
 DESCRIPTION = ('Extensible comic subscriber.')
 LICENSE = 'MIT'
 AUTHOR = 'visig'
