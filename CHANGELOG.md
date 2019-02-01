@@ -2,6 +2,14 @@
 
 ## 4.X
 
+### 4.1.5
+
+- migrate back to github.com.
+
+### 4.1.4
+
+- analyzer.cartoonmad: adapt both old and new image server.
+
 ### 4.1.3
 
 - fix: redirect cause unexpected error.
