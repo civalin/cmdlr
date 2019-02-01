@@ -7,7 +7,7 @@
 """
 
 import re
-from urllib.parse import urljoin
+from urllib.parse import parse_qsl
 
 from cmdlr.analyzer import BaseAnalyzer
 from cmdlr.autil import fetch
@@ -78,26 +78,39 @@ class Analyzer(BaseAnalyzer):
             'finished': self.__extract_finished(fetch_result),
         }
 
-    @staticmethod
-    def __get_base_url(soup, absurl):
-        ref = soup.find('img', src=re.compile(r'/cartoonimg/'))
-        if ref:
-            base_url = absurl(ref['src'])
-        else:
-            base_url = soup.find('img', src=re.compile(r'http://web'))['src']
 
-        return base_url
+    @staticmethod
+    def __get_imgurl_func(soup, absurl):
+        # print(soup.find('img', src=re.compile('comicpic.asp')))
+        src = soup.find('img', src=re.compile(r'comicpic.asp'))['src']
+        abspath, qs_string = absurl(src).split('?', maxsplit=1)
+
+        qs = dict(parse_qsl(qs_string))
+
+        file_parts = qs['file'].split('/')
+        file_parts[-1] = '{:0>3}'
+        qs['file'] = '/'.join(file_parts)
+
+        qs_tpl = '&'.join(['{}={}'.format(key, value)
+                           for key, value in qs.items()])
+        abspath_tpl = '{}?{}'.format(abspath, qs_tpl)
+
+        def get_imgurl(page_number):
+            return abspath_tpl.format(page_number)
+
+        return get_imgurl
 
 
     async def save_volume_images(self, url, request, save_image, **unused):
         """Get all images in one volume."""
         soup, absurl = await fetch(url, request, encoding='big5')
-        base_url = self.__get_base_url(soup, absurl)
-
-        def get_img_url(page_number):
-            return urljoin(base_url, '{:0>3}.jpg'.format(page_number))
+        get_img_url = self.__get_imgurl_func(soup, absurl)
 
         page_count = len(soup.find_all('option', value=True))
 
         for page_num in range(1, page_count + 1):
-            save_image(page_num, url=get_img_url(page_num))
+            save_image(
+                page_num,
+                url=get_img_url(page_num),
+                headers={'Referer': url},
+            )
