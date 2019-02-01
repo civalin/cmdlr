@@ -41,7 +41,7 @@ setup(
         "Topic :: System :: Archiving"],
 
     install_requires=[
-        'pyyaml >=3.13, <4',
+        'pyyaml >=4.2b1, <5',
         'aiohttp >=3, <4',
         'aiohttp_socks ==0.2',
         'voluptuous >=0.11.5, <0.12',
