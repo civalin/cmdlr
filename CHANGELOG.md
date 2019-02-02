@@ -2,6 +2,10 @@
 
 ## 4.X
 
+### 4.1.6
+
+- analyzer.cartoonmad: fix for site changed.
+
 ### 4.1.5
 
 - migrate back to github.com.
