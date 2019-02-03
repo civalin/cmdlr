@@ -29,7 +29,7 @@ def _object_hook(dct):
 
 
 def from_json_filepath(filepath):
-    """Get yaml data from file."""
+    """Get json data from file."""
     with open(filepath, 'r', encoding='utf8') as f:
         return json.load(f, object_hook=_object_hook,) or dict()
 
@@ -47,7 +47,7 @@ def from_json_yaml_filepath(filepath):
 
 
 def to_json_filepath(data, filepath):
-    """Save data to yaml file."""
+    """Save data to json file."""
     dirpath = os.path.dirname(filepath)
 
     if dirpath:
