@@ -3,7 +3,7 @@
 import sys
 import subprocess
 from collections import Iterable
-from pprint import pprint
+import pprint
 
 from ..log import logger
 

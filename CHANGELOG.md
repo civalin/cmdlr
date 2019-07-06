@@ -2,6 +2,10 @@
 
 ## 4.X
 
+### 4.1.7
+
+- fix: cannot print error msg when parsed data schema error.
+
 ### 4.1.6
 
 - analyzer.cartoonmad: fix for site changed.
