@@ -1,3 +1,5 @@
+**Due to lost of interest, this project has been abandoned**
+
 # Cmdlr
 
 Extensible command line tool to tracking online comics.
